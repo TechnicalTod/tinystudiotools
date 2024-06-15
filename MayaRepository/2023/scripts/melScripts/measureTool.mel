@@ -1,0 +1,1057 @@
+/*  Measure Tools - v2.1.1  ***********************************************************************************************************************************************
+     ________________________________________
+    |                                        |
+    |  Script done by: Klaudio Ladavac       |
+    |  Contact email : klaudio2u@gmail.com   |
+    |________________________________________|
+
+    
+LATEST RELESE/UPDATE: December 12, 2023.
+
+RELEASE NOTES: Available with the download. 
+
+IMPORTANT NOTE : Please don't distribute, copy or resale the part of the code or script file(s). The only way to get the original and up to date version is 
+                 only via on following link > GUMROAD > https:/gumroad.com/klaudio2u
+
+
+TO DO LIST: 
+1. Add option to create multiple distance tools at once. (If possible color them if they are set in X, Y, or Z)
+
+
+- DISCLAIMER -
+THE SCRIPT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. KLADUIO LADAVAC DOES NOT MAKE AND HEREBY DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTIES INCLUDING, 
+BUT NOT LIMITED TO, THE WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE, OR TRADE 
+PRACTICE. IN NO EVENT WILL KLAUDIO LADAVAC BE LIABLE FOR ANY LOST REVENUES, DATA, OR PROFITS, OR SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES, EVEN IF 
+KLAUDIO LADAVAC HAS BEEN ADVISED OF THE POSSIBILITY OR PROBABILITY OF SUCH DAMAGES.   
+
+****************************************************************************************************************************************************************/
+
+
+// SAVED SETTINGS  ------------------------------------------------------------------------------------------------------------------------------------------------------
+if (!`optionVar -ex "MTconvertUnitsToggle"`){ optionVar -iv "MTconvertUnitsToggle" 0; }        // If nothing is set - deafult - closed unit covert tab
+
+// X distance and locator - (default RED)
+if (!`optionVar -ex "distColor_xSet"`) { optionVar -fv "distColor_xSet" 1; optionVar -fva "distColor_xSet" 0.176; optionVar -fva "distColor_xSet" 0.180; }
+if (!`optionVar -ex "locColor_xSet"`) { optionVar -fv "locColor_xSet" 1; optionVar -fva "locColor_xSet" 0.176; optionVar -fva "locColor_xSet" 0.180; }
+// Y distance and locator - (default GREEN)
+if (!`optionVar -ex "distColor_ySet"`) { optionVar -fv "distColor_ySet" 0.005; optionVar -fva "distColor_ySet" 0.599; optionVar -fva "distColor_ySet" 0.139; }
+if (!`optionVar -ex "locColor_ySet"`) { optionVar -fv "locColor_ySet" 0.005; optionVar -fva "locColor_ySet" 0.599; optionVar -fva "locColor_ySet" 0.139; }
+// Z distance and locator - (default BLUE)
+if (!`optionVar -ex "distColor_zSet"`) { optionVar -fv "distColor_zSet" 0.077; optionVar -fva "distColor_zSet" 0.359; optionVar -fva "distColor_zSet" 1; }
+if (!`optionVar -ex "locColor_zSet"`) { optionVar -fv "locColor_zSet" 0.077; optionVar -fva "locColor_zSet" 0.359; optionVar -fva "locColor_zSet" 1; }
+// ALL distance and locator - (default WHITE)
+if (!`optionVar -ex "distColor_allSet"`) { optionVar -fv "distColor_allSet" 0.870; optionVar -fva "distColor_allSet" 0.870; optionVar -fva "distColor_allSet" 0.870; }
+if (!`optionVar -ex "locColor_allSet"`) { optionVar -fv "locColor_allSet" 0.870; optionVar -fva "locColor_allSet" 0.870; optionVar -fva "locColor_allSet" 0.870; }
+
+if (!`optionVar -ex "locScale_DSet"`){ optionVar -fv "locScale_DSet" 0.4; }     // Loc Scale - Default                    
+if (!`optionVar -ex "locScale_CSet"`){ optionVar -fv "locScale_CSet" 0.05; }    // Loc Scale - Constrain
+
+// Set precision value for distance tool
+if (!`optionVar -ex "MTdistToolPrecVal"`){ optionVar -iv "MTdistToolPrecVal" 2; } 
+
+// Turn ON "trackSelectionOrder" option in preferences > used for Angle calculation and distance tool positioning. It is turned OFF when you close the measure tools UI (window -closeCommand)
+selectPref -trackSelectionOrder true;
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// START UI ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+global proc loadMeasureTool()
+{
+    if ( `window -exists UnitConvert` ) { deleteUI UnitConvert; }                                   
+    window -tlb 1 -t "Measure Tools" -closeCommand "selectPref -trackSelectionOrder false;" UnitConvert;
+    columnLayout -w 292 mainUILayout;
+            
+            // main menus
+            menuBarLayout mainMt;
+            menu -label "Options" -parent mainMt -to 1 optionsMT;
+                menuItem -divider true -dividerLabel "Locators Selection";
+                menuItem -label "Selected        " -image "newRenderPass.png" -c "locFromSelected();" selectedMt;
+                menuItem -label "Global       " -image "newRenderPassSet.png" -c "locGlobalSelect();" allMT;
+                menuItem -divider true;
+                menuItem -label "Quick Auto UV" -c "quickAutoUVLayout();";
+                menuItem -divider true;   
+                menuItem -label "Preferences ...   " -image "hotkeySetSettings.png" -c "source \"measurePreferencesUI.mel\"; measurePreferencesUI();";
+            menu -label "Help" -parent mainMt -to 1 helpMT;
+                menuItem -divider true -dividerLabel "Tutorials";
+                menuItem -label "Measure Tools > Overview - v2.0 " -c "getTutsOverviewV2_0();";     
+                menuItem -divider true -dividerLabel "Maya Scripts";
+                menuItem -label "Gumroad" -c "scriptsGumroad();";
+                menuItem -divider true -dividerLabel "Contact";  
+                menuItem -label "Facebook" -c "webFacebook();";  
+                menuItem -label "ArtStation (portfolio)" -c "webArtStation();"; 
+                menuItem -divider true -dividerLabel "E-Mail";
+                menuItem -label "klaudio2u@gmail.com" -c ("warning -n \" > Mouse drag to highlight and CTRL+C to copy this E-Mail to clipboard >>> klaudio2u@gmail.com\""); 
+            
+            separator -height 1 -style "none";
+    
+            // Measure Tools
+            formLayout -h 84 -w 285 -numberOfDivisions 100 distanceCheck;
+                string $iconPath = `internalVar -userScriptDir` + "icons/";
+                text -label "" -al "left" -h 2 -w 286 -backgroundColor 0.25 0.25 0.25 bkgColorLine;  
+                text -label "" -al "left" -h 75 -w 286 -backgroundColor 0.25 0.25 0.25 bkgColorMDtools;  
+
+
+                // Quick Distance and Angle
+                string $versionChks = `about -v`;  // chech version because -hlc doesn't work in Maya 2016
+                if ($versionChks == "2018") {
+                    textField -bgc 0.2 0.2 0.2 -hlc 0.28 0.28 0.28 -ed true -h 27 -w 83 -pht "< Distance" distanceFiled;
+                    textField -bgc 0.2 0.2 0.2 -hlc 0.28 0.28 0.28 -ed true -h 27 -w 83 -pht "< Angle"  angleFiled;
+                }
+                else {
+                    textField -bgc 0.2 0.2 0.2  -ed true -h 27 -w 83 -pht "< Distance" distanceFiled;
+                    textField -bgc 0.2 0.2 0.2  -ed true -h 27 -w 83 -pht "< Angle"  angleFiled;                
+                }
+
+                iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool.png") -c "distanceToolSelVert();" -rpt 1 distanceBUtton;        
+                iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_angle.png") -c "selectAngleSelected();" -rpt 1 
+                            -ann "LMB             >> Calculate the angle between 3 selected vertices. \nShift+LMB  >> Convert the angle already in the field as 360 degrees." angleBUtton;  
+                
+                // Create Distance tool buttons
+                iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool2.png") -c "createDistanceTool();" -rpt 1 distanceToolBUtton;
+                iconTextCheckBox -v 1 -st "iconOnly" -w 20 -h 26 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_Const.png") constrainOnOff; 
+                // Clear buttons
+                iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_ClearAll2.png") -c "clearAllDistanceTools();" -ann "Delete All - delete all distance tools in the scene." clearAllBUtton;  
+                iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_ClearSelected.png") -c "clearSelectedDistance();" -ann "Delete Selected - delete only selected." clearSelectedBUtton;
+
+                // Axis constrain button
+                rowColumnLayout -numberOfColumns 5 radioButtonsM;
+                iconTextRadioCollection itRadCollectConstraint;    
+                    iconTextRadioButton -sl -st "iconOnly" -w 33 -h 24 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisAll_On.png") -onc "changeIconsAll();"  axisConstAll;  
+                    separator -w 6 -style "none" -backgroundColor 0.25 0.25 0.25;      
+                    iconTextRadioButton -st "iconOnly" -w 23 -h 24 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisX_Off.png")  -onc "changeIconsX();" axisConstX;         
+                    iconTextRadioButton -st "iconOnly" -w 23 -h 24 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisY_Off.png")  -onc "changeIconsY();" axisConstY; 
+                    iconTextRadioButton -st "iconOnly" -w 23 -h 24 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisZ_Off.png")  -onc "changeIconsZ();" axisConstZ;             
+                setParent ..;
+                
+            
+            formLayout -edit
+                -attachForm bkgColorLine "top" 0         -attachForm bkgColorLine "left" 1
+                -attachForm bkgColorMDtools "top" 4      -attachForm bkgColorMDtools "left" 1 
+                -attachForm distanceToolBUtton "top" 45   -attachForm distanceToolBUtton "left" 6
+                -attachForm constrainOnOff "top" 46      -attachForm constrainOnOff "left" 52                
+                -attachForm distanceFiled "top" 10       -attachForm distanceFiled "left" 53
+                -attachForm distanceBUtton "top" 9       -attachForm distanceBUtton "left" 6   
+                -attachForm angleFiled "top" 10       -attachForm angleFiled "left" 196
+                -attachForm angleBUtton "top" 9       -attachForm angleBUtton "left" 149                 
+                -attachForm radioButtonsM "top" 48        -attachForm radioButtonsM "left" 85
+                // Clear
+                -attachForm clearSelectedBUtton "top" 46       -attachForm clearSelectedBUtton "left" 224
+                -attachForm clearAllBUtton "top" 46            -attachForm clearAllBUtton "left" 251
+                distanceCheck;
+            setParent ..; 
+                
+            separator -height 4 -style "none";
+            
+            // Unit convert - drop down toggle
+            int $MTunitToggleVal = `optionVar -q "MTconvertUnitsToggle"`;
+            formLayout -h 16 -w 285 -numberOfDivisions 100 unitConvertToggle; 
+                text -label "" -al "left" -h 16 -w 284 -backgroundColor 0.25 0.25 0.25 bkgUnitToggle;
+                text -label "Units Convert" -al "left" -fn "smallPlainLabelFont" txtColorMDunits;
+                
+                
+                if ($MTunitToggleVal == 0 )
+                {
+                        iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_unitsToggle_off.png") -c "toggleUnitConverUI();" toggleUnitConcButton;
+                }
+                if ($MTunitToggleVal == 1 )
+                {
+                        iconTextButton -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_unitsToggle_on.png") -c "toggleUnitConverUI();" toggleUnitConcButton;
+                }     
+                    
+            formLayout -edit
+            -attachForm bkgUnitToggle "top" 1   -attachForm bkgUnitToggle "left" 2
+            -attachForm txtColorMDunits "top" 2   -attachForm txtColorMDunits "left" 25
+            -attachForm toggleUnitConcButton "top" 2   -attachForm toggleUnitConcButton "left" 0
+            unitConvertToggle; 
+            setParent ..;   
+    
+                
+            // Unit convert - measures
+        columnLayout unitConvert_attach_UI;
+        if ($MTunitToggleVal == 1 )
+        {   
+                formLayout -h 118 -w 285 -numberOfDivisions 100 unitConvertUI; 
+                text -label "" -al "left" -h 116 -w 286 -backgroundColor 0.25 0.25 0.25 bkgUnitsConvert;
+                    iconTextRadioCollection itRadCollect;    
+                        iconTextRadioButton -st "iconOnly" -w 46 -h 14 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_mm.png") -onc "mmLayout();"  orientXplus;         
+                        iconTextRadioButton -st "iconOnly" -w 46 -h 14 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_cm.png") -onc "cmLayout();" orientXplus2;         
+                        iconTextRadioButton -sl -st "iconOnly" -w 46 -h 14 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_m.png") -onc "mLayout();" orientXplus3;    
+                
+                        // inch > meter
+                            text -l " Inches  " labelInches;
+                            floatField -bgc 0.2 0.2 0.2 -pre 3 -w 70  -cc "inputInchesMeter();" inchesInput;
+                            text -l "  =  " labelEqual1;
+                            text -l "Meter  " labelMeter1;
+                            floatField -bgc 0.2 0.2 0.2 -pre 3 -w 70 -cc "inputMeterInches();" meter1Input;
+                        // feet > meter
+                            text -l " Feet  " labelFeet;
+                            floatField -bgc 0.2 0.2 0.2 -pre 3 -w 70  -cc "inputFeetMeter();" feetInput;
+                            text -l "  =  " labelEqual2;
+                            text -l "Meter  " labelMeter2;
+                            floatField -bgc 0.2 0.2 0.2 -pre 3 -w 70 -cc "inputMeterFeet();" meter2Input;  
+                        // yard > meter
+                            text -l "Yards  " labelYards;
+                            floatField -bgc 0.2 0.2 0.2 -pre 3 -w 70  -cc "inputYardsMeter();" yardsInput;
+                            text -l "  =  " labelEqual3;
+                            text -l "Meter  " labelMeter3;
+                            floatField -bgc 0.2 0.2 0.2 -pre 3 -w 70 -cc "inputMeterYards();" meter3Input;                  
+                
+                formLayout -edit
+                    -attachForm bkgUnitsConvert "top" 0   -attachForm bkgUnitsConvert "left" 1
+                    -attachForm orientXplus "top" 8   -attachForm orientXplus "left" 128
+                    -attachForm orientXplus2 "top" 8  -attachForm orientXplus2 "left" 178
+                    -attachForm orientXplus3 "top" 8  -attachForm orientXplus3 "left" 228
+                    // inch > meter
+                    -attachForm inchesInput "top" 34  -attachForm inchesInput "left" 50
+                    -attachForm labelInches "top" 37  -attachForm labelInches "left" 8
+                    -attachForm labelEqual1 "top" 37   -attachForm labelEqual1 "left" 125
+                    -attachForm labelMeter1 "top" 37   -attachForm labelMeter1 "left" 171
+                    -attachForm meter1Input "top" 34  -attachForm meter1Input "left" 205
+                    // feet > meter
+                    -attachForm feetInput "top" 59    -attachForm feetInput "left" 50 
+                    -attachForm labelFeet "top" 62    -attachForm labelFeet "left" 19
+                    -attachForm labelEqual2 "top" 62   -attachForm labelEqual2 "left" 125
+                    -attachForm labelMeter2 "top" 62   -attachForm labelMeter2 "left" 171
+                    -attachForm meter2Input "top" 59  -attachForm meter2Input "left" 205                     
+                    // yard > meter
+                    -attachForm yardsInput "top" 85   -attachForm yardsInput "left" 50
+                    -attachForm labelYards "top" 88   -attachForm labelYards "left" 19
+                    -attachForm labelEqual3 "top" 88   -attachForm labelEqual3 "left" 125
+                    -attachForm labelMeter3 "top" 88   -attachForm labelMeter3 "left" 171
+                    -attachForm meter3Input "top" 85  -attachForm meter3Input "left" 205           
+                    unitConvertUI; 
+                setParent ..;
+        
+        }
+        setParent ..;
+
+    showWindow UnitConvert;
+    setFocus UnitConvert;
+
+    if ($MTunitToggleVal == 0 )
+    { 
+        window -e -h 137 UnitConvert;
+    }
+}
+
+// END UI --------------------------------------------------------------------------------------
+
+
+
+////////////////////////////////////////////////////
+ // To Millimeters
+////////////////////////////////////////////////////
+
+// Inches > Millimeter
+global proc inputInchesMilli()
+{
+    float $getInputInch3 = `floatField -query -v inchesInput`;
+    
+    float $milliI = $getInputInch3 * 25.4;
+    floatField -e -v $milliI meter1Input; 
+}
+
+// Millimeter > Inches
+global proc inputMilliInches()
+{
+    float $getInputMilli1 = `floatField -query -v meter1Input`;
+    
+    float $inchesM = $getInputMilli1 * 0.03937008;
+    floatField -e -v $inchesM inchesInput; 
+}
+
+// Feet > Millimeter
+global proc inputFeetMilli()
+{
+    float $getInputFeet3 = `floatField -query -v feetInput`;
+
+    float $milliF = $getInputFeet3 * 304.8;
+    floatField -e -v $milliF meter2Input;
+    
+}
+
+// Millimeter > Feet
+global proc inputMilliFeet()
+{
+    float $getInputMilli2 = `floatField -query -v meter2Input`;
+    
+    float $feetsM = $getInputMilli2 * 0.00328084;
+    floatField -e -v $feetsM feetInput;
+    
+}
+
+// Yards > Millimeter
+global proc inputYardsMilli()
+{
+    float $getInputYards3 = `floatField -query -v yardsInput`;
+
+    float $milliY = $getInputYards3 * 914.4;
+    floatField -e -v $milliY meter3Input;
+    
+}
+
+// Millimeter > Yards
+global proc inputMilliYards()
+{
+    float $getInputMilli3 = `floatField -query -v meter3Input`;
+    
+    float $yardsM = $getInputMilli3 * 0.00109361;
+    floatField -e -v $yardsM yardsInput;
+    
+}
+
+////////////////////////////////////////////////////
+ // To Centimeters
+////////////////////////////////////////////////////
+
+// Inches > Centimeter
+global proc inputInchesCenti()
+{
+    float $getInputInch2 = `floatField -query -v inchesInput`;
+    
+    float $centiI = $getInputInch2 * 2.54;
+    floatField -e -v $centiI meter1Input; 
+}
+
+// Centimeter > Inches
+global proc inputCentiInches()
+{
+    float $getInputCenti1 = `floatField -query -v meter1Input`;
+    
+    float $inchesC = $getInputCenti1 * 0.39370079;
+    floatField -e -v $inchesC inchesInput; 
+}
+
+// Feet > Centimeter
+global proc inputFeetCenti()
+{
+    float $getInputFeet2 = `floatField -query -v feetInput`;
+
+    float $centiF = $getInputFeet2 * 30.48;
+    floatField -e -v $centiF meter2Input;
+    
+}
+
+// Centimeter > Feet
+global proc inputCentiFeet()
+{
+    float $getInputCenti2 = `floatField -query -v meter2Input`;
+    
+    float $feetsC = $getInputCenti2 * 0.0328084;
+    floatField -e -v $feetsC feetInput;
+    
+}
+
+// Yards > Centimeter
+global proc inputYardsCenti()
+{
+    float $getInputYards2 = `floatField -query -v yardsInput`;
+
+    float $centiY = $getInputYards2 * 91.44;
+    floatField -e -v $centiY meter3Input;
+    
+}
+
+// Centimeter > Yards
+global proc inputCentiYards()
+{
+    float $getInputCenti3 = `floatField -query -v meter3Input`;
+    
+    float $yardsC = $getInputCenti3 * 0.01093613;
+    floatField -e -v $yardsC yardsInput;
+    
+}
+
+////////////////////////////////////////////////////
+ // To Meters
+////////////////////////////////////////////////////
+
+// Inches > Meter
+global proc inputInchesMeter()
+{
+    float $getInputInch = `floatField -query -v inchesInput`;
+    
+    float $meterI = $getInputInch * 0.0254;
+    floatField -e -v $meterI meter1Input; 
+}
+
+// Meter > Inches
+global proc inputMeterInches()
+{
+    float $getInputMeter1 = `floatField -query -v meter1Input`;
+    
+    float $inchesM = $getInputMeter1 * 39.37007874;
+    floatField -e -v $inchesM inchesInput; 
+}
+
+// Feet > Meter
+global proc inputFeetMeter()
+{
+    float $getInputFeet = `floatField -query -v feetInput`;
+
+    float $metersF = $getInputFeet * 0.3048;
+    floatField -e -v $metersF meter2Input;
+    
+}
+
+// Meter > Feet
+global proc inputMeterFeet()
+{
+    float $getInputMeter2 = `floatField -query -v meter2Input`;
+    
+    float $feetsM = $getInputMeter2 * 3.2808399;
+    floatField -e -v $feetsM feetInput;
+    
+}
+
+// Yards > Meter
+global proc inputYardsMeter()
+{
+    float $getInputYards = `floatField -query -v yardsInput`;
+
+    float $metersY = $getInputYards * 0.9144;
+    floatField -e -v $metersY meter3Input;
+    
+}
+
+// Meter > Yards
+global proc inputMeterYards()
+{
+    float $getInputMeter3 = `floatField -query -v meter3Input`;
+    
+    float $yardsM = $getInputMeter3 * 1.0936133;
+    floatField -e -v $yardsM yardsInput;
+    
+}
+
+
+// Select Locator - from selected only
+global proc locFromSelected()
+{
+    string $saveArray_DT;    
+    string $locSel[];
+
+    // get selected distance tools
+    string $distToolSel[] = `ls -sl -tr`;
+        
+                // check if anything is selected
+                if (size($distToolSel) == 0)
+                {
+                     warning -n  " -- INFO -- Nothing is selected! Select one or more DISTANCE TOOLS!"; 
+                     return;
+                }
+                // check if correct objects are selected
+                for ($h=0; $h < size($distToolSel); $h++ ) 
+                { 
+                    if ( gmatch($distToolSel[$h], "*_distanceMeasure*") != 1) 
+                    {
+                        warning -n  " -- INFO -- Select first one or more DISTANCE TOOLS!"; 
+                        return;
+                    }
+                }  
+        
+        
+        
+    // get all and select the locators     
+    for ($eachDT in $distToolSel)
+    {
+        string $sel2[] = `listRelatives -s $eachDT`;
+        string $fSelection[] = `listConnections -d 1 $sel2[0]`;
+        
+        $saveArray_DT += (" " + $fSelection[0] + " " + $fSelection[1]);
+    }
+    
+    $locSel = stringToStringArray($saveArray_DT, " "); 
+    $saveArray_DT = "";  
+     
+    select -r $locSel;
+    ScaleTool;
+}
+
+
+// Select locators - Global - all in the scene
+global proc locGlobalSelect()
+{
+    string $getAllDistanceNodesSel[] = `ls -type distanceDimShape`;
+
+    string $getAllLocators[] = `listConnections -d 1 $getAllDistanceNodesSel`;
+    select -r $getAllLocators; 
+    ScaleTool;
+}
+
+// Quick Auto UV - menu option used to quick layout UVs after modifing the object or/and if they intersect (becaue of Point on Poly constraint).
+global proc quickAutoUVLayout()
+{
+    string $getObjectPreUV[] = `ls -sl -tr`;
+    for ($eachUV in $getObjectPreUV)
+    {
+        select $eachUV;
+        polyAutoProjection -lm 0 -pb 0 -ibd 1 -cm 0 -l 2 -sc 1 -o 1 -p 6 -ps 0.2 -ws 0 -ch 0;
+    }
+    
+    select -r $getObjectPreUV;
+    print  " -- INFO -- Automatic UV -- DONE! ";
+    
+} 
+
+// Clear / Delete All Distance Tools
+global proc clearAllDistanceTools()
+{
+       string $getAllDistanceNodes[] = `ls -type distanceDimShape`;
+        
+           if (size ($getAllDistanceNodes) == 0 ) 
+           {    
+                  warning -n  " -- INFO -- All �Distance Tools` deleted! "; 
+                  return;
+           }
+           
+           else 
+           {
+                  string $listAll[] = `listHistory $getAllDistanceNodes`; 
+                  string $listAllTransforms[] = `listRelatives -p $listAll`; 
+                  delete $listAllTransforms;   
+           }  
+}
+
+
+// Clear / Delete SELECTED Distance Tools
+global proc clearSelectedDistance()
+{
+        // check is selected - it has to be only Distance Tools - else stop the command
+        string $checkIfSelected[] = `ls -sl -fl`; 
+           
+            // check if anything is selected
+            if (size($checkIfSelected) == 0)
+            {
+                 warning -n  " -- INFO -- Nothing is selected! Select one or more DISTANCE TOOLS to delete!"; 
+                 return;
+            }
+            
+            // check if correct objects are selected
+            for ($i=0; $i < size($checkIfSelected); $i++ ) 
+            { 
+                if ( gmatch($checkIfSelected[$i], "*distanceMeasure*") != 1) 
+                {
+                    warning -n  " -- INFO -- Select only one or more DISTANCE TOOLS to delete!"; 
+                    return;
+                }
+            } 
+        
+        
+        
+        // get all and delete
+        string $distToolsSel[] = `ls -sl -tr`;
+        for ($eachD in $distToolsSel)
+        {
+            string $sel1[] = `listRelatives -s $eachD`;
+            string $fSelection[] = `listConnections -d 1 $sel1[0]`;
+            
+            delete $eachD $fSelection;
+        }
+
+}
+ 
+ 
+// Distance Measure
+global proc distanceToolSelVert()
+{
+
+        
+            string $selVertices[] = `ls -sl -fl`;
+
+            vector $a = `pointPosition -w $selVertices[0]`;
+            vector $b = `pointPosition -w $selVertices[1]`;
+            vector $mathVectors = $b - $a;            
+            float $lengthBetween = `mag $mathVectors`;
+            
+            // shorten to 3 decimal numbers ( 10= 1 decimal, 100= 2 decimal....etc.)
+            float $lengthBetween_short = `trunc($lengthBetween * 1000)` / 1000;
+                             
+            textField -e -tx $lengthBetween_short distanceFiled;  // Print distance between in field                      
+
+            print "Measure - Done!";            
+    
+
+    setFocus UnitConvert; 
+}
+
+// Distance Tool
+global proc createDistanceTool()
+{
+    int $getOnX = `iconTextRadioButton -q -sl axisConstX`;
+    int $getOnY = `iconTextRadioButton -q -sl axisConstY`;
+    int $getOnZ = `iconTextRadioButton -q -sl axisConstZ`;
+    int $getOnAll = `iconTextRadioButton -q -sl axisConstAll`;            
+
+    // Check if two vertices are selected
+         
+                 
+                string $selObject1[] = `ls -hilite`; 
+                string $selLockVertices2[] = `ls -os -fl`;   // order selection on it wil return correct selections order for placing the distance tool
+                 
+                // get position of selected vertices 
+                float $firstSelVerice1[] = `xform -q -t -ws $selLockVertices2[0]`;
+                float $secondSelVerice1[] = `xform -q -t -ws $selLockVertices2[1]`;
+                 
+                // create Distance Tool as fixed position (this is to avoid distance tool to use same locator if created at selected vertices immediatelly) 
+                distanceDimension -sp 0 0 0  -ep 0 0 1;
+                   
+                // get requred nodes   
+                string $getObjects1[] = `ls -sl`;
+                select -r -ne $getObjects1[1];
+                string $selectedDs1[] = `ls -sl -dag -leaf`; 
+                string $list1[] = `listHistory $selectedDs1[0]`; 
+                string $listTransforms1[] = `listRelatives -p $list1`; 
+                
+                // Set Distance tool precision from default 6 to 2.
+                int $MTsetPrecV = `optionVar -q "MTdistToolPrecVal"`;
+                setAttr ($selectedDs1[0] + ".precision") $MTsetPrecV;
+                
+                if ($getOnX == 1)  // move locator along X 
+                {
+                    xform -t $firstSelVerice1[0] $firstSelVerice1[1] $firstSelVerice1[2] -ws $listTransforms1[1];
+                    xform -t $secondSelVerice1[0] $firstSelVerice1[1] $firstSelVerice1[2] -ws $listTransforms1[2]; 
+                }
+                if ($getOnY == 1)  // move locator along Y 
+                {
+                    xform -t $firstSelVerice1[0] $firstSelVerice1[1] $firstSelVerice1[2] -ws $listTransforms1[1];
+                    xform -t $firstSelVerice1[0] $secondSelVerice1[1] $firstSelVerice1[2] -ws $listTransforms1[2]; 
+                }
+                if ($getOnZ == 1)  // move locator along Z
+                {
+                    xform -t $firstSelVerice1[0] $firstSelVerice1[1] $firstSelVerice1[2] -ws $listTransforms1[1];
+                    xform -t $firstSelVerice1[0] $firstSelVerice1[1] $secondSelVerice1[2] -ws $listTransforms1[2]; 
+                }
+                if ($getOnAll == 1)  // move locator along ALL - XYZ
+                {
+                    xform -t $firstSelVerice1[0] $firstSelVerice1[1] $firstSelVerice1[2] -ws $listTransforms1[1];
+                    xform -t $secondSelVerice1[0] $secondSelVerice1[1] $secondSelVerice1[2] -ws $listTransforms1[2];
+                }
+     
+             // Use PointOnPoly constrain if chececk   
+             int $getValueConst = `iconTextCheckBox -q -v constrainOnOff`;    
+             if ( $getValueConst == 1)
+             {
+                if ($getOnX == 1)  // constrain X
+                {   
+                    select -r $selLockVertices2[0]; 
+                    select -add $listTransforms1[1];
+                    doCreatePointOnPolyConstraintArgList 2 { "0" ,"1" ,"1" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" }; 
+                   
+                    select -r $selLockVertices2[1]; 
+                    select -add $listTransforms1[2]; 
+                    doCreatePointOnPolyConstraintArgList 2 { "0" ,"1" ,"1" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" }; 
+                } 
+                if ($getOnY == 1)  // constrain Y
+                {   
+                    select -r $selLockVertices2[0]; 
+                    select -add $listTransforms1[1];
+                    doCreatePointOnPolyConstraintArgList 2 {   "1" ,"0" ,"1" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" };
+                   
+                    select -r $selLockVertices2[1]; 
+                    select -add $listTransforms1[2]; 
+                    doCreatePointOnPolyConstraintArgList 2 {   "1" ,"0" ,"1" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" }; 
+                } 
+                if ($getOnZ == 1)  // constrain Z
+                {   
+                    select -r $selLockVertices2[0]; 
+                    select -add $listTransforms1[1];
+                    doCreatePointOnPolyConstraintArgList 2 {   "1" ,"1" ,"0" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" };
+                   
+                    select -r $selLockVertices2[1]; 
+                    select -add $listTransforms1[2]; 
+                    doCreatePointOnPolyConstraintArgList 2 {   "1" ,"1" ,"0" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" };
+                }  
+                if ($getOnAll == 1)  // constrain ALL - XYZ
+                {   
+                    select -r $selLockVertices2[0]; 
+                    select -add $listTransforms1[1]; 
+                    doCreatePointOnPolyConstraintArgList 2 { "0" ,"0" ,"0" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" };  
+                   
+                    select -r $selLockVertices2[1]; 
+                    select -add $listTransforms1[2]; 
+                    doCreatePointOnPolyConstraintArgList 2 { "0" ,"0" ,"0" ,"1" ,"" ,"1" ,"0" ,"0" ,"0" ,"0" }; 
+                }
+                
+                // Option to Hide locators when usinf constraints
+                //hide $listTransforms1[1] $listTransforms1[2];
+
+             }
+             
+             
+
+            // Distance Color - get saved values and set them
+            float $distColor_xSet_q[] = `optionVar -q "distColor_xSet"`; 
+            float $distColor_ySet_q[] = `optionVar -q "distColor_ySet"`;
+            float $distColor_zSet_q[] = `optionVar -q "distColor_zSet"`;
+            float $distColor_allSet_q[] = `optionVar -q "distColor_allSet"`;
+            
+                setAttr ($listTransforms1[0] +".overrideEnabled") 1 ;
+                setAttr ($listTransforms1[0] + ".overrideRGBColors") 1 ;     
+            
+            if ($getOnX == 1)  // If X - make distance tool RED 
+            {
+                setAttr ($listTransforms1[0] + ".overrideColorRGB") $distColor_xSet_q[0] $distColor_xSet_q[1] $distColor_xSet_q[2]; 
+                rename $listTransforms1[0] _X_distanceMeasure;                
+            }  
+            if ($getOnY == 1)  // If Y - make distance tool GREEN 
+            {
+                setAttr ($listTransforms1[0] + ".overrideColorRGB") $distColor_ySet_q[0] $distColor_ySet_q[1] $distColor_ySet_q[2]; 
+                rename $listTransforms1[0] _Y_distanceMeasure;         
+            }         
+            if ($getOnZ == 1)  // If Z - make distance tool BLUE 
+            {
+                setAttr ($listTransforms1[0] + ".overrideColorRGB") $distColor_zSet_q[0] $distColor_zSet_q[1] $distColor_zSet_q[2]; 
+                rename $listTransforms1[0] _Z_distanceMeasure;
+            }  
+            if ($getOnAll == 1)  // If All - make distance tool WHITE 
+            {
+                setAttr ($listTransforms1[0] + ".overrideColorRGB") $distColor_allSet_q[0] $distColor_allSet_q[1] $distColor_allSet_q[2];
+                rename $listTransforms1[0] _ALL_distanceMeasure; 
+            }          
+                
+
+
+            // Locator Scale and Color - get saved value
+            float $locScale_DSave_q = `optionVar -q "locScale_DSet"`;   
+            float $locScale_CSave_q = `optionVar -q "locScale_CSet"`;  
+            float $locColor_xSet_q[] = `optionVar -q "locColor_xSet"`;
+            float $locColor_ySet_q[] = `optionVar -q "locColor_ySet"`;
+            float $locColor_zSet_q[] = `optionVar -q "locColor_zSet"`;
+            float $locColor_allSet_q[] = `optionVar -q "locColor_allSet"`;
+             
+            select -r $listTransforms1[1] $listTransforms1[2];
+            string $selLocatorColor[] = `ls -sl -tr`;
+            for ($eachSelLoc in $selLocatorColor)
+            {
+                setAttr ($eachSelLoc +".overrideEnabled") 1 ;
+                setAttr ($eachSelLoc + ".overrideRGBColors") 1 ;
+                
+                if ( $getValueConst == 1)
+                {
+                    setAttr ($eachSelLoc + ".scale") $locScale_CSave_q $locScale_CSave_q $locScale_CSave_q; 
+                } 
+                if ( $getValueConst == 0)
+                {
+                    setAttr ($eachSelLoc + ".scale") $locScale_DSave_q $locScale_DSave_q $locScale_DSave_q; 
+                }         
+                
+                // Colorize Locators the same as distance colors
+                if ($getOnX == 1)  // If X - make distance tool RED (def - 1 0.176 0.180)
+                {
+                    setAttr ($eachSelLoc + ".overrideColorRGB") $locColor_xSet_q[0] $locColor_xSet_q[1] $locColor_xSet_q[2]; 
+                }  
+                if ($getOnY == 1)  // If Y - make distance tool GREEN (def - 0.005 0.599 0.139)
+                {
+                    setAttr ($eachSelLoc + ".overrideColorRGB") $locColor_ySet_q[0] $locColor_ySet_q[1] $locColor_ySet_q[2]; 
+                }         
+                if ($getOnZ == 1)  // If Z - make distance tool BLUE (def - 0.077 0.359 1)
+                {
+                    setAttr ($eachSelLoc + ".overrideColorRGB") $locColor_zSet_q[0] $locColor_zSet_q[1] $locColor_zSet_q[2]; 
+                }  
+                if ($getOnAll == 1)  // If All - make distance tool WHITE (def- 0.870 0.870 0.870)
+                {
+                    setAttr ($eachSelLoc + ".overrideColorRGB") $locColor_allSet_q[0] $locColor_allSet_q[1] $locColor_allSet_q[2]; 
+                } 
+            }
+            select -cl;
+            
+            // keep selection - still in vertice component mode
+            select -r $selObject1;
+            setSelectMode components Components; selectType -smp 1 -sme 0 -smf 0 -smu 0 -pv 1 -pe 0 -pf 0 -puv 0;
+            select -cl;
+            
+            print "Distance Tool - Created!";
+            
+ 
+}
+
+
+// Calculate the Angle and print it into the field
+global proc selectAngleSelected()
+{
+    int $chkModifierPress = `getModifiers`;
+    
+            // LMB + click on the button will calculate the angle between 3 vertices. (Ordered selection must be ON)
+            if ( $chkModifierPress == 0 ) 
+            {     
+                if (size (`ls -sl -fl`) == 3 ) 
+                {
+                    // get vertices and calcualte the angle
+                    string $vertsSelection[]= `ls -os -fl`;
+
+                    float $vert_org[] = `pointPosition -w $vertsSelection[0]`; 
+                    vector $O = <<$vert_org[0],$vert_org[1],$vert_org[2]>>;
+
+                    float $u[] = `pointPosition -w $vertsSelection[1]`; 
+                    vector $U = <<$u[0],$u[1],$u[2]>>;
+
+                    $U = $U - $O;
+
+                    float $v[] = `pointPosition -w $vertsSelection[2]`; 
+                    vector $V = <<$v[0],$v[1],$v[2]>>;
+
+                    $V = $V - $O;
+
+                    float $angleSum = rad_to_deg(`angle $U $V`);    // final angle calculation
+                    
+                    
+                    // round the number
+                    // decimals taking into account to round the number. 
+                    int $n = 2;
+                    float $roundAngle = pow(10, $n);
+
+                    int $calc_1 = ($angleSum * $roundAngle + 0.5);
+                    float $calc_2 = $calc_1 / $roundAngle;               
+                    
+                    
+                    // print it into the field
+                    textField  -e -tx $calc_2 angleFiled;    
+                } 
+                else 
+                {
+                   warning -n  " -- INFO -- Select 3 vertices to get the angle! "; 
+                   return;   
+                }  
+            }
+            
+            // If Shift+LMB on the button - convert as 360 degree angle
+            if ($chkModifierPress == 1)
+            {
+                string $angleValueGet;
+                $angleValueGet = `textField -q -tx angleFiled`;
+                
+                int $sAngle = `size $angleValueGet`;
+                if ($sAngle == 0)
+                {
+                   warning -n  " -- INFO -- Measure the angle first (LMB+click on button) between 3 vertice then use this option to convert the value! "; 
+                   setFocus UnitConvert;
+                   return;   
+                }
+                if ($sAngle >= 2)
+                {
+                   //string $filedValue[];
+                   //$numTokensTempA = `tokenize $angleValueGet " �" $filedValue`;
+                   float $filterNumbersOnly = $angleValueGet;
+                   float $toFullAngle = 360 - $filterNumbersOnly;
+                   
+                   textField -e -tx $toFullAngle angleFiled; 
+                }
+            }
+ 
+    setFocus UnitConvert;
+}      
+    
+// Units Convert - layout switching ---------------------------------------------------------------------------------------------------------------------------
+global proc mmLayout()
+{
+        // inch > milimeter
+            floatField -e -v 0 -cc "inputInchesMilli();" inchesInput;
+            text -e -l "Millimeter  " labelMeter1;
+            floatField -e -v 0 -cc "inputMilliInches();" meter1Input;
+        // feet > milimeter
+            floatField -e -v 0 -cc "inputFeetMilli();" feetInput;
+            text -e -l "Millimeter  " labelMeter2;
+            floatField -e -v 0 -cc "inputMilliFeet();" meter2Input;  
+        // yard > milimeter
+            floatField -e -v 0 -cc "inputYardsMilli();" yardsInput;
+            text -e -l "Millimeter  " labelMeter3;
+            floatField -e -v 0 -cc "inputMilliYards();" meter3Input;
+      
+
+        formLayout -e 
+             -attachForm labelMeter1 "top" 37   -attachForm labelMeter1 "left" 150 
+             -attachForm labelMeter2 "top" 62   -attachForm labelMeter2 "left" 150
+             -attachForm labelMeter3 "top" 88   -attachForm labelMeter3 "left" 150   
+        unitConvertUI; 
+     
+}
+
+global proc cmLayout()
+{
+        // inch > centi
+            floatField -e -v 0 -cc "inputInchesCenti();" inchesInput;
+            text -e -l "Centimeter  " labelMeter1;
+            floatField -e -v 0 -cc "inputCentiInches();" meter1Input;
+        // feet > centi
+            floatField -e -v 0 -cc "inputFeetCenti();" feetInput;
+            text -e -l "Centimeter  " labelMeter2;
+            floatField -e -v 0 -cc "inputCentiFeet();" meter2Input;  
+        // yard > centi
+            floatField -e -v 0 -cc "inputYardsCenti();" yardsInput;
+            text -e -l "Centimeter  " labelMeter3;
+            floatField -e -v 0 -cc "inputCentiYards();" meter3Input;
+      
+
+        formLayout -e 
+             -attachForm labelMeter1 "top" 37   -attachForm labelMeter1 "left" 145 
+             -attachForm labelMeter2 "top" 62   -attachForm labelMeter2 "left" 145
+             -attachForm labelMeter3 "top" 88   -attachForm labelMeter3 "left" 145   
+        unitConvertUI; 
+ 
+}
+
+
+global proc mLayout()
+{
+     
+        // inch > meter
+            floatField -e -v 0 -cc "inputInchesMeter();" inchesInput;
+            text -e -l "Meter  " labelMeter1;
+            floatField -e -v 0 -cc "inputMeterInches();" meter1Input;
+        // feet > meter
+            floatField -e -v 0 -cc "inputFeetMeter();" feetInput;
+            text -e -l "Meter  " labelMeter2;
+            floatField -e -v 0 -cc "inputMeterFeet();" meter2Input;  
+        // yard > meter
+            floatField -e -v 0 -cc "inputYardsMeter();" yardsInput;
+            text -e -l "Meter  " labelMeter3;
+            floatField -e -v 0 -cc "inputMeterYards();" meter3Input;
+      
+
+        formLayout -e 
+             -attachForm labelMeter1 "top" 37   -attachForm labelMeter1 "left" 171 
+             -attachForm labelMeter2 "top" 62   -attachForm labelMeter2 "left" 171
+             -attachForm labelMeter3 "top" 88   -attachForm labelMeter3 "left" 171   
+        unitConvertUI; 
+   
+}
+
+
+// Toggle Unit Conver layout
+global proc toggleUnitConverUI()
+{
+    int $MTunitToggle2 = `optionVar -q "MTconvertUnitsToggle"`;
+    if ($MTunitToggle2 == 0 )
+    {
+        string $iconPath = `internalVar -userScriptDir` + "icons/";
+        iconTextButton -e -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_unitsToggle_off.png") toggleUnitConcButton;
+
+        optionVar -iv "MTconvertUnitsToggle" 1;
+        
+        // Create Unit Conver layout
+        formLayout -h 118 -w 284 -numberOfDivisions 100 -parent unitConvert_attach_UI unitConvertUI; 
+        text -label "" -al "left" -h 116 -w 286 -backgroundColor 0.25 0.25 0.25 bkgUnitsConvert;
+              iconTextRadioCollection itRadCollect;    
+                iconTextRadioButton -st "iconOnly" -w 46 -h 14 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_mm.png") -onc "mmLayout();"  orientXplus;         
+                iconTextRadioButton -st "iconOnly" -w 46 -h 14 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_cm.png") -onc "cmLayout();" orientXplus2;         
+                iconTextRadioButton -sl -st "iconOnly" -w 46 -h 14 -mw 0 -mh 0 -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_m.png") -onc "mLayout();" orientXplus3;    
+           
+                // inch > meter
+                    text -l " Inches  " labelInches;
+                    floatField -pre 3 -w 70  -cc "inputInchesMeter();" inchesInput;
+                    text -l "  =  " labelEqual1;
+                    text -l "Meter  " labelMeter1;
+                    floatField -pre 3 -w 70 -cc "inputMeterInches();" meter1Input;
+                // feet > meter
+                    text -l " Feet  " labelFeet;
+                    floatField -pre 3 -w 70  -cc "inputFeetMeter();" feetInput;
+                    text -l "  =  " labelEqual2;
+                    text -l "Meter  " labelMeter2;
+                    floatField -pre 3 -w 70 -cc "inputMeterFeet();" meter2Input;  
+                // yard > meter
+                    text -l "Yards  " labelYards;
+                    floatField -pre 3 -w 70  -cc "inputYardsMeter();" yardsInput;
+                    text -l "  =  " labelEqual3;
+                    text -l "Meter  " labelMeter3;
+                    floatField -pre 3 -w 70 -cc "inputMeterYards();" meter3Input;                  
+           
+           formLayout -edit
+             -attachForm bkgUnitsConvert "top" 0   -attachForm bkgUnitsConvert "left" 1
+             -attachForm orientXplus "top" 8   -attachForm orientXplus "left" 128
+             -attachForm orientXplus2 "top" 8  -attachForm orientXplus2 "left" 178
+             -attachForm orientXplus3 "top" 8  -attachForm orientXplus3 "left" 228
+                     // inch > meter
+                     -attachForm inchesInput "top" 34  -attachForm inchesInput "left" 50
+                     -attachForm labelInches "top" 37  -attachForm labelInches "left" 8
+                     -attachForm labelEqual1 "top" 37   -attachForm labelEqual1 "left" 125
+                     -attachForm labelMeter1 "top" 37   -attachForm labelMeter1 "left" 171
+                     -attachForm meter1Input "top" 34  -attachForm meter1Input "left" 205
+                     // feet > meter
+                     -attachForm feetInput "top" 59    -attachForm feetInput "left" 50 
+                     -attachForm labelFeet "top" 62    -attachForm labelFeet "left" 19
+                     -attachForm labelEqual2 "top" 62   -attachForm labelEqual2 "left" 125
+                     -attachForm labelMeter2 "top" 62   -attachForm labelMeter2 "left" 171
+                     -attachForm meter2Input "top" 59  -attachForm meter2Input "left" 205                     
+                     // yard > meter
+                     -attachForm yardsInput "top" 85   -attachForm yardsInput "left" 50
+                     -attachForm labelYards "top" 88   -attachForm labelYards "left" 19
+                     -attachForm labelEqual3 "top" 88   -attachForm labelEqual3 "left" 125
+                     -attachForm labelMeter3 "top" 88   -attachForm labelMeter3 "left" 171
+                     -attachForm meter3Input "top" 85  -attachForm meter3Input "left" 205   
+                    
+             unitConvertUI; 
+             setParent ..;
+        
+    }
+    
+    if ($MTunitToggle2 == 1 )
+    {
+        string $iconPath = `internalVar -userScriptDir` + "icons/";
+        iconTextButton -e -image1 ($iconPath + "MeasureTools_icons/K_MeasureTool_unitsToggle_off.png") toggleUnitConcButton;
+        optionVar -iv "MTconvertUnitsToggle" 0;
+        
+        // delete unitConvertUI layout ( close tab for Unit Conversions )
+        deleteUI -layout unitConvertUI;
+        //columnLayout -e -w 292 unitConvert_attach_UI;
+        window -e -h 134 UnitConvert;
+
+    }  
+}
+
+
+// Icon switch for Constrain axis
+global proc changeIconsAll()
+{
+    string $iconPath = `internalVar -userScriptDir` + "icons/";
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisAll_On.png") axisConstAll;     
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisX_Off.png") axisConstX;         
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisY_Off.png") axisConstY; 
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisZ_Off.png") axisConstZ;     
+}
+global proc changeIconsX()
+{
+    string $iconPath = `internalVar -userScriptDir` + "icons/";
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisAll_Off.png") axisConstAll;     
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisX_On.png") axisConstX;         
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisY_Off.png") axisConstY; 
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisZ_Off.png") axisConstZ;     
+} 
+global proc changeIconsY()
+{
+    string $iconPath = `internalVar -userScriptDir` + "icons/";
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisAll_Off.png") axisConstAll;     
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisX_Off.png") axisConstX;         
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisY_On.png") axisConstY; 
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisZ_Off.png") axisConstZ;     
+}  
+global proc changeIconsZ()
+{
+    string $iconPath = `internalVar -userScriptDir` + "icons/";
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisAll_Off.png") axisConstAll;     
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisX_Off.png") axisConstX;         
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisY_Off.png") axisConstY; 
+    iconTextRadioButton -e -i1 ($iconPath + "MeasureTools_icons/K_MeasureTool_axisZ_On.png") axisConstZ;     
+}  
+
+
+
+
+// Help  ----------------------------------------------------------------------------------------------------------------------------------
+global proc getTutsOverviewV2_0()
+{
+   launch -web "https://youtu.be/R4SrHFa6Hto";
+}
+
+global proc scriptsGumroad()
+{
+   launch -web "http://gumroad.com/klaudio2u";
+}
+
+global proc webFacebook()
+{
+   launch -web "http://facebook.com/klaudio.ladavac";
+}
+global proc webArtStation()
+{
+   launch -web "http://artstation.com/klaudio2u";
+}

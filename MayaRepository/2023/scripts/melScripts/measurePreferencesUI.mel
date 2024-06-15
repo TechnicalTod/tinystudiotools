@@ -1,0 +1,636 @@
+/*  Measure Tools - v2 - preferenceUI  (internal v05)------------------------------------------------------------------------------------------------------------------
+
+ 
+     ________________________________________
+    |                                        |
+    |  Script done by: Klaudio Ladavac       |
+    |  Contact email : klaudio2u@gmail.com   |
+    |________________________________________|
+
+
+UPDATE DATE : April 06, 2010
+
+IMPORTANT NOTE : Please don't distribute, copy or resale the part of the code or script file(s). 
+                 The only way to get the original and up to date version is only via on following 
+                 link > GUMROAD > https://gumroad.com/klaudio2u
+       
+                            
+
+- DISCLAIMER -
+THE SCRIPT IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. KLADUIO LADAVAC DOES NOT MAKE AND HEREBY 
+DISCLAIMS ANY EXPRESS OR IMPLIED WARRANTIES INCLUDING, BUT NOT LIMITED TO, THE WARRANTIES OF NON-INFRINGEMENT, 
+MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE, OR TRADE 
+PRACTICE. IN NO EVENT WILL KLAUDIO LADAVAC BE LIABLE FOR ANY LOST REVENUES, DATA, OR PROFITS, OR SPECIAL,
+DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES, EVEN IF KLAUDIO LADAVAC HAS BEEN ADVISED OF THE POSSIBILITY OR 
+PROBABILITY OF SUCH DAMAGES.       
+
+// ---------------------------------------------------------------------------------------------------------------------------------------------------- */
+
+
+// Preference UI ----------------------------------------------------------------------------------------------------------------------------------------
+global proc measurePreferencesUI()
+{
+    
+
+    // X distance and locator
+    float $distColor_xSet_qP[] = `optionVar -q "distColor_xSet"`; 
+    float $locColor_xSet_qP[] = `optionVar -q "locColor_xSet"`;
+    // Y distance and locator 
+    float $distColor_ySet_qP[] = `optionVar -q "distColor_ySet"`;
+    float $locColor_ySet_qP[] = `optionVar -q "locColor_ySet"`;
+    // Z distance and locator
+    float $distColor_zSet_qP[] = `optionVar -q "distColor_zSet"`;
+    float $locColor_zSet_qP[] = `optionVar -q "locColor_zSet"`;
+    // ALL distance and locator 
+    float $distColor_allSet_qP[] = `optionVar -q "distColor_allSet"`;
+    float $locColor_allSet_qP[] = `optionVar -q "locColor_allSet"`;
+    
+    // Locatro Scale
+    float $locScale_DSave_qP = `optionVar -q "locScale_DSet"`;   
+    float $locScale_CSave_qP = `optionVar -q "locScale_CSet"`;  
+
+    // Precision Set
+    int $getSavedPrecisionSet = `optionVar -q "MTdistToolPrecVal"`;  
+    
+ 
+        if ( `window -exists preferencesAdjustMT` ) { deleteUI preferencesAdjustMT; }    
+        window -tlb 1 -t "Preferences"  preferencesAdjustMT;
+        columnLayout -w 336;
+
+            formLayout -h 430 -w 330 -numberOfDivisions 100 colorAdj;  
+            // Colorlabel
+            text -label " >  Colors" -al "left" -h 16 -w 353 -font "smallBoldLabelFont" -backgroundColor 0.25 0.25 0.25 bkgColorTitle;
+         
+            // Color sliders
+            columnLayout colorSliderAdjust;
+                colorSliderGrp -label "Distance X " -rgb $distColor_xSet_qP[0] $distColor_xSet_qP[1] $distColor_xSet_qP[2]  -co3 7 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "colorDistance_x();" colorDistance_x_slider;
+                popupMenu -p colorDistance_x_slider; menuItem -l "Copy color - Locator X" -c "copyLX";
+                separator -height 4 -style "none";     
+                colorSliderGrp -label "Locator X " -rgb $locColor_xSet_qP[0] $locColor_xSet_qP[1] $locColor_xSet_qP[2] -co3 13 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "locatorDistance_x();" locatorDistance_x_slider;
+                popupMenu -p locatorDistance_x_slider; menuItem -l "Copy color - Distance X" -c "copyDX";
+                   
+                separator -height 12 -style "none";
+                colorSliderGrp -label "Distance Y " -rgb $distColor_ySet_qP[0] $distColor_ySet_qP[1] $distColor_ySet_qP[2]  -co3 7 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "colorDistance_y();" colorDistance_y_slider;
+                popupMenu -p colorDistance_y_slider; menuItem -l "Copy color - Locator Y" -c "copyLY";  
+                separator -height 4 -style "none";     
+                colorSliderGrp -label "Locator Y " -rgb $locColor_ySet_qP[0] $locColor_ySet_qP[1] $locColor_ySet_qP[2]  -co3 13 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "locatorDistance_y();" locatorDistance_y_slider; 
+                popupMenu -p locatorDistance_y_slider; menuItem -l "Copy color - Distance Y" -c "copyDY";
+                
+                separator -height 12 -style "none"; 
+                colorSliderGrp -label "Distance Z " -rgb $distColor_zSet_qP[0] $distColor_zSet_qP[1] $distColor_zSet_qP[2]  -co3 7 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "colorDistance_z();" colorDistance_z_slider; 
+                popupMenu -p colorDistance_z_slider; menuItem -l "Copy color - Locator Z" -c "copyLZ";   
+                separator -height 4 -style "none";     
+                colorSliderGrp -label "Locator Z " -rgb $locColor_zSet_qP[0] $locColor_zSet_qP[1] $locColor_zSet_qP[2] -co3 13 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "locatorDistance_z();" locatorDistance_z_slider; 
+                popupMenu -p locatorDistance_z_slider; menuItem -l "Copy color - Distance Z" -c "copyDZ";         
+                
+                separator -height 12 -style "none"; 
+                colorSliderGrp -label "Distance ALL " -rgb $distColor_allSet_qP[0] $distColor_allSet_qP[1] $distColor_allSet_qP[2] -co3 -4 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "colorDistance_all();" colorDistance_all_slider;
+                popupMenu -p colorDistance_all_slider; menuItem -l "Copy color - Locator ALL" -c "copyLALL";    
+                separator -height 4 -style "none";     
+                colorSliderGrp -label "Locator ALL " -rgb $locColor_allSet_qP[0] $locColor_allSet_qP[1] $locColor_allSet_qP[2] -co3 1 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -dc "locatorDistance_all();" locatorDistance_all_slider;
+                popupMenu -p locatorDistance_all_slider; menuItem -l "Copy color - Distance ALL" -c "copyDALL";           
+            setParent ..;   
+            
+            // Locator Scale label
+            text -label " >  Locators Scale" -al "left" -h 16 -w 353 -font "smallBoldLabelFont" -backgroundColor 0.25 0.25 0.25 bkgColorsliders;
+            
+            // Locator sliders
+            columnLayout locatorScaleAdjust;
+                floatSliderGrp -label "Default" -field true -pre 3 -min 0.001 -max 10 -fmx 300 -co3 20 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -v $locScale_DSave_qP -dc "locatorScale_default();" locatorSlider_def;
+                separator -height 2 -style "none"; 
+                floatSliderGrp -label "Constrain" -field true -pre 3 -min 0.001 -max 10 -fmx 300 -co3 8 8 1  -ct3 "right" "both" "both" -cw3 65 85 160 -v $locScale_CSave_qP -dc "locatorScale_constrain();" locatorSlider_cons;
+            setParent ..; 
+            
+            
+            // Distance tool Precision Set
+            text -label " >  Measure Precision" -al "left" -h 16 -w 353 -font "smallBoldLabelFont" -backgroundColor 0.25 0.25 0.25 bkgPrecliders;     
+            columnLayout precSetAdjust;
+                intSliderGrp -label "Precision" -field true -min 1 -max 10  -co3 10 8 1  -ct3 "right" "both" "both" -cw3 72 85 160 -v $getSavedPrecisionSet -dc "MTprecisionDraggSet();" precisionSet_def;
+                separator -height 2 -style "none"; 
+            setParent ..;             
+            
+    
+            // Buttons
+            rowLayout -numberOfColumns 3 -ct3 "left" "left" "left" -co3 4 4 4  prefButtons ;
+                button -l "Reset to Default" -w 157 -h 26 -c "MT_resetToDefault()"; 
+                button -l "Save and Close" -w 157 -h 26 -c "MT_saveAndCloseSet()"; 
+            setParent ..; 
+            
+            
+            
+            formLayout -edit
+                 -attachForm bkgColorTitle "top" 3                -attachForm bkgColorTitle "left" 2
+                 -attachForm bkgColorsliders "top" 238            -attachForm bkgColorsliders "left" 2
+                 -attachForm colorSliderAdjust "top" 24           -attachForm colorSliderAdjust "left" 9
+                 -attachForm locatorScaleAdjust "top" 264         -attachForm locatorScaleAdjust "left" 9 
+                 -attachForm bkgPrecliders "top" 325              -attachForm bkgPrecliders "left" 2              
+                 -attachForm precSetAdjust "top" 350              -attachForm precSetAdjust "left" 2
+                 -attachForm prefButtons "top" 397               -attachForm prefButtons "left" 2
+                 
+            colorAdj;
+            setParent ..; 
+
+
+
+        showWindow preferencesAdjustMT;
+}
+
+// START main UI
+measurePreferencesUI();
+
+
+global proc MT_saveAndCloseSet()
+{
+    
+     // Save all values
+        float $distColor_xSave[] = `colorSliderGrp -q -rgb colorDistance_x_slider`;                                                                                     // X
+        optionVar -fv "distColor_xSet" $distColor_xSave[0]; optionVar -fva "distColor_xSet" $distColor_xSave[1]; optionVar -fva "distColor_xSet" $distColor_xSave[2];
+        float $locColor_xSave[] = `colorSliderGrp -q -rgb locatorDistance_x_slider`;
+        optionVar -fv "locColor_xSet" $locColor_xSave[0]; optionVar -fva "locColor_xSet" $locColor_xSave[1]; optionVar -fva "locColor_xSet" $locColor_xSave[2];
+        
+        float $distColor_ySave[] = `colorSliderGrp -q -rgb colorDistance_y_slider`;                                                                                      // Y
+        optionVar -fv "distColor_ySet" $distColor_ySave[0]; optionVar -fva "distColor_ySet" $distColor_ySave[1]; optionVar -fva "distColor_ySet" $distColor_ySave[2];
+        float $locColor_ySave[] = `colorSliderGrp -q -rgb locatorDistance_y_slider`;
+        optionVar -fv "locColor_ySet" $locColor_ySave[0]; optionVar -fva "locColor_ySet" $locColor_ySave[1]; optionVar -fva "locColor_ySet" $locColor_ySave[2];     
+        
+        float $distColor_zSave[] = `colorSliderGrp -q -rgb colorDistance_z_slider`;                                                                                      // Z
+        optionVar -fv "distColor_zSet" $distColor_zSave[0]; optionVar -fva "distColor_zSet" $distColor_zSave[1]; optionVar -fva "distColor_zSet" $distColor_zSave[2];
+        float $locColor_zSave[] = `colorSliderGrp -q -rgb locatorDistance_z_slider`;
+        optionVar -fv "locColor_zSet" $locColor_zSave[0]; optionVar -fva "locColor_zSet" $locColor_zSave[1]; optionVar -fva "locColor_zSet" $locColor_zSave[2];  
+        
+        float $distColor_allSave[] = `colorSliderGrp -q -rgb colorDistance_all_slider`;                                                                                              // ALL
+        optionVar -fv "distColor_allSet" $distColor_allSave[0]; optionVar -fva "distColor_allSet" $distColor_allSave[1]; optionVar -fva "distColor_allSet" $distColor_allSave[2];
+        float $locColor_allSave[] = `colorSliderGrp -q -rgb locatorDistance_all_slider`;
+        optionVar -fv "locColor_allSet" $locColor_allSave[0]; optionVar -fva "locColor_allSet" $locColor_allSave[1]; optionVar -fva "locColor_allSet" $locColor_allSave[2]; 
+        
+        float $locScale_DSave = `floatSliderGrp -q -v locatorSlider_def`;     // Loc Scale - Default
+        optionVar -fv "locScale_DSet" $locScale_DSave;
+        float $locScale_CSave = `floatSliderGrp -q -v locatorSlider_cons`;    // Loc Scale - Constrain
+        optionVar -fv "locScale_CSet" $locScale_CSave;
+        
+        int $precisionDT_PSave = `intSliderGrp -q -v precisionSet_def`;
+        optionVar -iv "MTdistToolPrecVal" $precisionDT_PSave;
+        
+     // close Preference UI
+        evalDeferred "deleteUI -window preferencesAdjustMT";
+    
+}
+
+// Reset to Default
+global proc MT_resetToDefault()
+{           
+        colorSliderGrp -e -rgb 1 0.176 0.180 colorDistance_x_slider;   
+        colorSliderGrp -e -rgb 1 0.176 0.180 locatorDistance_x_slider;
+        
+        colorSliderGrp -e -rgb 0.005 0.599 0.139 colorDistance_y_slider; 
+        colorSliderGrp -e -rgb 0.005 0.599 0.139 locatorDistance_y_slider;
+    
+        colorSliderGrp -e -rgb 0.077 0.359 1 colorDistance_z_slider;
+        colorSliderGrp -e -rgb 0.077 0.359 1 locatorDistance_z_slider;
+        
+        colorSliderGrp -e -rgb 0.870 0.870 0.870 colorDistance_all_slider;
+        colorSliderGrp -e -rgb 0.870 0.870 0.870 locatorDistance_all_slider;
+
+        floatSliderGrp -e -v 0.4 locatorSlider_def;    
+        floatSliderGrp -e -v 0.05 locatorSlider_cons;   
+
+        intSliderGrp -e -v 2 precisionSet_def;
+
+        // Run all the color/locator/precision commands to update if there are already created distance tools in the scene. Commands
+        // above set values in the UI and then this commands run again to update if there is anything in the scene too.
+        colorDistance_x(); locatorDistance_x(); 
+        colorDistance_y(); locatorDistance_y();
+        colorDistance_z(); locatorDistance_z();
+        colorDistance_all(); locatorDistance_all();
+        locatorScale_default(); 
+        locatorScale_constrain();
+        MTprecisionDraggSet();
+}
+
+
+// Copy color popup menus ----------------------------------------------------------------------------------------------------------------------------------------
+global proc copyLX() { float $copyColorLX[] = `colorSliderGrp -q -rgb locatorDistance_x_slider`; colorSliderGrp -e -rgb $copyColorLX[0] $copyColorLX[1] $copyColorLX[2] colorDistance_x_slider; }  // X
+global proc copyDX() { float $copyColorDX[] = `colorSliderGrp -q -rgb colorDistance_x_slider`; colorSliderGrp -e -rgb $copyColorDX[0] $copyColorDX[1] $copyColorDX[2] locatorDistance_x_slider; }
+global proc copyLY() { float $copyColorLY[] = `colorSliderGrp -q -rgb locatorDistance_y_slider`; colorSliderGrp -e -rgb $copyColorLY[0] $copyColorLY[1] $copyColorLY[2] colorDistance_y_slider; }  // Y
+global proc copyDY() { float $copyColorDY[] = `colorSliderGrp -q -rgb colorDistance_y_slider`; colorSliderGrp -e -rgb $copyColorDY[0] $copyColorDY[1] $copyColorDY[2] locatorDistance_y_slider; }
+global proc copyLZ() { float $copyColorLZ[] = `colorSliderGrp -q -rgb locatorDistance_z_slider`; colorSliderGrp -e -rgb $copyColorLZ[0] $copyColorLZ[1] $copyColorLZ[2] colorDistance_z_slider; }  // Z
+global proc copyDZ() { float $copyColorDZ[] = `colorSliderGrp -q -rgb colorDistance_z_slider`; colorSliderGrp -e -rgb $copyColorDZ[0] $copyColorDZ[1] $copyColorDZ[2] locatorDistance_z_slider; }
+global proc copyLALL() { float $copyColorLALL[] = `colorSliderGrp -q -rgb locatorDistance_all_slider`; colorSliderGrp -e -rgb $copyColorLALL[0] $copyColorLALL[1] $copyColorLALL[2] colorDistance_all_slider; }  // ALL
+global proc copyDALL() { float $copyColorDALL[] = `colorSliderGrp -q -rgb colorDistance_all_slider`; colorSliderGrp -e -rgb $copyColorDALL[0] $copyColorDALL[1] $copyColorDALL[2] locatorDistance_all_slider; }
+
+
+// X - color and locator ----------------------------------------------------------------------------------------------------------------------------------------
+global proc colorDistance_x()
+{
+    string $getXDistanceNodes[] = `ls -type distanceDimShape`;
+
+    string $save_X_Dist;
+    string $save_X_DistF[];
+
+    for ($i=0; $i < size($getXDistanceNodes); $i++ ) 
+    {    
+            string $listX[] = `listHistory $getXDistanceNodes[$i]`; 
+            string $listXTransforms[] = `listRelatives -p $listX`; 
+            
+            for ($x=0; $x < size($listXTransforms); $x++ ) 
+            {      
+                if (gmatch($listXTransforms[$x], "_X_distanceMeasure*") == 1)  
+                {
+                    $save_X_Dist += (" " + $listXTransforms[$x]);
+                }
+            }
+    }
+    
+    // convert to Array
+    $save_X_DistF = stringToStringArray($save_X_Dist, " "); 
+    // clear stored Objects
+    $save_X_Dist = ""; 
+
+        float $sliderColor_x[] = `colorSliderGrp -q -rgb colorDistance_x_slider`;
+        for ($j=0; $j < size($save_X_DistF); $j++ ) 
+        {
+            setAttr ($save_X_DistF[$j] + ".overrideColorRGB") $sliderColor_x[0] $sliderColor_x[1] $sliderColor_x[2];
+        }
+}
+
+
+global proc locatorDistance_x()
+{
+
+    string $getXDistanceNodes2[] = `ls -type distanceDimShape`;
+      
+    string $save_X_Loc;
+    string $save_X_LocF[];
+    
+    for ($i=0; $i < size($getXDistanceNodes2); $i++ ) 
+    {
+        if (gmatch($getXDistanceNodes2[$i], "_X_distanceMeasur*") == 1)  
+        {           
+                string $listAll_x[] = `listHistory $getXDistanceNodes2[$i]`; 
+                string $listXTransforms2[] = `listRelatives -p $listAll_x`; 
+                
+                for ($x=0; $x < size($listXTransforms2); $x++ ) 
+                {              
+                    if (gmatch($listXTransforms2[$x], "locator*") == 1)  
+                    {
+                        $save_X_Loc += (" " + $listXTransforms2[$x]);
+                    }
+                }
+        }
+    }
+    
+    // convert to Array
+    $save_X_LocF = stringToStringArray($save_X_Loc, " "); 
+    // clear stored Objects
+    $save_X_Loc = ""; 
+    
+        // get and assign color
+        float $locatorColor_x[] = `colorSliderGrp -q -rgb locatorDistance_x_slider`;
+        for ($j=0; $j < size($save_X_LocF); $j++ ) 
+        {
+            setAttr ($save_X_LocF[$j] + ".overrideColorRGB") $locatorColor_x[0] $locatorColor_x[1] $locatorColor_x[2];
+        }
+    
+}  
+    
+    
+// Y - color and locator ----------------------------------------------------------------------------------------------------------------------------------------
+global proc colorDistance_y()
+{
+    string $getYDistanceNodes[] = `ls -type distanceDimShape`;
+
+    string $save_Y_Dist;
+    string $save_Y_DistF[];
+
+
+    for ($i=0; $i < size($getYDistanceNodes); $i++ ) 
+    {    
+            string $listY[] = `listHistory $getYDistanceNodes[$i]`; 
+            string $listYTransforms[] = `listRelatives -p $listY`; 
+            
+            for ($x=0; $x < size($listYTransforms); $x++ ) 
+            {      
+                if (gmatch($listYTransforms[$x], "_Y_distanceMeasure*") == 1)  
+                {
+                    $save_Y_Dist += (" " + $listYTransforms[$x]);
+                }
+            }
+    }
+    // convert to Array
+    $save_Y_DistF = stringToStringArray($save_Y_Dist, " "); 
+    // clear stored Objects
+    $save_Y_Dist = ""; 
+
+        float $sliderColor_y[] = `colorSliderGrp -q -rgb colorDistance_y_slider`;
+        for ($j=0; $j < size($save_Y_DistF); $j++ ) 
+        {
+            setAttr ($save_Y_DistF[$j] + ".overrideColorRGB") $sliderColor_y[0] $sliderColor_y[1] $sliderColor_y[2];
+        }
+
+}
+
+
+global proc locatorDistance_y()
+{
+    string $getYDistanceNodes2[] = `ls -type distanceDimShape`;
+      
+    string $save_Y_Loc;
+    string $save_Y_LocF[];
+    
+    for ($i=0; $i < size($getYDistanceNodes2); $i++ ) 
+    {
+        if (gmatch($getYDistanceNodes2[$i], "_Y_distanceMeasur*") == 1)  
+        {           
+                string $listAll_y[] = `listHistory $getYDistanceNodes2[$i]`; 
+                string $listYTransforms2[] = `listRelatives -p $listAll_y`; 
+                
+                for ($x=0; $x < size($listYTransforms2); $x++ ) 
+                {              
+                    if (gmatch($listYTransforms2[$x], "locator*") == 1)  
+                    {
+                        $save_Y_Loc += (" " + $listYTransforms2[$x]);
+                    }
+                }
+        }
+    }
+    
+    // convert to Array
+    $save_Y_LocF = stringToStringArray($save_Y_Loc, " "); 
+    // clear stored Objects
+    $save_Y_Loc = ""; 
+    
+        // get and assign color
+        float $locatorColor_y[] = `colorSliderGrp -q -rgb locatorDistance_y_slider`;
+        for ($j=0; $j < size($save_Y_LocF); $j++ ) 
+        {
+            setAttr ($save_Y_LocF[$j] + ".overrideColorRGB") $locatorColor_y[0] $locatorColor_y[1] $locatorColor_y[2];
+        }
+    
+}
+    
+    
+// Z - color and locator ----------------------------------------------------------------------------------------------------------------------------------------
+global proc colorDistance_z()
+{
+    string $getZDistanceNodes[] = `ls -type distanceDimShape`;
+
+    string $save_Z_Dist;
+    string $save_Z_DistF[];
+
+    for ($i=0; $i < size($getZDistanceNodes); $i++ ) 
+    {    
+            string $listZ[] = `listHistory $getZDistanceNodes[$i]`; 
+            string $listZTransforms[] = `listRelatives -p $listZ`; 
+            
+            for ($x=0; $x < size($listZTransforms); $x++ ) 
+            {      
+                if (gmatch($listZTransforms[$x], "_Z_distanceMeasure*") == 1)  
+                {
+                    $save_Z_Dist += (" " + $listZTransforms[$x]);
+                }
+            }
+    }
+    // convert to Array
+    $save_Z_DistF = stringToStringArray($save_Z_Dist, " "); 
+    // clear stored Objects
+    $save_Z_Dist = ""; 
+ 
+
+        float $sliderColor_z[] = `colorSliderGrp -q -rgb colorDistance_z_slider`;
+        for ($j=0; $j < size($save_Z_DistF); $j++ ) 
+        {
+            setAttr ($save_Z_DistF[$j] + ".overrideColorRGB") $sliderColor_z[0] $sliderColor_z[1] $sliderColor_z[2];
+        }
+    
+}
+
+
+global proc locatorDistance_z()
+{
+    string $getZDistanceNodes2[] = `ls -type distanceDimShape`;
+      
+    string $save_Z_Loc;
+    string $save_Z_LocF[];
+    
+    for ($i=0; $i < size($getZDistanceNodes2); $i++ ) 
+    {
+        if (gmatch($getZDistanceNodes2[$i], "_Z_distanceMeasur*") == 1)  
+        {           
+                string $listAll_z[] = `listHistory $getZDistanceNodes2[$i]`; 
+                string $listZTransforms2[] = `listRelatives -p $listAll_z`; 
+                
+                for ($x=0; $x < size($listZTransforms2); $x++ ) 
+                {              
+                    if (gmatch($listZTransforms2[$x], "locator*") == 1)  
+                    {
+                        $save_Z_Loc += (" " + $listZTransforms2[$x]);
+                    }
+                }
+        }
+    }
+    
+    // convert to Array
+    $save_Z_LocF = stringToStringArray($save_Z_Loc, " "); 
+    // clear stored Objects
+    $save_Z_Loc = ""; 
+    
+        // get and assign color
+        float $locatorColor_z[] = `colorSliderGrp -q -rgb locatorDistance_z_slider`;
+        for ($j=0; $j < size($save_Z_LocF); $j++ ) 
+        {
+            setAttr ($save_Z_LocF[$j] + ".overrideColorRGB") $locatorColor_z[0] $locatorColor_z[1] $locatorColor_z[2];
+        }
+    
+}    
+    
+    
+// ALL - color and locator ----------------------------------------------------------------------------------------------------------------------------------------
+global proc colorDistance_all()
+{
+    string $getALL_DistanceNodes[] = `ls -type distanceDimShape`;
+
+    string $save_ALL_Dist;
+    string $save_ALL_DistF[];
+
+    for ($i=0; $i < size($getALL_DistanceNodes); $i++ ) 
+    {    
+            string $listALL[] = `listHistory $getALL_DistanceNodes[$i]`; 
+            string $listALLTransforms[] = `listRelatives -p $listALL`; 
+            
+            for ($x=0; $x < size($listALLTransforms); $x++ ) 
+            {      
+                if (gmatch($listALLTransforms[$x], "_ALL_distanceMeasure*") == 1)  
+                {
+                    $save_ALL_Dist += (" " + $listALLTransforms[$x]);
+                }
+            }
+    }
+    // convert to Array
+    $save_ALL_DistF = stringToStringArray($save_ALL_Dist, " "); 
+    // clear stored Objects
+    $save_ALL_Dist = ""; 
+ 
+        float $sliderColor_all[] = `colorSliderGrp -q -rgb colorDistance_all_slider`;
+        for ($j=0; $j < size($save_ALL_DistF); $j++ ) 
+        {
+            setAttr ($save_ALL_DistF[$j] + ".overrideColorRGB") $sliderColor_all[0] $sliderColor_all[1] $sliderColor_all[2];
+        }
+}
+ 
+
+global proc locatorDistance_all()
+{
+    string $getALL_DistanceNodes2[] = `ls -type distanceDimShape`;
+      
+    string $save_ALL_Loc;
+    string $save_ALL_LocF[];
+    
+    for ($i=0; $i < size($getALL_DistanceNodes2); $i++ ) 
+    {
+        if (gmatch($getALL_DistanceNodes2[$i], "_ALL_distanceMeasur*") == 1)  
+        {           
+                string $listAll_all[] = `listHistory $getALL_DistanceNodes2[$i]`; 
+                string $listALLTransforms2[] = `listRelatives -p $listAll_all`; 
+                
+                for ($x=0; $x < size($listALLTransforms2); $x++ ) 
+                {              
+                    if (gmatch($listALLTransforms2[$x], "locator*") == 1)  
+                    {
+                        $save_ALL_Loc += (" " + $listALLTransforms2[$x]);
+                    }
+                }
+        }
+    }
+    
+    // convert to Array
+    $save_ALL_LocF = stringToStringArray($save_ALL_Loc, " "); 
+    // clear stored Objects
+    $save_ALL_Loc = ""; 
+    
+        // get and assign color
+        float $locatorColor_all[] = `colorSliderGrp -q -rgb locatorDistance_all_slider`;
+        for ($j=0; $j < size($save_ALL_LocF); $j++ ) 
+        {
+            setAttr ($save_ALL_LocF[$j] + ".overrideColorRGB") $locatorColor_all[0] $locatorColor_all[1] $locatorColor_all[2];
+        }
+    
+}    
+    
+    
+
+// DEFAULT - locator ----------------------------------------------------------------------------------------------------------------------------------------
+global proc locatorScale_default()
+{
+    string $getAllLocDNodes[] = `ls -type distanceDimShape`;
+    
+        // check if there is any of the mesure tools in the scene, if none then do nothing.
+        int $chkSelSize = size($getAllLocDNodes);
+        if ($chkSelSize == 0)
+        {
+            return;
+        }
+
+
+    string $listAll_D[] = `listHistory $getAllLocDNodes`; 
+    string $listAllTransforms_D[] = `listRelatives -p $listAll_D`; 
+
+    string $save_D_Loc;
+    string $save_D_LocF[];
+
+    for ($i=0; $i < size($listAllTransforms_D); $i++ ) 
+    {
+        if (gmatch($listAllTransforms_D[$i], "locator*") == 1)  
+        {     
+            string $checkConstraints1[] = `listRelatives -typ "transform" $listAllTransforms_D[$i]`;
+            int $selSize1 = size($checkConstraints1);
+            
+            if ($selSize1 == 0)
+            {         
+                $save_D_Loc += (" " + $listAllTransforms_D[$i]);
+            }
+        }
+    }
+    // convert to Array
+    $save_D_LocF = stringToStringArray($save_D_Loc, " "); 
+    // clear stored Objects
+    $save_D_Loc = ""; 
+
+
+        float $sliderScale_D = `floatSliderGrp -q -v locatorSlider_def`;
+        for ($j=0; $j < size($save_D_LocF); $j++ ) 
+        {
+            setAttr ($save_D_LocF[$j] + ".scale") $sliderScale_D $sliderScale_D $sliderScale_D;
+        }
+}
+ 
+
+
+global proc locatorScale_constrain()
+{
+    string $getAllLocDNodes2[] = `ls -type distanceDimShape`;
+
+        // check if there is any of the mesure tools in the scene, if none then do nothing.    
+        int $chkSelSize2 = size($getAllLocDNodes2);
+        if ($chkSelSize2 == 0)
+        {
+            return;
+        }
+
+
+    string $listAll_C[] = `listHistory $getAllLocDNodes2`; 
+    string $listAllTransforms_C[] = `listRelatives -p $listAll_C`; 
+
+    string $save_C_Loc;
+    string $save_C_LocF[];
+
+    for ($i=0; $i < size($listAllTransforms_C); $i++ ) 
+    {
+        if (gmatch($listAllTransforms_C[$i], "locator*") == 1)  
+        {     
+            string $checkConstraints2[] = `listRelatives -typ "transform" $listAllTransforms_C[$i]`;
+            int $selSize2 = size($checkConstraints2);
+            
+            if ($selSize2 == 1)
+            {         
+                $save_C_Loc += (" " + $listAllTransforms_C[$i]);
+            }
+        }
+    }
+    // convert to Array
+    $save_C_LocF = stringToStringArray($save_C_Loc, " "); 
+    // clear stored Objects
+    $save_C_Loc = ""; 
+
+
+        float $sliderScale_C = `floatSliderGrp -q -v locatorSlider_cons`;
+        for ($j=0; $j < size($save_C_LocF); $j++ ) 
+        {
+            setAttr ($save_C_LocF[$j] + ".scale") $sliderScale_C $sliderScale_C $sliderScale_C;
+        }
+} 
+
+  
+// PRECISION - Set default ----------------------------------------------------------------------------------------------------------------------------------------
+global proc MTprecisionDraggSet()
+{
+    string $getAllLocDNodes2[] = `ls -type distanceDimShape`;
+
+        // check if there is any of the mesure tools in the scene, if none then do nothing.    
+        int $chkSelSize2 = size($getAllLocDNodes2);
+        if ($chkSelSize2 == 0)
+        {
+            return;
+        }
+
+
+        int $sliderPrec_C = `intSliderGrp -q -v precisionSet_def`;
+        for ($p=0; $p < size($getAllLocDNodes2); $p++ ) 
+        {
+            setAttr ($getAllLocDNodes2[$p] + ".precision") $sliderPrec_C;
+        }
+
+} 
+  
+  
+  
+  
