@@ -14,7 +14,7 @@ baseScriptsPath = baseScriptsPath.replace('\\', '/')
 baseMayaAppPath = os.getenv('MAYA_APP_BASE_PATH')
 
 # Paths for Maya icons
-mayaShelfIconPath = baseScriptsPath + 'icons/maya/'
+mayaShelfIconPath = baseScriptsPath + 'icons/'
 mzControlIconPAth = baseScriptsPath + 'icons/mz_icons/'
 
 # Paths for Maya plugins
