@@ -347,7 +347,6 @@ def makeShelfAndButtons():
         slapFactoryShelf.addMenu(shaderToolsButton, 'Create Blinn for substance export', createBlinnPerShapeCMD)
         slapFactoryShelf.addMenu(shaderToolsButton, 'Copy shader to objects', copyShaderToObjectsCMD)
         slapFactoryShelf.addMenuSpacer(shaderToolsButton, label='Tools')
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Create shader from Substance painter export', buildShaderNetworkCMD)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -355,7 +354,6 @@ def makeShelfAndButtons():
 
     try:
         cameraButton = slapFactoryShelf.shelfButton(blankCMD, 'cameraTools.png', 'Shader Tools')
-        slapFactoryShelf.addMenu(cameraButton, 'Change camera background colour', changeCameraBackgroundColCMD)
     except Exception as e:
         import traceback
         traceback.print_exc()
