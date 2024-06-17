@@ -4,10 +4,5 @@ __pycache__/
 # Ignore all .pyc files
 *.pyc
 
-# Ignore other Python bytecode files
-*.pyo
-*.pyd
-*$py.class
-
 # Ignore the tools folder
 tools/
