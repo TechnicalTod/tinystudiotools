@@ -2,10 +2,10 @@ import re
 import maya.cmds as mc
 from genTools.genUtils import viewportMessage
 import genTools.versionFile
-import filePaths
+import shared.filePaths
 
 def versionSnapshotFile():
-    saveDir = filePaths.downloadsFolder
+    saveDir = shared.filePaths.downloadsFolder
     fileName = "TmpSnapshot"
     fileExtension = ".png"
     existing_file, new_file = genTools.versionFile.VersionExistingFilePath(saveDir, fileName, fileExtension)

@@ -3,11 +3,10 @@ import subprocess
 from PySide2 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
 import re
-from stackGenUtils import warningPopup, viewportMessage
+from genTools.genUtils import warningPopup, viewportMessage
 
 from importlib import reload
 import filePaths
-reload(filePaths)
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -17,8 +16,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        self.style_sheet_file_loc = filePaths.styleSheetFilepath
-        with open(self.style_sheet_file_loc, "r") as fh:
+        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
         self.setWindowTitle('Export multiple Obj')

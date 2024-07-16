@@ -19,7 +19,7 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle('Create asset directories')
         self.setFocus()
         self.style_sheet_file_loc = filePaths.styleSheetFilepath
-        with open(self.style_sheet_file_loc, "r") as fh:
+        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.center()
         self.show()

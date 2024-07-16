@@ -178,9 +178,9 @@ def pluginManagerCMD():
 def unlockAllNodesCMD():
     genUtils.unlockAllNodes()
 
-def measureToolsCMD():
-    mm.eval('source "measureTool.mel";')
-    mm.eval('loadMeasureTool();')
+def measurementToolsCMD():
+    import techvisTools.measurementToolsUI
+    techvisTools.measurementToolsUI.openWindow()
 
 def fastRetopoCMD():
     import modellingTools.retopoMultiple
@@ -381,7 +381,7 @@ def makeShelfAndButtons():
 
     try:
         techvisToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'techvis.png', 'Techvis Tools')
-        slapFactoryShelf.addMenu(techvisToolsButton, 'Measurement Tools', measureToolsCMD)
+        slapFactoryShelf.addMenu(techvisToolsButton, 'Measurement Tools', measurementToolsCMD)
     except Exception as e:
         import traceback
         traceback.print_exc()
