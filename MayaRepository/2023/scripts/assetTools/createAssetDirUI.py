@@ -61,25 +61,27 @@ class MainWindow(QtWidgets.QWidget):
         folderName = None
 
         if self.AssetDirRadioButton.isChecked():
-            folderName = 'assets\\'
+            folderName = 'assets/'
         if self.techvisDirRadioButton.isChecked():
-            folderName = 'techvis\\'
+            folderName = 'techvis/'
 
         assetname = self.getAssetName.text()
 
         if not assetname:
             warningPopup('No asset name specified')
         else:
-            baseUserDir = filePaths.userProjectsDir + folderName
+            baseUserDir = filePaths.artistDir + folderName
 
             dirList = []
 
+            dirList.append(filePaths.artistDir)
+            dirList.append(baseUserDir)
             dirList.append(baseUserDir + assetname)
-            dirList.append(baseUserDir + assetname + '\\scenes')
-            dirList.append(baseUserDir + assetname + '\\sourceimages')
-            dirList.append(baseUserDir + assetname + '\\sourceimages\\ref')
-            dirList.append(baseUserDir + assetname + '\\sourceimages\\textures')
-            dirList.append(baseUserDir + assetname + '\\tempOBJ')
+            dirList.append(baseUserDir + assetname + '/scenes')
+            dirList.append(baseUserDir + assetname + '/sourceimages')
+            dirList.append(baseUserDir + assetname + '/sourceimages/ref')
+            dirList.append(baseUserDir + assetname + '/sourceimages/textures')
+            dirList.append(baseUserDir + assetname + '/tempOBJ')
 
             print (baseUserDir + assetname)
 
@@ -92,9 +94,9 @@ class MainWindow(QtWidgets.QWidget):
             fileList = []
 
             fileList.append(baseUserDir + assetname +
-                            '\\scenes\\{0}_workingMayaFile_V001.ma'.format(assetname))
+                            '/scenes/{0}_workingMayaFile_V001.ma'.format(assetname))
             fileList.append(baseUserDir + assetname +
-                            '\\scenes\\{0}_workingSubstanceFile_V001.spp'.format(assetname))
+                            '/scenes/{0}_workingSubstanceFile_V001.spp'.format(assetname))
 
             for fileName in fileList:
                 with open(fileName, 'a'):

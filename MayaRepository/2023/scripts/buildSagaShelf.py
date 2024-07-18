@@ -2,12 +2,28 @@ import shelfCreate
 import maya.cmds as mc
 import maya.mel as mm
 import genTools.genUtils as genUtils
-
-from importlib import reload
 import filePaths
 
 def blankCMD():
     return
+
+'''ASSET TOOLS'''
+
+def createAssetDirUICMD():
+    import assetTools.createAssetDirUI
+    assetTools.createAssetDirUI.launch()
+
+def convertMegascansAssetsCMD():
+    import assetTools.convertMegascansAssets
+    assetTools.convertMegascansAssets.launch()
+
+'''CAMERA'''
+
+def takeSnapshotCMD():
+    import cameraTools.takeSnapshot
+    cameraTools.takeSnapshot.snap(clipboard=True)
+
+'''GEN TOOLS AND UTILS'''
 
 def centerPivotCMD():
     genUtils.centerPivot()
@@ -24,114 +40,32 @@ def deleteUnconnectedShapesCMD():
 def moveBACMD():
     genUtils.moveBA()
 
-def moveToOriginCMD():
-    import genTools.moveToOrigin
-    genTools.moveToOrigin.moveToOrigin()
-
-def movePivotBACMD():
-    mm.eval('movePivotBA();')
-
-def movePivotToOriginCMD():
-    mm.eval('movePivotToOrigin();')
-
 def combineObjectsCMD():
     genUtils.combineObjects()
 
 def separateObjectsCMD():
     genUtils.separateObjects()
 
-def UVEditorCMD():
-    for panel in mc.getPanel(sty="polyTexturePlacementPanel") or []:
-        mc.scriptedPanel(panel, e=True, to=True)
-
-def cubeUVsCMD():
-    import modellingTools.cubeUVs
-    modellingTools.cubeUVs.applyCubeUVs()
-
-def convertTextureUICMD():
-    import textureTools.convertTextureUI
-    textureTools.convertTextureUI.launch()
-
-def cardGeneratorCMD():
-    import modellingTools.cardGenerator
-    modellingTools.cardGenerator.launch()
-
-def cubinateCMD():
-    import modellingTools.cubinate
-    modellingTools.cubinate.cubinate()
-
 def deleteUnknownNodesCMD():
     genUtils.deleteUnknownNodes()
-
-def renameShaderToShapeNameCMD():
-    import shadingTools.genShaderUtils
-    shadingTools.genShaderUtils.renameShaderToShapeName()
 
 def detachComponentsCMD():
     genUtils.detachComponents()
 
-def detachDuplicateComponentsCMD():
-    mm.eval('detachDuplicateComponents();')
-
 def selectByPolycountCMD():
     genUtils.selectSame()
 
-def selectByAngleCMD():
-    if not mc.polySelectConstraint(query=True, ap=True) is True:
-        mc.polySelectConstraint(ap=True, at=38)
-    else:
-        mc.polySelectConstraint(ap=False, at=0)
+def deleteAllNameSpacesCMD():
+    genUtils.deleteAllNameSpaces()
 
-def separateByShadingGroupsCMD():
-    import shadingTools.separateByShadingGroups
-    shadingTools.separateByShadingGroups.main()
+def unlockAllNodesCMD():
+    genUtils.unlockAllNodes()
 
-def splitShapesPerUDIMCMD():
-    import textureTools.splitShapesPerUDIM
-    textureTools.splitShapesPerUDIM.splitShapesPerUDIM()
-
-def cometRenameCMD():
-    mm.eval('cometRename();')
-
-def selectNthEdgeCMD():
-    mm.eval('polySelectEdgesEveryN "edgeRing" 2;')
-
-def copyCurrentScenePathCMD():
-    from PySide2 import QtGui
-    maya_file = mc.file(sceneName=True, q=True)
-    clip = QtGui.QClipboard()
-    clip.setText(str(maya_file))
-
-def randomVertColCMD():
-    mm.eval('randomVertCol();')
-
-def sortOutlinerCMD():
-    mm.eval('sortOutliner();')
-
-def toggleVertexColorDisplayCMD():
-    import shadingTools.genShaderUtils
-    reload(shadingTools.genShaderUtils)
-    shadingTools.genShaderUtils.toggleVertexColorDisplay()
-
-def createBlinnPerShapeCMD():
-    import shadingTools.genShaderUtils
-    reload(shadingTools.genShaderUtils)
-    shadingTools.genShaderUtils.createBlinnPerShape()
-
-def convertTextureUICMD():
-    import textureTools.convertTextureUI
-    textureTools.convertTextureUI.launch()
-
-def createAssetDirUICMD():
-    import assetTools.createAssetDirUI
-    assetTools.createAssetDirUI.launch()
+def setCurrentUVsToMap1CMD():
+    genUtils.setCurrentUVsToMap1()
 
 def createLocAtPivotCMD():
     genUtils.createLocAtPivot()
-
-def extractVisGeoCMD():
-    import modellingTools.extractVisGeo
-    modellingTools.extractVisGeo.extractSelected()
 
 def deleteDisplayLayersCMD():
     genUtils.deleteAllDisplayLayers()
@@ -144,28 +78,9 @@ def exportMayaCMD():
     import genTools.importExportMaya
     genTools.importExportMaya.exportAsset()
 
-def deleteAllNameSpacesCMD():
-    genUtils.deleteAllNameSpaces()
-
-def exportOBJCMD():
-    import modellingTools.exportOBJ
-    modellingTools.exportOBJ.launch()
-
-def takeSnapshotCMD():
-    import cameraTools.takeSnapshot
-    cameraTools.takeSnapshot.snap(clipboard=True)
-
-def DoraSkinWeightCMD():
-    mm.eval('DoraSkinWeightImpExp();')
-
-def mzCtrlCreatorCMD():
-    import riggingTools.mz_ctrlCreator
-    riggingTools.mz_ctrlCreator.buildWindow()
-
-def copyShaderToObjectsCMD():
-    import shadingTools.genShaderUtils
-    reload(shadingTools.genShaderUtils)
-    shadingTools.genShaderUtils.copyShaderToObjects()
+def moveToOriginCMD():
+    import genTools.moveToOrigin
+    genTools.moveToOrigin.moveToOrigin()
 
 def versionUpCurrentFileCMD():
     import genTools.versionFile
@@ -175,19 +90,141 @@ def pluginManagerCMD():
     import genTools.pluginManager
     genTools.pluginManager.launch()
 
-def unlockAllNodesCMD():
-    genUtils.unlockAllNodes()
+def movePivotBACMD():
+    mm.eval('movePivotBA();')
 
-def measurementToolsCMD():
-    import techvisTools.measurementToolsUI
-    techvisTools.measurementToolsUI.openWindow()
+def movePivotToOriginCMD():
+    mm.eval('movePivotToOrigin();')
+
+def sortOutlinerCMD():
+    mm.eval('sortOutliner();')
+
+def UVEditorCMD():
+    for panel in mc.getPanel(sty="polyTexturePlacementPanel") or []:
+        mc.scriptedPanel(panel, e=True, to=True)
+
+def cometRenameCMD():
+    mm.eval('cometRename();')
+
+def copyCurrentScenePathCMD():
+    from PySide2 import QtGui
+    maya_file = mc.file(sceneName=True, q=True)
+    clip = QtGui.QClipboard()
+    clip.setText(str(maya_file))
+
+'''MODELLING TOOLS'''
+
+def extractVisGeoCMD():
+    import modellingTools.extractVisGeo
+    modellingTools.extractVisGeo.extractSelected()
+
+def exportOBJCMD():
+    import modellingTools.exportOBJ
+    modellingTools.exportOBJ.launch()
 
 def fastRetopoCMD():
     import modellingTools.retopoMultiple
     modellingTools.retopoMultiple.fastRetopoMultiple()
 
-def setCurrentUVsToMap1CMD():
-    genUtils.setCurrentUVsToMap1()
+def cubeUVsCMD():
+    import modellingTools.cubeUVs
+    modellingTools.cubeUVs.applyCubeUVs()
+
+def cubinateCMD():
+    import modellingTools.cubinate
+    modellingTools.cubinate.cubinate()
+
+def cardGeneratorCMD():
+    import modellingTools.cardGenerator
+    modellingTools.cardGenerator.launch()
+
+def selectByAngleCMD():
+    if not mc.polySelectConstraint(query=True, ap=True) is True:
+        mc.polySelectConstraint(ap=True, at=38)
+    else:
+        mc.polySelectConstraint(ap=False, at=0)
+
+def detachDuplicateComponentsCMD():
+    mm.eval('detachDuplicateComponents();')
+
+def selectNthEdgeCMD():
+    mm.eval('polySelectEdgesEveryN "edgeRing" 2;')
+
+'''RIGGING TOOLS'''
+
+def exportPuppetForSkeletalMeshCMD():
+    import riggingTools.exportPuppetForSkeletalMesh
+    riggingTools.exportPuppetForSkeletalMesh.main()
+
+def mzCtrlCreatorCMD():
+    import riggingTools.mz_ctrlCreator
+    riggingTools.mz_ctrlCreator.buildWindow()
+
+def DoraSkinWeightCMD():
+    mm.eval('DoraSkinWeightImpExp();')
+
+'''SHADER TOOLS'''
+
+def renameShaderToShapeNameCMD():
+    import shadingTools.genShaderUtils
+    shadingTools.genShaderUtils.renameShaderToShapeName()
+
+def separateByShadingGroupsCMD():
+    import shadingTools.separateByShadingGroups
+    shadingTools.separateByShadingGroups.main()
+
+def toggleVertexColorDisplayCMD():
+    import shadingTools.genShaderUtils
+    reload(shadingTools.genShaderUtils)
+    shadingTools.genShaderUtils.toggleVertexColorDisplay()
+
+def createBlinnPerShapeCMD():
+    import shadingTools.genShaderUtils
+    reload(shadingTools.genShaderUtils)
+    shadingTools.genShaderUtils.createBlinnPerShape()
+
+def copyShaderToObjectsCMD():
+    import shadingTools.genShaderUtils
+    reload(shadingTools.genShaderUtils)
+    shadingTools.genShaderUtils.copyShaderToObjects()
+
+def buildShaderNetworkFromSubstanceCMD():
+    import shadingTools.buildShaderNetworkFromSubstance
+    reload(shadingTools.buildShaderNetworkFromSubstance)
+    shadingTools.buildShaderNetworkFromSubstance.launch()
+
+def randomVertColCMD():
+    mm.eval('randomVertCol();')
+
+'''TECHVIS TOOLS'''
+
+def measurementToolsCMD():
+    import techvisTools.measurementToolsUI
+    techvisTools.measurementToolsUI.openWindow()
+
+'''TEXTURE TOOLS'''
+
+def splitShapesPerUDIMCMD():
+    import textureTools.splitShapesPerUDIM
+    textureTools.splitShapesPerUDIM.splitShapesPerUDIM()
+
+def convertTextureUICMD():
+    import textureTools.convertTextureUI
+    textureTools.convertTextureUI.launch()
+
+def convertDirtyTexturesToSetDecCMD():
+    import unrealTools.convertDirtyTexturesToSetDec
+    unrealTools.convertDirtyTexturesToSetDec.ConvertTextures()
+
+def convertTextureUICMD():
+    import textureTools.convertTextureUI
+    textureTools.convertTextureUI.launch()
+
+'''UNREAL TOOLS'''
+
+def convertTextureUICMD():
+    import unrealTools.exportSetDecAssets
+    unrealTools.exportSetDecAssets.openWindow()
 
 '''
 BUILD SHELF
@@ -195,7 +232,7 @@ BUILD SHELF
 
 def makeShelfAndButtons():
     iconPath = filePaths.mayaShelfIconPath
-    slapFactoryShelf = shelfCreate.ShelfTool('STACK_SHELF', iconPath)
+    slapFactoryShelf = shelfCreate.ShelfTool('SAGA_SHELF', iconPath)
 
     slapFactoryShelf.createShelf()
 
@@ -302,6 +339,8 @@ def makeShelfAndButtons():
         slapFactoryShelf.addMenu(modellingButton, 'Card generator', cardGeneratorCMD)
         slapFactoryShelf.addMenu(modellingButton, 'Extract Vis Geo', extractVisGeoCMD)
         slapFactoryShelf.addMenu(modellingButton, 'Fast Retopo Geo', fastRetopoCMD)
+        slapFactoryShelf.addMenu(modellingButton, 'Convert Megascans Assets', convertMegascansAssetsCMD)
+        
 
     except Exception as e:
         import traceback
@@ -312,6 +351,7 @@ def makeShelfAndButtons():
         riggingButton = slapFactoryShelf.shelfButton(blankCMD, 'rigging.png', 'Rigging Tools')
         slapFactoryShelf.addMenu(riggingButton, '', blankCMD)
         slapFactoryShelf.addMenuSpacer(riggingButton, label='Commands')
+        slapFactoryShelf.addMenu(riggingButton, 'Export puppet for Skeletal Mesh', exportPuppetForSkeletalMeshCMD)
         slapFactoryShelf.addMenu(riggingButton, 'Dora Skin Weight Importer', DoraSkinWeightCMD)
         slapFactoryShelf.addMenu(riggingButton, 'MZ Ctrl Creator', mzCtrlCreatorCMD)
 
@@ -347,6 +387,7 @@ def makeShelfAndButtons():
         slapFactoryShelf.addMenu(shaderToolsButton, 'Create Blinn for substance export', createBlinnPerShapeCMD)
         slapFactoryShelf.addMenu(shaderToolsButton, 'Copy shader to objects', copyShaderToObjectsCMD)
         slapFactoryShelf.addMenuSpacer(shaderToolsButton, label='Tools')
+        slapFactoryShelf.addMenu(shaderToolsButton, 'Build shader network from Substance', buildShaderNetworkFromSubstanceCMD)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -413,6 +454,9 @@ def makeShelfAndButtons():
     try:
         unrealToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'unrealTools.png', 'Unreal Tools')
         slapFactoryShelf.addMenu(unrealToolsButton, 'Save Setdec Assets', blankCMD)
+        slapFactoryShelf.addMenuSpacer(genToolsButton, label='Commands')
+        slapFactoryShelf.addMenuSpacer(genToolsButton, label='Tools')
+
     except Exception as e:
         import traceback
         traceback.print_exc()

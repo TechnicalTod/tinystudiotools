@@ -4,8 +4,6 @@ from PySide2 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
 import re
 from genTools.genUtils import warningPopup, viewportMessage
-
-from importlib import reload
 import filePaths
 
 class MainWindow(QtWidgets.QWidget):
