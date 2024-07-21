@@ -2,9 +2,9 @@ import os
 import sys
 from PySide2 import QtGui, QtWidgets, QtCore
 import maya.cmds as cmds
-
-from importlib import reload
 import filePaths
+import maya.OpenMayaUI as OMUI
+import shiboken2
 
 import techvisTools.measurementTools as mt
 
@@ -12,6 +12,13 @@ class MainWindow(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+        # Get Maya's main window
+        mayaWin = OMUI.MQtUtil.mainWindow()
+        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QtWidgets.QWidget)
+
+        # Parent your window to Maya's main window
+        self.setParent(self.mayaWin)
+        self.setWindowFlags(QtCore.Qt.Window)
         self.initUI()
 
     def initUI(self):

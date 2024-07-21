@@ -9,6 +9,8 @@ from importlib import reload
 import shutil
 import json
 import filePaths
+import maya.OpenMayaUI as OMUI
+import shiboken2
 
 SHOWDRIVE = filePaths.libDir + "megascansLib/convertedSetDec/"
 IMPATH = '"C:\\Program Files\\Autodesk\Maya2023\\bin\\magick.exe"'
@@ -33,7 +35,8 @@ parameterList = {
         'metallic': {'suffix': 'Metallic', 'mayaParameter': 'metalness'},
         'roughness': {'suffix': 'Roughness', 'mayaParameter': 'specularRoughness'},
         'normal': {'suffix': 'Normal', 'mayaParameter': 'normalCamera'},
-        'subsurface': {'suffix': 'Translucency', 'mayaParameter': 'subsurfaceColor'}
+        'subsurface': {'suffix': 'Translucency', 'mayaParameter': 'subsurfaceColor'},
+        'displacement': {'suffix': 'Displacement', 'mayaParameter': 'displacement'}
     }
 }
 
@@ -41,6 +44,13 @@ class MainWindow(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+        # Get Maya's main window
+        mayaWin = OMUI.MQtUtil.mainWindow()
+        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QtWidgets.QWidget)
+
+        # Parent your window to Maya's main window
+        self.setParent(self.mayaWin)
+        self.setWindowFlags(QtCore.Qt.Window)
         self.initUI()
 
     def initUI(self):
@@ -107,52 +117,86 @@ class MainWindow(QtWidgets.QWidget):
             self.buildUSDPreviewMat(shape, assetName, newTexturePaths, "Plant")
 
     def getTextureDictFromMegascans(self, megascanAsset):
+        # Convert asset name to PyNode object
         megascansObject = pm.PyNode(megascanAsset)
         shaderList = []
-        #get a list of all shaders attached to shape
+
+        # Get the shape node of the Megascan object
         megascansObjectShapeNode = megascansObject.getShape()
+
+        # Get all shading groups attached to the shape node
         getShadingGroups = megascansObjectShapeNode.shadingGroups()
+
+        # List all shaders connected to the shading groups
         megascansObjectShaders = pm.ls(pm.listConnections(getShadingGroups), materials=True)
         for shader in megascansObjectShaders:
             shaderList.append(shader)
+
         pubTexturedict = {}
-        #loop through attached shaders and get all textures connected to materials
+
+        # Loop through attached shaders and get all textures connected to materials
         for shader in set(shaderList):
             pubTexturedict[shader] = {}
             for parameter in parameterList.get('MegascansStandardSurface'):
                 pubTexturedict[shader][parameter] = {}
                 try:
-                    mayaParameterName = (parameterList.get('MegascansStandardSurface').get(parameter).get('mayaParameter'))
-                    megascansSuffixName = (parameterList.get('MegascansStandardSurface').get(parameter).get('suffix'))
+                    mayaParameterName = parameterList.get('MegascansStandardSurface').get(parameter).get('mayaParameter')
+                    megascansSuffixName = parameterList.get('MegascansStandardSurface').get(parameter).get('suffix')
                     fileNode = pm.listConnections('{}.{}'.format(shader, mayaParameterName))
+
                     if parameter in ('diffuse', 'ao'):
                         fileNode = pm.listConnections('{}.{}'.format(shader, 'baseColor'))
-                        if fileNode[0].nodeType() == 'layeredTexture':
+                        if fileNode and fileNode[0].nodeType() == 'layeredTexture':
                             secondaryNodes = pm.listConnections(fileNode[0])
                             for node in secondaryNodes:
-                                if node.nodeType() == 'file':
-                                    if node.endswith("{}".format(megascansSuffixName.title())):
-                                        texturePath = node.fileTextureName.get()
-                                        pubTexturedict[shader][parameter] = texturePath
+                                if node.nodeType() == 'file' and node.name().endswith(megascansSuffixName.title()):
+                                    texturePath = node.fileTextureName.get()
+                                    pubTexturedict[shader][parameter] = texturePath
                         else:
-                            if parameter == 'diffuse':
+                            if parameter == 'diffuse' and fileNode:
                                 texturePath = fileNode[0].fileTextureName.get()
                                 pubTexturedict[shader][parameter] = texturePath
-                            if parameter == 'ao':
-                                texturePath = None
+                            elif parameter == 'ao':
+                                texturePath = None  # AO texture handling can be customized as needed
                                 pubTexturedict[shader][parameter] = texturePath
 
                     if parameter in ('roughness', 'normal'):
-                        secondaryNode = pm.listConnections('{}.{}'.format(fileNode[0], 'input'))
-                        texturePath = secondaryNode[0].fileTextureName.get()
-                        pubTexturedict[shader][parameter] = texturePath
+                        if fileNode:
+                            secondaryNode = pm.listConnections('{}.{}'.format(fileNode[0], 'input'))
+                            if secondaryNode:
+                                texturePath = secondaryNode[0].fileTextureName.get()
+                                pubTexturedict[shader][parameter] = texturePath
+
                     if parameter in ('emissive', 'opacity', 'metallic', 'subsurface'):
-                        texturePath = fileNode[0].fileTextureName.get()
-                        pubTexturedict[shader][parameter] = texturePath
-                except:
-                    texturePath = None
-                    pubTexturedict[shader][parameter] = texturePath
-            return pubTexturedict
+                        if fileNode:
+                            texturePath = fileNode[0].fileTextureName.get()
+                            pubTexturedict[shader][parameter] = texturePath
+                except Exception as e:
+                    print(f"Error processing parameter {parameter} for shader {shader}: {e}")
+                    pubTexturedict[shader][parameter] = None
+
+            # Handle displacement map
+            try:
+                shadingEngine = pm.listConnections(shader, type='shadingEngine')
+                if shadingEngine:
+                    displacementNode = pm.listConnections('{}.displacementShader'.format(shadingEngine[0]), type='file')
+                    if displacementNode:
+                        texturePath = displacementNode[0].fileTextureName.get()
+                        if texturePath.endswith(".exr"):
+                            jpgTexturePath = texturePath.replace(".exr", ".jpg")
+                            if os.path.exists(jpgTexturePath):
+                                texturePath = jpgTexturePath
+                        pubTexturedict[shader]['displacement'] = texturePath
+                    else:
+                        pubTexturedict[shader]['displacement'] = None
+                else:
+                    pubTexturedict[shader]['displacement'] = None
+            except Exception as e:
+                print(f"Error processing displacement for shader {shader}: {e}")
+                pubTexturedict[shader]['displacement'] = None
+
+        print (pubTexturedict)
+        return pubTexturedict
 
     def processTextures(self, shaderDict, assetType):
             origTexList = [texture for params in shaderDict.values() for texture in params.values() if texture]
@@ -171,7 +215,6 @@ class MainWindow(QtWidgets.QWidget):
 
             newTexturePaths = []
             for parameter in parameterList.get('MegascansStandardSurface'):
-                mayaParameterName = (parameterList.get('MegascansStandardSurface').get(parameter).get('mayaParameter'))
                 megascansSuffixName = (parameterList.get('MegascansStandardSurface').get(parameter).get('suffix'))
                 for origTexPath in origTexList:
                     if megascansSuffixName in origTexPath:
@@ -187,36 +230,56 @@ class MainWindow(QtWidgets.QWidget):
             return assetName, newTexturePaths
 
     def buildUSDPreviewMat(self, shape, assetName, texPaths, assetType):
+        # Convert shape name to PyNode object
         shapeObject = pm.PyNode(shape)
 
+        # Construct material name
         material_name = "M_{}".format(assetName)
-        if not pm.objExists(material_name):
-            material_shader = pm.shadingNode('usdPreviewSurface', asShader=True, name=material_name)
-            material_sg = pm.sets(renderable=True, noSurfaceShader=True, empty=True, name="{}_SG".format(material_name))
-            pm.connectAttr("{}.outColor".format(material_name), "{}.surfaceShader".format(material_sg), force=True)
 
-            # Create and connect textures
+        # Check if material already exists
+        if not pm.objExists(material_name):
+            # Create a new USD Preview Surface shader
+            material_shader = pm.shadingNode('usdPreviewSurface', asShader=True, name=material_name)
+            # Create a new shading group
+            material_sg = pm.sets(renderable=True, noSurfaceShader=True, empty=True, name="{}_SG".format(material_name))
+            # Connect the shader to the shading group's surface shader attribute
+            pm.connectAttr("{}.outColor".format(material_shader), "{}.surfaceShader".format(material_sg), force=True)
+
+            # Iterate through the texture paths to create and connect textures
             for texPath in texPaths:
                 fileName = texPath.split("/")[-1]
                 fileNameOnly = fileName.split(".1001.png")[0]
-                fileNameParameter = fileName.split(".1001.png")[0].split("_")[-1]
-                shaderConnectionAttr = parameterList.get('USDPreviewMaterial').get(fileNameParameter.lower()).get('mayaParameter')
-                fileNodeConnectionAttr = parameterList.get('USDPreviewMaterial').get(fileNameParameter.lower()).get('fileNodeParameter')
-                fileNode = pm.shadingNode('file', asTexture=True)
-                fileNode.rename("{}".format(fileNameOnly))
-                pm.setAttr("{}.fileTextureName".format(fileNode), texPath, type="string")
-                pm.connectAttr("{}.{}".format(fileNode, fileNodeConnectionAttr), "{}.{}".format(material_shader, shaderConnectionAttr), force=True)
+                fileNameParameter = fileName.split(".1001.png")[0].split("_")[-1].lower()
 
-            # Assign the material to shape
+                shaderConnectionAttr = parameterList.get('USDPreviewMaterial').get(fileNameParameter).get('mayaParameter')
+                fileNodeConnectionAttr = parameterList.get('USDPreviewMaterial').get(fileNameParameter).get('fileNodeParameter')
+
+                # Create a new file node for the texture
+                fileNode = pm.shadingNode('file', asTexture=True)
+                fileNode.rename(fileNameOnly)
+                pm.setAttr("{}.fileTextureName".format(fileNode), texPath, type="string")
+
+                if fileNameParameter == "normal":
+                    # Create a bump2d node for normal maps
+                    bump2dNode = pm.shadingNode('bump2d', asUtility=True)
+                    pm.setAttr("{}.bumpInterp".format(bump2dNode), 0)
+                    pm.setAttr("{}.bumpDepth".format(bump2dNode), 0.1)
+                    pm.connectAttr("{}.outAlpha".format(fileNode), "{}.bumpValue".format(bump2dNode), force=True)
+                    pm.connectAttr("{}.outNormal".format(bump2dNode), "{}.{}".format(material_shader, shaderConnectionAttr), force=True)
+                else:
+                    pm.connectAttr("{}.{}".format(fileNode, fileNodeConnectionAttr), "{}.{}".format(material_shader, shaderConnectionAttr), force=True)
+
+            # Assign the material to the shape
             pm.sets(material_sg, edit=True, forceElement=shapeObject)
         else:
-            print ("Found a material with the same name {} please change this before running".format(material_name))
-        #try to rename the shape to the newly converted megascans name
+            print("Found a material with the same name {}. Please change this before running.".format(material_name))
+
+        # Rename the shape based on the asset type
         if assetType == "Standard":
             shapeObject.rename(assetName)
-        if assetType == "Plant":
-            if shapeObject.endswith("_LOD0"):
-                shapeObject.rename(shapeObject[:-5])
+        elif assetType == "Plant" and shapeObject.endswith("_LOD0"):
+            shapeObject.rename(shapeObject[:-5])
+
 
     def getAssetNameFromJson(self, megascansDir):
         for file in os.listdir(megascansDir):

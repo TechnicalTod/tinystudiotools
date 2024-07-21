@@ -2,15 +2,22 @@ import os
 import subprocess
 from genTools.genUtils import warningPopup
 from PySide2 import QtGui, QtWidgets, QtCore
-
-from importlib import reload
 import filePaths
-reload(filePaths)
+import maya.OpenMayaUI as OMUI
+import shiboken2
+
 
 class MainWindow(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+        # Get Maya's main window
+        mayaWin = OMUI.MQtUtil.mainWindow()
+        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QtWidgets.QWidget)
+
+        # Parent your window to Maya's main window
+        self.setParent(self.mayaWin)
+        self.setWindowFlags(QtCore.Qt.Window)
         self.initUI()
 
     def initUI(self):

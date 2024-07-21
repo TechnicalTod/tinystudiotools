@@ -175,22 +175,18 @@ def separateByShadingGroupsCMD():
 
 def toggleVertexColorDisplayCMD():
     import shadingTools.genShaderUtils
-    reload(shadingTools.genShaderUtils)
     shadingTools.genShaderUtils.toggleVertexColorDisplay()
 
 def createBlinnPerShapeCMD():
     import shadingTools.genShaderUtils
-    reload(shadingTools.genShaderUtils)
     shadingTools.genShaderUtils.createBlinnPerShape()
 
 def copyShaderToObjectsCMD():
     import shadingTools.genShaderUtils
-    reload(shadingTools.genShaderUtils)
     shadingTools.genShaderUtils.copyShaderToObjects()
 
 def buildShaderNetworkFromSubstanceCMD():
     import shadingTools.buildShaderNetworkFromSubstance
-    reload(shadingTools.buildShaderNetworkFromSubstance)
     shadingTools.buildShaderNetworkFromSubstance.launch()
 
 def randomVertColCMD():
@@ -222,7 +218,7 @@ def convertTextureUICMD():
 
 '''UNREAL TOOLS'''
 
-def convertTextureUICMD():
+def exportSetDecAssetsCMD():
     import unrealTools.exportSetDecAssets
     unrealTools.exportSetDecAssets.openWindow()
 
@@ -453,7 +449,7 @@ def makeShelfAndButtons():
 
     try:
         unrealToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'unrealTools.png', 'Unreal Tools')
-        slapFactoryShelf.addMenu(unrealToolsButton, 'Save Setdec Assets', blankCMD)
+        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Setdec Assets', exportSetDecAssetsCMD())
         slapFactoryShelf.addMenuSpacer(genToolsButton, label='Commands')
         slapFactoryShelf.addMenuSpacer(genToolsButton, label='Tools')
 

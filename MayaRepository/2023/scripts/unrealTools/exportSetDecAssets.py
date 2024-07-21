@@ -5,19 +5,22 @@ import maya.cmds as mc
 from PySide2 import QtGui, QtWidgets, QtCore
 import shutil
 import filePaths
+import maya.OpenMayaUI as OMUI
+import shiboken2
 
 SHOWDRIVE = filePaths.showDir
 
 parameterList = {
     'USDPreviewMaterial': {
         'diffuse': {'suffix': 'Diffuse', 'mayaParameter': 'diffuseColor'},
-        'emissive': {'suffix': 'Emissive', 'mayaParameter': 'emissiveColor'}, 
+        'emissive': {'suffix': 'Emissive', 'mayaParameter': 'emissiveColor'},
         'ao': {'suffix': 'AO', 'mayaParameter': 'occlusion'},
         'opacity': {'suffix': 'Transparency', 'mayaParameter': 'opacity'},
-        'metallic': {'suffix': 'Metallic', 'mayaParameter': 'metallic'}, 
+        'metallic': {'suffix': 'Metallic', 'mayaParameter': 'metallic'},
         'roughness': {'suffix': 'Roughness', 'mayaParameter': 'roughness'},
         'normal': {'suffix': 'Normal', 'mayaParameter': 'normal'},
-        'subsurface': {'suffix': 'Translucency', 'mayaParameter': 'clearcoat', 'fileNodeParameter': 'outAlpha'}
+        'subsurface': {'suffix': 'Translucency', 'mayaParameter': 'clearcoat', 'fileNodeParameter': 'outAlpha'},
+        'displacement': {'suffix': 'Displacement', 'mayaParameter': 'displacement', 'fileNodeParameter': 'outAlpha'}
     }
 }
 
@@ -25,6 +28,13 @@ class MainWindow(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+        # Get Maya's main window
+        mayaWin = OMUI.MQtUtil.mainWindow()
+        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QtWidgets.QWidget)
+
+        # Parent your window to Maya's main window
+        self.setParent(self.mayaWin)
+        self.setWindowFlags(QtCore.Qt.Window)
         self.initUI()
 
     def initUI(self):
@@ -338,7 +348,11 @@ class MainWindow(QtWidgets.QWidget):
             return paths
 
     def getShowList(self):
-        availableShows = os.listdir(SHOWDRIVE)
+        unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
+        availableShows = [
+            d for d in os.listdir(SHOWDRIVE)
+            if os.path.isdir(os.path.join(SHOWDRIVE, d)) and not d.startswith('.') and d not in unwanted_dirs
+        ]
         self.showComboBox.addItems(availableShows)
 
     def updateSetDecGroupComboBox(self):
@@ -446,7 +460,7 @@ class MainWindow(QtWidgets.QWidget):
             try:
                 if setDecObject.published.get():
                     #Run shader checks and try to set shader back to original if found otherwise rename shader to original name
-                    #get a list of all shaders attached to imported published shape 
+                    #get a list of all shaders attached to imported published shape
                     publishedSetDecObjectShapeNode = setDecObject.getShape()
                     publishedSetDecShadingGroups = publishedSetDecObjectShapeNode.shadingGroups()
                     publishedSetDecObjectShaders = pm.ls(pm.listConnections(publishedSetDecShadingGroups), materials=True)
@@ -534,7 +548,7 @@ class MainWindow(QtWidgets.QWidget):
                                         pubTexturedict)
                 else:
                     print("Node '{}' does not exist.".format(setDecObject))
-        
+
         pm.undoInfo(openChunk=False)
         self.resetCurrentList()
 
@@ -553,27 +567,31 @@ class MainWindow(QtWidgets.QWidget):
         for shader in setDecObjectShaders:
             shaderList.append(shader)
         pubTexturedict = {}
-        #loop through attached shaders and get all textures connected to materials
+        # Loop through attached shaders and get all textures connected to materials
         for shader in set(shaderList):
             pubTexturedict[shader] = {}
             for parameter in parameterList.get('USDPreviewMaterial'):
                 try:
-                    mayaParameterName = (parameterList.get('USDPreviewMaterial').get(parameter).get('mayaParameter'))
-                    fileNode = pm.listConnections('{}.{}'.format(shader, mayaParameterName))
-                    texturePath = fileNode[0].fileTextureName.get()
-                    texturePath = texturePath.replace("\\", "/")
-                    fileName = texturePath.split("/")[-1]
-                    fileNameSplit = fileName.split(".<UDIM>.png")[0]
-                    texturePath = texturePath.split(fileName)[0]
-                    textureList = []
-                    for tex in os.listdir(texturePath):
-                        if tex.endswith(".png"):
-                            if fileNameSplit in tex:
-                                print (texturePath + tex)
-                                textureList.append(texturePath + tex)
-                    pubTexturedict[shader][parameter] = textureList
-                except:
-                    print ("No texture found for " + parameter)
+                    mayaParameterName = parameterList.get('USDPreviewMaterial').get(parameter).get('mayaParameter')
+                    fileNode = pm.listConnections('{}.{}'.format(shader, mayaParameterName), source=True, destination=False)
+
+                    # Check if the parameter is 'normal' and traverse through the bump2d node
+                    if parameter == 'normal':
+                        fileNode = pm.listConnections(fileNode[0], source=True, destination=False)
+                        print ("NORMAL", fileNode)
+                    if fileNode:
+                        print ("ATANDARD", fileNode)
+                        texturePath = fileNode[0].fileTextureName.get()
+                        texturePath = texturePath.replace("\\", "/")
+                        fileName = texturePath.split("/")[-1]
+                        fileNameSplit = fileName.split(".<UDIM>.png")[0]
+                        texturePath = texturePath.split(fileName)[0]
+                        textureList = [os.path.join(texturePath, tex) for tex in os.listdir(texturePath) if tex.endswith(".png") and fileNameSplit in tex]
+                        pubTexturedict[shader][parameter] = textureList
+                    else:
+                        pubTexturedict[shader][parameter] = []
+                except Exception as e:
+                    print(f"No texture found for {parameter}: {e}")
 
         #build export directory
         textureBasePath = setDecAssetPath + "tex"
@@ -589,6 +607,8 @@ class MainWindow(QtWidgets.QWidget):
                     #copy texture to pub folder
                     shutil.copy(texturePath, textureBasePath)
                     fileNode = pm.listConnections('{}.{}'.format(shader, mayaParameterName))
+                    if parameterName == 'normal':
+                        fileNode = pm.listConnections(fileNode[0], source=True, destination=False)
                     texturePath = fileNode[0].fileTextureName.get()
                     texturePath = texturePath.replace("\\", "/")
                     textureNameFull = texturePath.split("/")[-1]
@@ -642,7 +662,7 @@ class MainWindow(QtWidgets.QWidget):
         # Unparent and reset transformations
         pm.parent(setDecObject, world=True)
         setDecObject.setMatrix(pm.dt.Matrix(), worldSpace=True)
-    
+
         # Change the outliner color to blue just before adding attributes
         setDecObject.useOutlinerColor.set(True)
         setDecObject.outlinerColor.set([0, 0.6, 1])  # RGB for blue
@@ -684,7 +704,7 @@ class MainWindow(QtWidgets.QWidget):
 
         # Cleanup: delete the transform node
         pm.delete(setDecObject)
-        
+
         # Re-import the .ma file and reapply transformations and parent, ensuring no namespace is added
         importedNodes = pm.importFile(mayaFullPath, returnNewNodes=True, mergeNamespacesOnClash=False)
         importedTransform = [node for node in importedNodes if isinstance(node, pm.nt.Transform)][0]
