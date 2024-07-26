@@ -2,7 +2,7 @@ import shelfCreate
 import maya.cmds as mc
 import maya.mel as mm
 import genTools.genUtils as genUtils
-import filePaths
+import mayaFilePaths
 
 def blankCMD():
     return
@@ -12,10 +12,6 @@ def blankCMD():
 def createAssetDirUICMD():
     import assetTools.createAssetDirUI
     assetTools.createAssetDirUI.launch()
-
-def convertMegascansAssetsCMD():
-    import assetTools.convertMegascansAssets
-    assetTools.convertMegascansAssets.launch()
 
 '''CAMERA'''
 
@@ -222,12 +218,25 @@ def exportSetDecAssetsCMD():
     import unrealTools.exportSetDecAssets
     unrealTools.exportSetDecAssets.openWindow()
 
+def convertMegascansAssetsCMD():
+    import unrealTools.convertMegascansAssets
+    unrealTools.convertMegascansAssets.launch()
+
+def publishShotForUnrealCMD():
+    import unrealTools.publishShotForUnreal
+    unrealTools.publishShotForUnreal.launch()
+
+def USDSceneImportExportUIMayaCMD():
+    import unrealTools.USDSceneImportExportUIMaya
+    unrealTools.USDSceneImportExportUIMaya.launch()
+
+
 '''
 BUILD SHELF
 '''
 
 def makeShelfAndButtons():
-    iconPath = filePaths.mayaShelfIconPath
+    iconPath = mayaFilePaths.mayaShelfIconPath
     slapFactoryShelf = shelfCreate.ShelfTool('SAGA_SHELF', iconPath)
 
     slapFactoryShelf.createShelf()
@@ -336,7 +345,7 @@ def makeShelfAndButtons():
         slapFactoryShelf.addMenu(modellingButton, 'Extract Vis Geo', extractVisGeoCMD)
         slapFactoryShelf.addMenu(modellingButton, 'Fast Retopo Geo', fastRetopoCMD)
         slapFactoryShelf.addMenu(modellingButton, 'Convert Megascans Assets', convertMegascansAssetsCMD)
-        
+
 
     except Exception as e:
         import traceback
@@ -449,9 +458,11 @@ def makeShelfAndButtons():
 
     try:
         unrealToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'unrealTools.png', 'Unreal Tools')
-        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Setdec Assets', exportSetDecAssetsCMD())
         slapFactoryShelf.addMenuSpacer(genToolsButton, label='Commands')
         slapFactoryShelf.addMenuSpacer(genToolsButton, label='Tools')
+        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Setdec Assets', exportSetDecAssetsCMD)
+        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Shot To Unreal', publishShotForUnrealCMD)
+        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Layout Scene Description', USDSceneImportExportUIMayaCMD)
 
     except Exception as e:
         import traceback

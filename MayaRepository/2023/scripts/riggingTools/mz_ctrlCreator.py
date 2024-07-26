@@ -21,9 +21,7 @@ Reference:
 ##############################################################################################
 
 import maya.cmds as cmds
-from importlib import reload
-import filePaths
-reload(filePaths)
+import mayaFilePaths
 
 #############################################
 '''global variable, the name of the window'''
@@ -72,7 +70,7 @@ def mz_ccUI():
     cmds.scrollLayout(childResizable = 1)
     cmds.gridLayout(numberOfColumns = 7, cellWidthHeight = (40, 40), width = 100)
 
-    IconsPath = filePaths.mzControlIconPAth
+    IconsPath = mayaFilePaths.mzControlIconPAth
 
     #icons of the "controllers"
     cmds.symbolButton(image = IconsPath + 'ccButton01.PNG', command = mz_ccButtonSnap01)

@@ -9,7 +9,7 @@ showDir = os.environ.get('SAGA_SHOW_DIR')
 artistDir = '{}Artist/{}/'.format(libDir, windowsUserName)
 
 # Script folder path
-baseScriptsPath = os.getenv('SAGA_MAYA_SCRIPT_PATH')
+baseScriptsPath = os.getenv('MAYA_REPO')
 baseScriptsPath = baseScriptsPath.replace('\\', '/')
 
 # Maya base directory

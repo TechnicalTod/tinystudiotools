@@ -4,11 +4,11 @@ import pymel.core as pm
 import maya.cmds as mc
 from PySide2 import QtGui, QtWidgets, QtCore
 import shutil
-import filePaths
+import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
 
-SHOWDRIVE = filePaths.showDir
+SHOWDRIVE = mayaFilePaths.showDir
 
 parameterList = {
     'USDPreviewMaterial': {
@@ -39,7 +39,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.setWindowTitle('Publish Set Dec Assets')
         self.setFocus()
@@ -100,10 +100,10 @@ class MainWindow(QtWidgets.QWidget):
         self.setDecGroupComboBox.currentTextChanged.connect(self.resetCurrentList)
 
         #adjust the import button style sheet
-        with open("{}/importButton.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/importButton.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.exportButton.setStyleSheet(fh.read())
         #adjust the unpublish button style sheet
-        with open("{}/unpublishButton.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/unpublishButton.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.unpublishButton.setStyleSheet(fh.read())
 
         layout.addWidget(self.tableWidget, 0, 1, 5, 4)
@@ -186,7 +186,7 @@ class MainWindow(QtWidgets.QWidget):
                 variantComboBox.addItems(variantList)
                 variantComboBox.setCurrentIndex(0)
                 if len(variantList) > 1:
-                    with open("{}/qComboBoxMultiItemYellow.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+                    with open("{}/qComboBoxMultiItemYellow.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
                         variantComboBox.setStyleSheet(fh.read())
             except:
                 variantComboBox.addItems(["base"])
@@ -204,7 +204,7 @@ class MainWindow(QtWidgets.QWidget):
                 versionComboBox.setCurrentIndex(len(versionList)-1)
             except:
                 versionComboBox.addItems(["N/A"])
-                with open("{}/qComboBoxMultiItemGreen.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+                with open("{}/qComboBoxMultiItemGreen.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
                     versionComboBox.setStyleSheet(fh.read())
                 versionComboBox.setCurrentIndex(0)
 
@@ -271,12 +271,12 @@ class MainWindow(QtWidgets.QWidget):
             setDecCurrentVersion.addItems(versionList)
             setDecCurrentVersion.setCurrentIndex(len(versionList)-1)
             self.getLatestVersionNumber(row, setDecCurrentVersion, setDecNewVersion)
-            with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+            with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
                 setDecCurrentVersion.setStyleSheet(fh.read())
         except:
             setDecNewVersion.clear()
             setDecCurrentVersion.addItems(["N/A"])
-            with open("{}/qComboBoxMultiItemGreen.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+            with open("{}/qComboBoxMultiItemGreen.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
                 setDecCurrentVersion.setStyleSheet(fh.read())
             setDecCurrentVersion.setCurrentIndex(0)
             setDecNewVersion.addItems(["v001"])
@@ -298,7 +298,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def renameSelectedVariants(self):
         input_dialog = QtWidgets.QInputDialog(self)
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             input_dialog.setStyleSheet(fh.read())
         newVariantName, ok = input_dialog.getText(self, "Set Variant Name", "Enter new variant name:")
         if ok:
@@ -749,7 +749,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def warningPopup(self, message):
         selectionWarningDialog = QtWidgets.QMessageBox()
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             selectionWarningDialog.setStyleSheet(fh.read())
         selectionWarningDialog.setText(message)
         selectionWarningDialog.setWindowTitle("Warning")

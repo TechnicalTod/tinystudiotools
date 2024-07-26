@@ -2,10 +2,7 @@ import os
 import subprocess
 from genTools.genUtils import warningPopup
 from PySide2 import QtGui, QtWidgets, QtCore
-
-from importlib import reload
-import filePaths
-reload(filePaths)
+import mayaFilePaths
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -15,7 +12,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        self.style_sheet_file_loc = filePaths.styleSheetFilepath
+        self.style_sheet_file_loc = mayaFilePaths.styleSheetFilepath
         with open(self.style_sheet_file_loc, "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
@@ -32,7 +29,7 @@ class MainWindow(QtWidgets.QWidget):
         self.convertButton = QtWidgets.QPushButton('Convert Image', self)
         self.convertButton.clicked.connect(self.ConvertImage)
 
-        browseButtoniconPath = filePaths.mayaShelfIconPath + "folder.png"
+        browseButtoniconPath = mayaFilePaths.mayaShelfIconPath + "folder.png"
         self.browseButton = QtWidgets.QPushButton()
         self.browseButton.setIcon(QtGui.QIcon(browseButtoniconPath))
         self.browseButton.clicked.connect(self.showFileDialog)
@@ -48,7 +45,7 @@ class MainWindow(QtWidgets.QWidget):
         self.setLayout(self.grid)
 
     def showFileDialog(self):
-        initialDir = filePaths.downloadsFolder
+        initialDir = mayaFilePaths.downloadsFolder
         options = QtWidgets.QFileDialog.Options()
         fileFilter = "Image Files (*.jpg *.jpeg *.png *.bmp *.gif *.tif *.exr);;All Files (*)"
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName(self,

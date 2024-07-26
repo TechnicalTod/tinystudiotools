@@ -8,7 +8,7 @@ from PySide2 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import shutil
 import json
-import filepaths
+import mayaFilepaths
 
 IMPATH = '"C:\Program Files\Autodesk\Maya2023\bin\magick.exe"'
 

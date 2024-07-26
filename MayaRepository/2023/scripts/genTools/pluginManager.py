@@ -1,10 +1,7 @@
 import os
 from PySide2 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
-
-from importlib import reload
-import filePaths
-reload(filePaths)
+import mayaFilePaths
 
 WINDOW = None
 

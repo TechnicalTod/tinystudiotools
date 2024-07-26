@@ -16,9 +16,6 @@ set SCRIPT_DIR=%SAGA_LIB_DIR%SagaTools/
 REM Set the Sagatools Maya repo dir
 set MAYA_REPO=%SCRIPT_DIR%MayaRepository/%MAYAVERSION%/
 
-REM Set custom script paths
-set SAGA_MAYA_SCRIPT_PATH=%MAYA_REPO%
-
 set MAYA_SCRIPT_PATH=^
 %MAYA_REPO%scripts;^
 %MAYA_REPO%shared;^

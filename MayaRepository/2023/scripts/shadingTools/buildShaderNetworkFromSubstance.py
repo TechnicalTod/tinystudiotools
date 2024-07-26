@@ -7,7 +7,7 @@ import subprocess
 import json
 import pymel.core as pm
 import maya.cmds as mc
-import filePaths
+import mayaFilePaths
 
 parameterList = {
     'USDPreviewMaterial': {
@@ -30,7 +30,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
         self.setWindowTitle('Build shaders from Substance exports')
@@ -50,7 +50,7 @@ class MainWindow(QtWidgets.QWidget):
         self.shaderPresetComboBox = QtWidgets.QComboBox(self)
         self.shaderPresetComboBox.addItems(["Standard"])
 
-        browseButtoniconPath = filePaths.mayaShelfIconPath + "folder.png"
+        browseButtoniconPath = mayaFilePaths.mayaShelfIconPath + "folder.png"
         self.browseButton = QtWidgets.QPushButton()
         self.browseButton.setIcon(QtGui.QIcon(browseButtoniconPath))
         self.browseButton.clicked.connect(self.showFileDialog)
@@ -69,7 +69,7 @@ class MainWindow(QtWidgets.QWidget):
         self.setLayout(self.grid)
 
     def showFileDialog(self):
-        initialDir = filePaths.downloadsFolder
+        initialDir = mayaFilePaths.downloadsFolder
         dirPath = QtWidgets.QFileDialog.getExistingDirectory(self,
                                                   "Select Folder",
                                                   initialDir,

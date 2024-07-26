@@ -1,10 +1,10 @@
 import maya.cmds as mc
 
 from importlib import reload
-import filePaths
-reload(filePaths)
+import mayaFilePaths
+reload(mayaFilePaths)
 
-tempFilePath = filePaths.downloadsFolder + 'tempExportImport.ma'
+tempFilePath = mayaFilePaths.downloadsFolder + 'tempExportImport.ma'
 
 print (tempFilePath)
 

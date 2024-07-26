@@ -8,11 +8,11 @@ from PySide2 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import shutil
 import json
-import filePaths
+import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
 
-SHOWDRIVE = filePaths.libDir + "megascansLib/convertedSetDec/"
+SHOWDRIVE = mayaFilePaths.libDir + "megascansLib/convertedSetDec/"
 IMPATH = '"C:\\Program Files\\Autodesk\Maya2023\\bin\\magick.exe"'
 
 parameterList = {
@@ -55,7 +55,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(400, 50)
         self.setWindowTitle('Convert Megascans Assets to Set Dec')
@@ -81,7 +81,7 @@ class MainWindow(QtWidgets.QWidget):
         self.setLayout(self.grid)
 
     def showFileDialog(self):
-        initialDir = filePaths.downloadsFolder
+        initialDir = mayaFilePaths.downloadsFolder
         options = QtWidgets.QFileDialog.Options()
         fileFilter = "USD Files (*.usd *.usda *.usdz);;All Files (*)"
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName(self,

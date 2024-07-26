@@ -2,7 +2,7 @@ import os
 import subprocess
 from genTools.genUtils import warningPopup
 from PySide2 import QtGui, QtWidgets, QtCore
-import filePaths
+import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
 
@@ -25,8 +25,8 @@ class MainWindow(QtWidgets.QWidget):
         self.resize(600, 50)
         self.setWindowTitle('Create asset directories')
         self.setFocus()
-        self.style_sheet_file_loc = filePaths.styleSheetFilepath
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        self.style_sheet_file_loc = mayaFilePaths.styleSheetFilepath
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.center()
         self.show()
@@ -77,11 +77,11 @@ class MainWindow(QtWidgets.QWidget):
         if not assetname:
             warningPopup('No asset name specified')
         else:
-            baseUserDir = filePaths.artistDir + folderName
+            baseUserDir = mayaFilePaths.artistDir + folderName
 
             dirList = []
 
-            dirList.append(filePaths.artistDir)
+            dirList.append(mayaFilePaths.artistDir)
             dirList.append(baseUserDir)
             dirList.append(baseUserDir + assetname)
             dirList.append(baseUserDir + assetname + '/scenes')

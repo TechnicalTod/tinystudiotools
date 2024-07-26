@@ -2,7 +2,7 @@ import os
 import sys
 from PySide2 import QtGui, QtWidgets, QtCore
 import maya.cmds as cmds
-import filePaths
+import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
 
@@ -22,7 +22,7 @@ class MainWindow(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        with open("{}/dark.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(500, 100)
         self.setWindowTitle('Measurement Tool')
@@ -40,7 +40,7 @@ class MainWindow(QtWidgets.QWidget):
         self.settingsLabel = QtWidgets.QLabel("Measurement Settings (Works on multiple selected)")
         self.settingsLabel.setFixedHeight(30)
         self.settingsLabel.setAlignment(QtCore.Qt.AlignCenter)
-        with open("{}/QLabelTitleFont.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/QLabelTitleFont.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.settingsLabel.setStyleSheet(fh.read())
 
         # Gap Size Slider
@@ -112,7 +112,7 @@ class MainWindow(QtWidgets.QWidget):
         self.buttonLabel = QtWidgets.QLabel("Create Measurements:")
         self.buttonLabel.setFixedHeight(30)
         self.buttonLabel.setAlignment(QtCore.Qt.AlignCenter)
-        with open("{}/QLabelTitleFont.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/QLabelTitleFont.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.buttonLabel.setStyleSheet(fh.read())
 
         self.launchToolButton1 = QtWidgets.QPushButton("Raycast (Through camera)")
@@ -121,9 +121,9 @@ class MainWindow(QtWidgets.QWidget):
         self.launchToolButton2 = QtWidgets.QPushButton("Selected (Two selected objects)")
         self.launchToolButton2.clicked.connect(self.launchMeasurementToolSel)
 
-        with open("{}/importButton.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/importButton.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.launchToolButton1.setStyleSheet(fh.read())
-        with open("{}/importButton.qss".format(filePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/importButton.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.launchToolButton2.setStyleSheet(fh.read())
 
         self.settingslabelLayout = QtWidgets.QGridLayout()
