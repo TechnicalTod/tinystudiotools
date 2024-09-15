@@ -51,7 +51,7 @@ class MainWindow(QtWidgets.QWidget):
         self.assetDir.editTextChanged.connect(lambda: self.populateVarComboBox())
 
         # Create a combo box and populate it with files from the directory
-        self.varDirLabel = QtWidgets.QLabel("Varient Name:")
+        self.varDirLabel = QtWidgets.QLabel("Variant Name:")
         self.varDir = QtWidgets.QComboBox(self)
         self.populateVarComboBox()
         self.varDir.setEditable(True)
@@ -148,7 +148,7 @@ class MainWindow(QtWidgets.QWidget):
         vardir = self.varDir.currentText()
         itemver = self.importVer.currentText()
         itemdir = self.USDName.text()
-        USDPath = SHOWDRIVE + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver + '/' + itemdir
+        USDPath = SHOWDRIVE + showdir + '/03_Production/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver + '/' + itemdir
         USDPath = USDPath.replace(" ", '_')
         sceneBuilder.BuildScene(USDPath)
 
@@ -162,11 +162,11 @@ class MainWindow(QtWidgets.QWidget):
         itemdir = itemdir[:-9]
         itemdir += itemver + '.usda'
         if showdir != '' and assetdir != '':
-            coredir = USDPath = SHOWDRIVE + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver
+            coredir = USDPath = SHOWDRIVE + showdir + '/03_Production/Assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver
             coredir = coredir.replace(" ", '_')
             if not os.path.exists(coredir):
                 os.makedirs(coredir)
-            USDPath = SHOWDRIVE + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver + '/' + itemdir
+            USDPath = SHOWDRIVE + showdir + '/03_Production/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver + '/' + itemdir
             USDPath = USDPath.replace(" ", '_')
             sceneExporter.ExportScene(USDPath)
             self.populateAssetComboBox()
@@ -176,32 +176,43 @@ class MainWindow(QtWidgets.QWidget):
 
     def populateShowComboBox(self, directory):
         try:
-            # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+            unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
+            directories = [
+                d for d in os.listdir(SHOWDRIVE)
+                if os.path.isdir(os.path.join(SHOWDRIVE, d)) and not d.startswith('.') and d not in unwanted_dirs
+            ]
             self.showDir.addItems(directories)
         except Exception as e:
             self.showDir.addItem(str(e))
             print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
 
     def populateAssetComboBox(self):
-        self.assetDir.clear()
-        showdir = self.showDir.currentText()
-        directory = SHOWDRIVE + showdir + '/assets/ENV'
+        self.assetDir.clear()  # Clear the current items in the combo box
+        showdir = self.showDir.currentText()  # Get the current text from the show directory combo box
+        directory = os.path.join(SHOWDRIVE, showdir, '03_Production', 'Assets', 'ENV')  # Construct the full directory path
+
         if not os.path.exists(directory):
-            return
+            return  # Exit the function if the directory does not exist
+
+        # Define unwanted directories
+        unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
+
         try:
-            # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
-            self.assetDir.addItems(directories)
+            # List all directories in the given path, excluding unwanted directories
+            directories = [
+                d for d in os.listdir(directory)
+                if os.path.isdir(os.path.join(directory, d)) and d not in unwanted_dirs
+            ]
+            self.assetDir.addItems(directories)  # Add directories to the combo box
         except Exception as e:
-            self.assetDir.addItem(str(e))
+            self.assetDir.addItem(str(e))  # Add the error message as an item in the combo box
             print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
 
     def populateVarComboBox(self):
         self.varDir.clear()
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
-        directory = SHOWDRIVE + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/'
+        directory = SHOWDRIVE + showdir + '/03_Production/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/'
         if not os.path.exists(directory):
             return
         try:
@@ -209,7 +220,7 @@ class MainWindow(QtWidgets.QWidget):
             directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
             self.varDir.addItems(directories)
         except Exception as e:
-            self.varDir.addItem(str(e))
+            self.varDir.addItem("Base")
             print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
 
     def populateVerComboBoxes(self):
@@ -217,7 +228,7 @@ class MainWindow(QtWidgets.QWidget):
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         vardir = self.varDir.currentText()
-        directory = f'{SHOWDRIVE}{showdir}/assets/ENV/{assetdir}/publish/unreal/layoutSceneDescription/{vardir}'
+        directory = f'{SHOWDRIVE}{showdir}/03_Production/assets/ENV/{assetdir}/publish/unreal/layoutSceneDescription/{vardir}'
 
         if not os.path.exists(directory):
             self.importVer.addItem('v001')  # Add v001 as default if directory does not exist
