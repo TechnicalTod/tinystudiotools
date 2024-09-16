@@ -3,7 +3,7 @@ import subprocess
 import os
 from PySide2.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QComboBox
 from PySide2.QtGui import QIcon
-from PySide2.QtCore import QSize
+from PySide2.QtCore import QSize, QSettings
 
 def resourcePath(relativePath):
     """Get absolute path to resource, works for PyInstaller"""
@@ -13,6 +13,7 @@ def resourcePath(relativePath):
 class SagaLauncher(QWidget):
     def __init__(self):
         super().__init__()
+        self.settings = QSettings("SagaTools", "SagaLauncher")  # Create a QSettings object
         self.initUI()
 
     def initUI(self):
@@ -30,6 +31,12 @@ class SagaLauncher(QWidget):
 
         # Populate combo box with directories from S:\
         self.populateShowList()
+
+        # Load the last selected show from QSettings
+        self.loadSettings()
+
+        # Connect combo box index change to save settings
+        self.showComboBox.currentIndexChanged.connect(self.saveSettings)
 
         # Create buttons without labels
         self.mayaButton = QPushButton()
@@ -78,6 +85,19 @@ class SagaLauncher(QWidget):
     def addWidgets(self):
         self.layout.addWidget(self.showComboBox)
         self.layout.addLayout(self.buttonLayout)
+
+    def loadSettings(self):
+        """Load the last selected show from QSettings and set it in the combo box."""
+        lastShow = self.settings.value("lastShow", "")
+        if lastShow:
+            index = self.showComboBox.findText(lastShow)  # Find the index of the saved show
+            if index >= 0:
+                self.showComboBox.setCurrentIndex(index)
+
+    def saveSettings(self):
+        """Save the currently selected show to QSettings."""
+        selectedShow = self.showComboBox.currentText()
+        self.settings.setValue("lastShow", selectedShow)
 
     def openMaya(self):
         selectedItem = self.showComboBox.currentText()
