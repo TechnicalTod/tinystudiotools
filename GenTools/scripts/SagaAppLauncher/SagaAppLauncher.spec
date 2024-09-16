@@ -1,4 +1,4 @@
-# saga_launcher.spec
+# SagaAppLauncher.spec
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
@@ -7,12 +7,13 @@ added_files = [
     ('icons/mayaIcon.png', 'icons'),
     ('icons/unrealIcon.png', 'icons'),
     ('styles/dark.qss', 'styles'),
-    ('batch_files/launchMaya2023.bat', 'batch_files'),
-    ('batch_files/launchUnrealProject.bat', 'batch_files'),
+    ('batchFiles/launchMaya2023.bat', 'batch_files'),
+    ('batchFiles/launchUnrealProject.bat', 'batch_files'),
+    ('C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.10_3.10.3056.0_x64__qbz5n2kfra8p0/python310.dll', '.')
 ]
 
 a = Analysis(
-    ['saga_launcher.py'],
+    ['SagaAppLauncher.py'],
     pathex=[],
     binaries=[],
     datas=added_files,
@@ -34,7 +35,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='saga_launcher',
+    name='SagaAppLauncher',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -51,5 +52,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='saga_launcher',
+    name='SagaAppLauncher',
 )

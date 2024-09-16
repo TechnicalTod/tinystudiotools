@@ -1,60 +1,99 @@
 import sys
 import subprocess
 import os
-from PySide2.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout
+from PySide2.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QComboBox
 from PySide2.QtGui import QIcon
 from PySide2.QtCore import QSize
 
-def resource_path(relative_path):
+def resourcePath(relativePath):
     """Get absolute path to resource, works for PyInstaller"""
-    base_path = getattr(sys, '_MEIPASS', os.path.abspath("."))
-    return os.path.join(base_path, relative_path)
+    basePath = getattr(sys, '_MEIPASS', os.path.abspath("."))
+    return os.path.join(basePath, relativePath)
 
 class SagaLauncher(QWidget):
     def __init__(self):
         super().__init__()
-        self.init_ui()
+        self.initUI()
 
-    def init_ui(self):
+    def initUI(self):
         # Set window properties
-        stylesheet_path = resource_path('styles/dark.qss')
-        with open(stylesheet_path, "r") as fh:
+        stylesheetPath = resourcePath('styles/dark.qss')
+        with open(stylesheetPath, "r") as fh:
             self.setStyleSheet(fh.read())
         self.setWindowTitle('Saga App Launcher')
-        self.setGeometry(100, 100, 300, 200)
 
         # Create layout
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
 
-        # Create buttons
-        button1 = QPushButton()
-        icon1_path = resource_path('icons/mayaIcon.png')
-        icon1 = QIcon(icon1_path)
-        button1.setIcon(icon1)
-        button1.setIconSize(QSize(100, 100))
-        button1.clicked.connect(self.run_batch1)
+        # Create the combo box
+        self.showComboBox = QComboBox()
 
-        button2 = QPushButton()
-        icon2_path = resource_path('icons/unrealIcon.png')
-        icon2 = QIcon(icon2_path)
-        button2.setIcon(icon2)
-        button2.setIconSize(QSize(100, 100))
-        button2.clicked.connect(self.run_batch2)
+        # Populate combo box with directories from S:\
+        self.populateShowList()
 
-        # Add buttons to layout
-        layout.addWidget(button1)
-        layout.addWidget(button2)
+        # Create buttons without labels
+        self.mayaButton = QPushButton()
+        icon1Path = resourcePath('icons/mayaIcon.png')
+        icon1 = QIcon(icon1Path)
+        self.mayaButton.setIcon(icon1)
+        self.mayaButton.setIconSize(QSize(120, 100))
+        self.mayaButton.clicked.connect(self.openMaya)
+
+        self.unrealButton = QPushButton()
+        icon2Path = resourcePath('icons/unrealIcon.png')
+        icon2 = QIcon(icon2Path)
+        self.unrealButton.setIcon(icon2)
+        self.unrealButton.setIconSize(QSize(120, 100))
+        self.unrealButton.clicked.connect(self.openUnreal)
+
+        # Create a horizontal layout for the buttons
+        self.buttonLayout = QHBoxLayout()
+        self.buttonLayout.addWidget(self.mayaButton)
+        self.buttonLayout.addWidget(self.unrealButton)
+
+        # Add widgets to layout via a function
+        self.addWidgets()
 
         # Set layout
-        self.setLayout(layout)
+        self.setLayout(self.layout)
 
-    def run_batch1(self):
-        batch1_path = resource_path('batch_files/launchMaya2023.bat')
-        subprocess.run(batch1_path, shell=True)
+        # Adjust window size to content
+        self.adjustSize()
 
-    def run_batch2(self):
-        batch2_path = resource_path('batch_files/launchUnrealProject.bat')
-        subprocess.run(batch2_path, shell=True)
+    def populateShowList(self):
+        """Populate the QComboBox with directories from the S:\ drive, excluding system folders."""
+        drivePath = 'S:\\'
+        if os.path.exists(drivePath):
+            try:
+                directories = [
+                    d for d in os.listdir(drivePath)
+                    if os.path.isdir(os.path.join(drivePath, d)) and d not in ['$RECYCLE.BIN', 'System Volume Information']
+                ]
+                self.showComboBox.addItems(directories)
+            except Exception as e:
+                print(f"Failed to list directories in {drivePath}: {e}")
+        else:
+            print(f"Drive {drivePath} not found")
+
+    def addWidgets(self):
+        self.layout.addWidget(self.showComboBox)
+        self.layout.addLayout(self.buttonLayout)
+
+    def openMaya(self):
+        selectedItem = self.showComboBox.currentText()
+        mayaBatchPath = resourcePath('batch_files/launchMaya2023.bat')
+        if selectedItem:
+            subprocess.run([mayaBatchPath, selectedItem], shell=True)
+        else:
+            print("No selection made")
+
+    def openUnreal(self):
+        selectedItem = self.showComboBox.currentText()
+        unrealBatchPath = resourcePath('batch_files/launchUnrealProject.bat')
+        if selectedItem:
+            subprocess.run([unrealBatchPath, selectedItem], shell=True)
+        else:
+            print("No selection made")
 
 def main():
     app = QApplication(sys.argv)

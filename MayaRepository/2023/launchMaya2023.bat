@@ -6,6 +6,7 @@ set MAYAVERSION=2023
 REM Set Maya application paths
 set MAYA_APP_BASE_PATH=C:/Program Files/Autodesk/Maya%MAYAVERSION%/
 set MAYA_APP_PATH=%MAYA_APP_BASE_PATH%bin/maya.exe
+set QT_PLUGIN_PATH= C:/Program Files/Autodesk/Maya2023/plugins/platforms
 
 REM Set Show Directory
 set SAGA_SHOW_DIR=S:/
