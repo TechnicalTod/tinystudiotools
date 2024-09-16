@@ -1,4 +1,5 @@
 # Saga Previs Tools Repository
+This is the repository for the Saga Studio pipeline repository
 
 ## Description
 This requires two drives to be set to correctly run
