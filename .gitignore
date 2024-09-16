@@ -8,6 +8,5 @@ __pycache__/
 tools/
 TODO.txt
 
-
-L:/SagaTools/GenTools/scripts/SagaAppLauncher/build
-L:/SagaTools/GenTools/scripts/SagaAppLauncher/dist
+GenTools/scripts/SagaAppLauncher/build/
+GenTools/scripts/SagaAppLauncher/dist/
