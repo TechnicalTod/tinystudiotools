@@ -4,7 +4,7 @@ import numpy as np
 import unreal
 import warnings
 
-from conversionUtilites import *
+from genTools.conversionUtilites import *
 
 # Reference USD Asset - This will be replaced when turned into a UI
 #usd_file_path = "D:/CFXDemoProject/MayaNewAttrPub_v01.usda"

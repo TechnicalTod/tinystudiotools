@@ -9,8 +9,8 @@ from importlib import reload
 import unrealFilePaths
 reload(unrealFilePaths)
 
-import UE_USDSceneBuilder as usd_builder
-import UE_USDSceneExporter as usd_exporter
+import levelTools.UE_USDSceneBuilder as usd_builder
+import levelTools.UE_USDSceneExporter as usd_exporter
 
 import ImportExportUSDUI as simpleUI
 

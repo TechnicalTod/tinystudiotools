@@ -1,7 +1,7 @@
 import unreal
 import os
 from datetime import datetime
-import perforceAutomation
+import shotTools.perforceTools.perforceAutomation as perforceAutomation
 import time
 import sys
 

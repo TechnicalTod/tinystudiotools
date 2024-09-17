@@ -1,5 +1,5 @@
-from matrixComposition import *
-from changeOfBasis import *
+from genTools.matrixComposition import *
+from genTools.changeOfBasis import *
 import pxr.Usd, pxr.UsdGeom
 from transforms3d.euler import euler2mat
 import os

@@ -9,7 +9,7 @@ from importlib import reload
 import unrealFilePaths
 reload(unrealFilePaths)
 
-import USD_exporter
+import assetTools.USD_exporter as USD_exporter
 
 class MainWindow(QtWidgets.QWidget):
 

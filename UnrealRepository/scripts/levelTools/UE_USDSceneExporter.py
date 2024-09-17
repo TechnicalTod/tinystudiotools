@@ -6,7 +6,7 @@ import numpy as np
 import unreal
 import warnings
 
-from conversionUtilites import *
+from genTools.conversionUtilites import *
 
 np.set_printoptions(precision=3)
 np.set_printoptions(suppress=True)

@@ -2,7 +2,7 @@ import os
 import sys
 import unreal
 import subprocess
-from genUnrealUtils import warningPopup
+from genTools.genUnrealUtils import warningPopup
 
 #Function to set generic asset import options using unreal.AssetImportTask()
 #The additional import options are then fed into this using the options property

@@ -1,5 +1,5 @@
 import unreal
-import MyCustomEditorRenderExecutor
+import renderTools.MyCustomEditorRenderExecutor as MyCustomEditorRenderExecutor
  
 """
 This is a bootstrapping script that is executed when the editor starts in a

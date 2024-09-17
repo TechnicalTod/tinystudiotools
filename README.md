@@ -11,6 +11,9 @@ In addition to this it requires the following folders to be created
 
 **L:\Artist** - Artist folder
 
+**Unreal Generic project setup docs**
+https://docs.google.com/document/d/1NRxG60mvPhEzeWD2NCXaiJ-_0_pyBCbX-a-44ctsJb8/edit
+
 ### Prerequisite python libs
 
 **MAYA:**
@@ -18,3 +21,4 @@ In addition to this it requires the following folders to be created
 
 **UNREAL**
 - Pyside2
+- transforms3d

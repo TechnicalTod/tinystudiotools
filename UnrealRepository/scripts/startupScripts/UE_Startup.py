@@ -5,7 +5,7 @@ import keyring
 
 import unreal
 
-import perforceAutomation
+import shotTools.perforceTools.perforceAutomation as perforceAutomation
 
 import CustomPIEExecutor
 

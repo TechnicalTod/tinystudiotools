@@ -6,12 +6,12 @@ import unreal
 import subprocess
 from PySide2 import QtGui, QtWidgets, QtCore
 from importlib import reload
-import genUnrealUtils
-import genUnrealImportUtils
+import genTools.genUnrealUtils as genUnrealUtils
+import genTools.genUnrealImportUtils as genUnrealImportUtils
 reload(genUnrealImportUtils)
 import unrealFilePaths
 reload(unrealFilePaths)
-import get_usd_tex_paths
+import assetTools.get_usd_tex_paths as get_usd_tex_paths
 reload(get_usd_tex_paths)
 
 parameterList = {

@@ -12,7 +12,7 @@ previs_menu = main_menu.add_sub_menu(main_menu.menu_name, "Previs Menu", " ", "C
 class importUnrealAssetClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import importUnrealAsset
+        import assetTools.importUnrealAsset as importUnrealAsset
         reload (importUnrealAsset)
         importUnrealAsset.openWindow()
 importUnrealAssetMenuButton = importUnrealAssetClass()
@@ -32,7 +32,7 @@ importUnrealAssetMenuButton.register_menu_entry()
 class ImportShotFromMayaClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import ImportShotFromMaya
+        import shotTools.ImportShotFromMaya as ImportShotFromMaya
         reload (ImportShotFromMaya)
         ImportShotFromMaya.openWindow()
 ImportShotFromMayaMenuButton = ImportShotFromMayaClass()
@@ -52,7 +52,7 @@ ImportShotFromMayaMenuButton.register_menu_entry()
 class ImportExportUSDUIClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import ImportExportUSDUI_V2
+        import levelTools.ImportExportUSDUI_V2 as ImportExportUSDUI_V2
         reload (ImportExportUSDUI_V2)
         ImportExportUSDUI_V2.openWindow()
 ImportExportUSDUIMenuButton = ImportExportUSDUIClass()
@@ -72,7 +72,7 @@ ImportExportUSDUIMenuButton.register_menu_entry()
 class ImportLevelAndSubLevelsClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import ImportLevelAndSubLevels
+        import levelTools.ImportLevelAndSubLevels as ImportLevelAndSubLevels
         reload (ImportLevelAndSubLevels)
         ImportLevelAndSubLevels.openWindow()
 ImportLevelAndSubLevelsMenuButton = ImportLevelAndSubLevelsClass()
@@ -92,7 +92,7 @@ ImportLevelAndSubLevelsMenuButton.register_menu_entry()
 class ENVBuilderClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import UE_envBuilder
+        import levelTools.UE_envBuilder as UE_envBuilder
         reload (UE_envBuilder)
         UE_envBuilder.openWindow()
 ENVBuilderButton = ENVBuilderClass()
@@ -112,7 +112,7 @@ ENVBuilderButton.register_menu_entry()
 class USD_Asset_Exporter_Class(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import USD_Asset_Exporter
+        import assetTools.USD_Asset_Exporter as USD_Asset_Exporter
         reload (USD_Asset_Exporter)
         USD_Asset_Exporter.openWindow()
 USDExporterMenuButton = USD_Asset_Exporter_Class()
@@ -132,7 +132,7 @@ USDExporterMenuButton.register_menu_entry()
 class USD_ShotVersioner_Class(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import UE_ShotVersioner
+        import shotTools.UE_ShotVersioner as UE_ShotVersioner
         reload (UE_ShotVersioner)
         UE_ShotVersioner.version_and_fix_redirectors()
 ShotVersionerButton = USD_ShotVersioner_Class()
@@ -152,7 +152,7 @@ ShotVersionerButton.register_menu_entry()
 class remapShadersClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import remapShaders
+        import assetTools.remapShaders as remapShaders
         reload (remapShaders)
         remapShaders.openWindow()
 remapShadersButton = remapShadersClass()
