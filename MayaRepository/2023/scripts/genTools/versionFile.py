@@ -9,8 +9,8 @@ def CopyExistingFile(saveDir, fileName, fileExtension):
 
     LatestVersion, newVersion = GetVersionNumber(saveDir, fileName, fileExtension)
 
-    existing_file = '{}{}_V{:03d}{}'.format(saveDir, fileName, LatestVersion, fileExtension)
-    new_file = '{}{}_V{:03d}{}'.format(saveDir, fileName, newVersion, fileExtension)
+    existing_file = '{}{}_V{:04d}{}'.format(saveDir, fileName, LatestVersion, fileExtension)
+    new_file = '{}{}_V{:04d}{}'.format(saveDir, fileName, newVersion, fileExtension)
 
     if not os.path.isfile(new_file):
         shutil.copy(existing_file, new_file)

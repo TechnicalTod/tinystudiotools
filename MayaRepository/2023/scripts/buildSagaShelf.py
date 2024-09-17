@@ -458,8 +458,8 @@ def makeShelfAndButtons():
 
     try:
         unrealToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'unrealTools.png', 'Unreal Tools')
-        slapFactoryShelf.addMenuSpacer(genToolsButton, label='Commands')
-        slapFactoryShelf.addMenuSpacer(genToolsButton, label='Tools')
+        slapFactoryShelf.addMenuSpacer(unrealToolsButton, label='Commands')
+        slapFactoryShelf.addMenuSpacer(unrealToolsButton, label='Tools')
         slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Setdec Assets', exportSetDecAssetsCMD)
         slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Shot To Unreal', publishShotForUnrealCMD)
         slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Layout Scene Description', USDSceneImportExportUIMayaCMD)

@@ -12,7 +12,7 @@ artistDir = '{}Artist/{}/'.format(libDir, windowsUserName)
 baseScriptsPath = os.getenv('UNREAL_REPO')
 
 # Paths for unreal icons
-unrealShelfIconPath = baseScriptsPath + 'icons/'
+unrealIconPath = baseScriptsPath + 'icons/'
 
 # Downloads folder
 downloadsFolder = 'c:/Users/{}/Downloads/'.format(windowsUserName)

@@ -53,10 +53,18 @@ class SagaLauncher(QWidget):
         self.unrealButton.setIconSize(QSize(120, 100))
         self.unrealButton.clicked.connect(self.openUnreal)
 
+        self.aeButton = QPushButton()
+        icon3Path = resourcePath('icons/aeIcon.png')
+        icon2 = QIcon(icon3Path)
+        self.aeButton.setIcon(icon2)
+        self.aeButton.setIconSize(QSize(120, 100))
+        self.aeButton.clicked.connect(self.openUnreal)
+
         # Create a horizontal layout for the buttons
         self.buttonLayout = QHBoxLayout()
         self.buttonLayout.addWidget(self.mayaButton)
         self.buttonLayout.addWidget(self.unrealButton)
+        self.buttonLayout.addWidget(self.aeButton)
 
         # Add widgets to layout via a function
         self.addWidgets()
@@ -114,6 +122,9 @@ class SagaLauncher(QWidget):
             subprocess.run([unrealBatchPath, selectedItem], shell=True)
         else:
             print("No selection made")
+
+    def openAfterEffects(self):
+        print("No selection made")
 
 def main():
     app = QApplication(sys.argv)

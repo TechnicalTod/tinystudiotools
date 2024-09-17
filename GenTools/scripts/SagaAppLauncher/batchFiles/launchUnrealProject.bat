@@ -19,7 +19,7 @@ REM Set the Sagatools Unreal repo dir
 set UNREAL_REPO=%SCRIPT_DIR%UnrealRepository/
 
 REM Set the Unreal project directory for the specific show
-set UNREAL_PROJECT_DIR=%SAGA_BASE_SHOW_DIR%%CURRENT_SHOW%\05_Unreal\SagaSandbox\SagaSandbox.uproject
+set UNREAL_PROJECT_DIR=%SAGA_BASE_SHOW_DIR%%CURRENT_SHOW%\05_Unreal\SAGA_%CURRENT_SHOW%\SAGA_%CURRENT_SHOW%.uproject
 
 set MAYA_SCRIPT_PATH=^
 %UNREAL_REPO%scripts;^
