@@ -1,17 +1,18 @@
 import os
 import json
 
-import keyring
+'''import keyring'''
 
 import unreal
 
-import shotTools.perforceTools.perforceAutomation as perforceAutomation
+import perforceTools.perforceAutomation as perforceAutomation
 
-import CustomPIEExecutor
+import renderTools.CustomPIEExecutor
 
 # Path to the JSON configuration file
 config_file_path = 'config.json'
 
+'''
 # Ftrack Variables
 service_api_key = "OpenPype/ftrack/causeandfx.ftrackapp.com/api_key"
 service_api_user = "OpenPype/ftrack/causeandfx.ftrackapp.com/username"
@@ -19,7 +20,7 @@ service_api_user = "OpenPype/ftrack/causeandfx.ftrackapp.com/username"
 os.environ['Ftrack_API_Key'] = keyring.get_password(service_api_key, "api_key")
 os.environ['Ftrack_API_User'] = keyring.get_password(service_api_user, "username")
 os.environ['Ftrack_Server'] = "https://causeandfx.ftrackapp.com"
-
+'''
 
 # Json Variables
 project_dir = unreal.SystemLibrary.get_project_directory()

@@ -1,7 +1,7 @@
 import unreal
 import os
 from datetime import datetime
-import shotTools.perforceTools.perforceAutomation as perforceAutomation
+import perforceTools.perforceAutomation as perforceAutomation
 import time
 import sys
 
@@ -11,7 +11,7 @@ import getpass
 
 import subprocess
 
-import keyring
+'''import keyring'''
 
 import socket
 

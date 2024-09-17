@@ -21,7 +21,7 @@ set UNREAL_REPO=%SCRIPT_DIR%UnrealRepository/
 REM Set the Unreal project directory for the specific show
 set UNREAL_PROJECT_DIR=%SAGA_BASE_SHOW_DIR%%CURRENT_SHOW%\05_Unreal\SAGA_%CURRENT_SHOW%\SAGA_%CURRENT_SHOW%.uproject
 
-set MAYA_SCRIPT_PATH=^
+set UNREAL_SCRIPT_PATH=^
 %UNREAL_REPO%scripts;^
 %UNREAL_REPO%shared;^
 %UNREAL_REPO%tools
@@ -34,7 +34,7 @@ set PYTHONPATH=^
 REM Display environment variables for debugging
 echo CURRENT_SHOW is set to %CURRENT_SHOW%
 echo UNREAL_PROJECT_DIR is set to %UNREAL_PROJECT_DIR%
-echo MAYA_SCRIPT_PATH is set to %MAYA_SCRIPT_PATH%
+echo UNREAL_SCRIPT_PATH is set to %UNREAL_SCRIPT_PATH%
 echo PYTHONPATH is set to %PYTHONPATH%
 
 REM Launch Unreal project
