@@ -58,7 +58,7 @@ class SagaLauncher(QWidget):
         icon2 = QIcon(icon3Path)
         self.aeButton.setIcon(icon2)
         self.aeButton.setIconSize(QSize(120, 100))
-        self.aeButton.clicked.connect(self.openUnreal)
+        self.aeButton.clicked.connect(self.openAfterEffects)
 
         # Create a horizontal layout for the buttons
         self.buttonLayout = QHBoxLayout()

@@ -6,6 +6,7 @@ block_cipher = None
 added_files = [
     ('icons/mayaIcon.png', 'icons'),
     ('icons/unrealIcon.png', 'icons'),
+    ('icons/aeIcon.png', 'icons'),
     ('styles/dark.qss', 'styles'),
     ('batchFiles/launchMaya2023.bat', 'batch_files'),
     ('batchFiles/launchUnrealProject.bat', 'batch_files'),
