@@ -14,7 +14,7 @@ class MainWindow(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        with open("{}/dark.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(500, 100)
         self.setWindowTitle('Shot Builder')

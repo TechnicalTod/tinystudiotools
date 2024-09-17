@@ -16,7 +16,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.setWindowTitle('Remap multiple shaders')
         self.setFocus()
@@ -62,9 +62,9 @@ class MainWindow(QtWidgets.QWidget):
         self.browseButton.customContextMenuRequested.connect(self.showShaderContextMenu)
         
         #adjust the import button style sheet
-        with open("{}/importButton.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+        with open("{}/importButton.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.remapShadersButton.setStyleSheet(fh.read())
-        with open("{}/openButton.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+        with open("{}/openButton.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.browseButton.setStyleSheet(fh.read())
 
     #connect and populate the layout

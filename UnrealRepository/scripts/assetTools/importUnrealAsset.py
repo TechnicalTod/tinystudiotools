@@ -11,8 +11,8 @@ import genTools.genUnrealImportUtils as genUnrealImportUtils
 reload(genUnrealImportUtils)
 import unrealFilePaths
 reload(unrealFilePaths)
-import assetTools.get_usd_tex_paths as get_usd_tex_paths
-reload(get_usd_tex_paths)
+import assetTools.getUSDTexturePaths as getUSDTexturePaths
+reload(getUSDTexturePaths)
 
 parameterList = {
     'USDPreviewMaterial': {
@@ -36,7 +36,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.setWindowTitle('Import Unreal Assets')
         self.setFocus()
@@ -132,7 +132,7 @@ class MainWindow(QtWidgets.QWidget):
             variantComboBox.addItems(variantList)
             variantComboBox.setCurrentIndex(0)
             if len(variantList) > 1:
-                with open("{}/qComboBoxMultiItemYellow.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+                with open("{}/qComboBoxMultiItemYellow.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
                     variantComboBox.setStyleSheet(fh.read())
 
             #create combo box for version column
@@ -333,7 +333,7 @@ class MainWindow(QtWidgets.QWidget):
         if assetType == "Static Mesh":
             publishedUSDPath = "{}/{}/{}/usd/".format(assetPath, variantName, versionNumber)
             usdFile = os.listdir(publishedUSDPath)[0]
-            USDShaderDict = get_usd_tex_paths.get_paths(publishedUSDPath + usdFile)
+            USDShaderDict = getUSDTexturePaths.get_paths(publishedUSDPath + usdFile)
 
             for shaderName in USDShaderDict:
                 textureDict = USDShaderDict.get(shaderName)

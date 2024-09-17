@@ -34,7 +34,7 @@ class UserInputDialog(QDialog):
     def __init__(self):
         super().__init__()
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.UNREAL_styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.setWindowTitle("Publish Comment")
         self.resize(300, 50)
