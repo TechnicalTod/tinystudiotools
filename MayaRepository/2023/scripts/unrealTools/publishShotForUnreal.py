@@ -122,35 +122,31 @@ class MainWindow(QtWidgets.QWidget):
     def getCameraData(self):
         cameraInfoDict = {}
 
-        cameraAttrs = ["focalLength",
-                        "horizontalFilmAperture",
-                        "verticalFilmAperture"]
-        #get all cameras in scene skipping default cameras
+        # Get all cameras in the scene, skipping default cameras
         cameras = pm.ls(type='camera', long=True)
         for camera in cameras:
             cameraShape = camera
             cameraName = camera.getParent()
             if cameraName not in ('persp', 'back', 'front', 'side', 'top'):
                 cameraInfoDict[cameraName] = {}
-                for attr in cameraAttrs:
-                    if attr in ("horizontalFilmAperture","verticalFilmAperture"):
-                        cameraInfoDict[cameraName][attr] = round(cameraShape.attr(attr).get() * 25.4, 3)
-                    else:
-                        cameraInfoDict[cameraName][attr] = cameraShape.attr(attr).get()
-                #TODO: This was breaking the json needs to be added up into the cameraAttrs list
-                '''
-                #get image plane data
+
+                # Get focal length
+                cameraInfoDict[cameraName]["focalLength"] = cameraShape.attr("focalLength").get()
+
+                # Convert film aperture from inches to millimeters
+                cameraInfoDict[cameraName]["horizontalFilmAperture"] = round(cameraShape.attr("horizontalFilmAperture").get() * 25.4, 3)
+                cameraInfoDict[cameraName]["verticalFilmAperture"] = round(cameraShape.attr("verticalFilmAperture").get() * 25.4, 3)
+
+                # Fetch image plane data
                 imagePlaneList = pm.listConnections(cameraShape, type='imagePlane')
-                if len(imagePlaneList) == 0:
-                    cameraInfoDict[cameraName]["ImagePlate"] = None
+                if not imagePlaneList:
+                    cameraInfoDict[cameraName]["ImagePlate"] = ""
                 else:
                     try:
-                        for imagePlaneNode in imagePlaneList:
-                            imagePlanePath = pm.getAttr("{}.imageName".format(imagePlaneNode))
-                            cameraInfoDict[cameraName]["ImagePlate"] = imagePlanePath
+                        imagePlanePath = pm.getAttr("{}.imageName".format(imagePlaneList[0]))
+                        cameraInfoDict[cameraName]["ImagePlate"] = imagePlanePath
                     except:
-                        cameraInfoDict[cameraName]["ImagePlate"] = None
-                '''
+                        cameraInfoDict[cameraName]["ImagePlate"] = ""
 
         #loop through dictionary to populate shot info
         for info in cameraInfoDict:

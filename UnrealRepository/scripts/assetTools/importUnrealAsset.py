@@ -8,11 +8,8 @@ from PySide2 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import genTools.genUnrealUtils as genUnrealUtils
 import genTools.genUnrealImportUtils as genUnrealImportUtils
-reload(genUnrealImportUtils)
 import unrealFilePaths
-reload(unrealFilePaths)
 import assetTools.getUSDTexturePaths as getUSDTexturePaths
-reload(getUSDTexturePaths)
 
 parameterList = {
     'USDPreviewMaterial': {

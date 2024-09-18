@@ -159,6 +159,10 @@ def mzCtrlCreatorCMD():
 def DoraSkinWeightCMD():
     mm.eval('DoraSkinWeightImpExp();')
 
+def loadAdvancedSkeletonCMD():
+    advancedSkeletonInstallPath = 'L:/SagaTools/GenTools/AdvancedSkeleton/install.mel'
+    mm.eval(f'source "{advancedSkeletonInstallPath}"')
+
 '''SHADER TOOLS'''
 
 def renameShaderToShapeNameCMD():
@@ -359,6 +363,8 @@ def makeShelfAndButtons():
         slapFactoryShelf.addMenu(riggingButton, 'Export puppet for Skeletal Mesh', exportPuppetForSkeletalMeshCMD)
         slapFactoryShelf.addMenu(riggingButton, 'Dora Skin Weight Importer', DoraSkinWeightCMD)
         slapFactoryShelf.addMenu(riggingButton, 'MZ Ctrl Creator', mzCtrlCreatorCMD)
+        slapFactoryShelf.addMenuSpacer(riggingButton, label='Tools')
+        slapFactoryShelf.addMenu(riggingButton, 'Load Advanced Skelton Shelf', loadAdvancedSkeletonCMD)
 
     except Exception as e:
         import traceback

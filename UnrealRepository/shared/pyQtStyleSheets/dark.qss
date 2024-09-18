@@ -154,7 +154,7 @@ QComboBox::drop-down
 
 QComboBox::down-arrow
 {
-     image: url(X:\MayaRepository\2023\previs\scripts\icons\dropDownArrow.png);
+     image: url(L:/SagaTools/UnrealRepository/icons/dropDownArrow.png);
      right: 4px;
      width: 35px;
 }
@@ -459,6 +459,7 @@ QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
 {
     border: 1px solid #444;
 }
+
 
 /* Style for horizontal slider */
 QSlider::groove:horizontal {

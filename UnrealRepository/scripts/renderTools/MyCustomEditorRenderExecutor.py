@@ -81,7 +81,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         FTRACK_API_KEY = os.getenv('Ftrack_API_Key')
         FTRACK_API_USER = os.getenv('Ftrack_API_User')
         FTRACK_SERVER = os.getenv('Ftrack_Server')
-        
+
         pattern = r'LS_|_v00\d'
         cleaned_name = re.sub(pattern, '', shotname)
 
@@ -177,7 +177,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         FTRACK_API_KEY = os.getenv('Ftrack_API_Key')
         FTRACK_API_USER = os.getenv('Ftrack_API_User')
         FTRACK_SERVER = os.getenv('Ftrack_Server')
-        
+
         pattern = r'LS_|_v00\d'
         cleaned_name = re.sub(pattern, '', layer_name)
 
@@ -327,7 +327,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
     # Function to create a movie pipeline queue asset
     def create_queue_from_transient(self, job, jobnum):
         temp_asset = unreal.MoviePipelineQueue()
-        
+
         new_job = temp_asset.allocate_new_job(unreal.MoviePipelineExecutorJob)
         new_job.job_name = 'test'
         new_job.map = job.map
@@ -343,10 +343,10 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
         # Specify the class type for the movie pipeline queue
         movie_pipeline_queue_class = unreal.MoviePipelineQueue
-        
+
         # Create a new asset using the specified class
         queue_asset = asset_tools.create_asset(asset_name, asset_path, movie_pipeline_queue_class, None)
-        
+
         # Get the package path for the asset
         package_path = queue_asset.get_outermost().get_name()
 
@@ -376,12 +376,12 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
     @unreal.ufunction(override=True)
     def execute_delayed(self, memory_queue):
-        
-        # Check to see if this is an actual queue to save to disk and send to Deadline. 
-        # It's a little bit of a hacky work around. If the memory_queue is 0 it means 
-        # it's coming from a command line and can be processed as if it's being run on 
+
+        # Check to see if this is an actual queue to save to disk and send to Deadline.
+        # It's a little bit of a hacky work around. If the memory_queue is 0 it means
+        # it's coming from a command line and can be processed as if it's being run on
         # a remote machine. Otherwise we can save the memory_queue and send it to deadline.
-        # Also doing processing for automatically saving to show drives - This is hard coded 
+        # Also doing processing for automatically saving to show drives - This is hard coded
         # for the most part which I dislike - So Hopefully I fix it at some point
         jobnum = 0
         num_jobs = len(memory_queue.get_jobs())
@@ -458,7 +458,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                 job.set_configuration(config)
 
                 deadlineQueue, assetpath = self.create_queue_from_transient(job, jobnum)
-                
+
                 perforceAutomation.push_specific_changes(os.getenv('Workspace'), assetpath)
                 perforceAutomation.pull_unreal_changes_to_perforce(os.getenv('Shared_Render_Workspace')) # Pull onto X:drive - This is the shared on x for remote machines
 
@@ -472,7 +472,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                     f'-MoviePipelineConfig="/Game/DeadlineQueues/{deadlineQueue}" '
                     '-stdout -log'
                 )
-                
+
                 # Log for debugging
                 unreal.log(f"Executable: {exe}")
                 unreal.log(f"Arguments: {args}")
@@ -482,19 +482,19 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
                 self.submit_to_deadline(project_name, sequence_name, deadlineQueue, frame_range, deadlinepath, exe, args, chunksize, path, xres, yres, comment, publish)
             return
-        
+
         unreal.log('No Memory Queue, Running Remote')
         cmd_tokens, cmd_switches, cmd_parameters = unreal.SystemLibrary.parse_command_line(
             unreal.SystemLibrary.get_command_line()
         )
-        
+
         try:
             queue_asset_path = cmd_parameters['MoviePipelineConfig']
         except Exception:
             unreal.log_error("Missing '-MoviePipelineConfig' argument")
             self.on_executor_errored_impl_impl()
             return
-        
+
         unreal.log(f"Loading Queue file from path: {queue_asset_path}")
         self.loadedQueue = unreal.EditorAssetLibrary.load_asset(queue_asset_path)
 
@@ -502,31 +502,31 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             unreal.log_error("Failed to load queue from path, is asset missing?")
             self.on_executor_errored_impl()
             return
-            
+
         if len(self.loadedQueue.get_jobs()) == 0:
             unreal.log_error("No jobs in queue to process.")
             self.on_executor_errored_impl()
             return
-            
+
         # Here's a good time to edit the self.loadedQueue if you wanted to, as its
         # now a copy (ie: changes won't affect the asset on disk) such as resolving
         # output directories or checking things out in Shotgrid, etc.
-        
+
         # Start the rendering process
         self.start_job_by_index(0)
-    
+
     @unreal.ufunction(ret=None, params=[int])
     def start_job_by_index(self, inIndex):
         if(inIndex >= len(self.loadedQueue.get_jobs())):
             unreal.log_error("Out of Bounds Job Index!")
             self.on_executor_errored_impl()
-        
+
         self.jobIndex = inIndex
-        
+
         # Load the map in the editor
         map_package_path = unreal.MoviePipelineLibrary.get_map_package_name(
                 self.loadedQueue.get_jobs()[self.jobIndex])
-                
+
         map_load_start_time = unreal.MathLibrary.utc_now()
         unreal.EditorLoadingAndSavingUtils.load_map(map_package_path)
         curr_time = unreal.MathLibrary.utc_now()
@@ -537,7 +537,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             )
         )
         unreal.log(f"Map load took: {total_seconds} seconds.")
-        
+
         # This is a little bit of a change in behavior compared to the in-editor behavior,
         # we first duplicate the job into its own Queue and then use the PIE Executor to
         # render that new queue (which only has one job). This allows us to do two things:
@@ -545,7 +545,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         # 2) Iterate through the queue ourself which gives us better control over updating extenral systems, etc.
         self.currentQueue = unreal.MoviePipelineQueue()
         job = self.currentQueue.duplicate_job(self.loadedQueue.get_jobs()[self.jobIndex])
-        
+
         # Set Output dir
         config = job.get_configuration()
         output_settings = config.find_or_add_setting_by_class(unreal.MoviePipelineOutputSetting)
@@ -560,77 +560,77 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         self.pieExecutor.execute(self.currentQueue)
 
         #self.start_progress_update()
-        
+
         # Start the progress update thread
         self.rendering = True
         self.start_time = unreal.MathLibrary.utc_now()
         progress_thread = threading.Thread(target=self.update_progress_periodically) # Function Running on seperate thread to check progress and output to logs
         progress_thread.start()
-        
+
     def process_exr_to_mov(self, exr_directory):
         oiiotool_path = r"C:\Program Files (x86)\OpenPype\3.14.0\vendor\bin\oiio\windows\oiiotool.exe"  # Path to oiiotool
         ffmpeg_path = r"X:\FFMPEG\bin\ffmpeg.exe"  # Path to ffmpeg
         ocio_config_path = r"X:\CG_Repository\OCIO\aces_1.2\config.ocio"  # Path to your OCIO config file
-        
+
         # Set the OCIO environment variable
         env = os.environ.copy()
         env["OCIO"] = ocio_config_path
-        
+
         # Print OCIO environment variable for debugging
         print("OCIO environment variable set to:", env["OCIO"])
-        
+
         # List all files in the directory
         exr_files = [f for f in os.listdir(exr_directory) if f.endswith('.exr')]
-        
+
         # Check if there are any EXR files in the directory
         if not exr_files:
             print("No EXR files found.")
             return
-        
+
         # Sort the files
         exr_files.sort()
-        
+
         # Create a "converted" folder inside the EXR directory if it doesn't exist
         converted_dir = os.path.join(exr_directory, "converted")
         os.makedirs(converted_dir, exist_ok=True)
-        
+
         # Get the first EXR file to determine the starting frame
         first_exr = exr_files[0]
         match = re.search(r'(\d+)\.exr$', first_exr)
         starting_frame = match.group(1) if match else "0"
-        
+
         # Convert each EXR file to a corresponding PNG in the "converted" folder
         for exr_file in exr_files:
             exr_path = os.path.join(exr_directory, exr_file)
             png_file = exr_file.replace(".exr", ".png")
             png_path = os.path.join(converted_dir, png_file)
-            
+
             oiiotool_cmd = [
                 oiiotool_path,
                 "-i", exr_path,
                 "--colorconvert", "ACES - ACEScg", "Output - sRGB",  # Convert color space from ACEScg to sRGB
                 "-o", png_path
             ]
-            
+
             try:
                 print(f"Converting {exr_file} to {png_file}...")
                 subprocess.run(oiiotool_cmd, check=True, env=env)
             except subprocess.CalledProcessError as e:
                 print(f"Failed to convert {exr_file} to PNG: {e}")
                 return
-        
+
         print("Conversion complete!")
-        
+
         # Determine the correct pattern for the PNG sequence in the converted directory
         first_png = os.listdir(converted_dir)[0]  # Get the first PNG file in the converted directory
         base_name = re.sub(r'\d+\.png$', '', first_png)  # Extract the base name before the frame number
-        
+
         # Construct the PNG sequence pattern for FFMPEG
         png_sequence = os.path.join(converted_dir, f"{base_name}%04d.png")
-        
+
         # Encode the PNG sequence to MOV using ffmpeg
         output_file = os.path.join(exr_directory, f"{base_name}mov")
-        
+
         ffmpeg_cmd = [
             ffmpeg_path,  # Path to your ffmpeg executable
             '-y',  # Overwrite output files without asking
@@ -643,7 +643,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             '-r', '24',  # Frame rate
             output_file  # Output MOV file
         ]
-        
+
         try:
             print("Encoding PNG sequence to MOV...")
             subprocess.run(ffmpeg_cmd, check=True)
@@ -674,7 +674,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         else:
             # Notify whoever created us that we're done
             self.on_executor_finished_impl()
-    
+
     @unreal.ufunction(override=True)
     def is_rendering(self):
         # This will block anyone from trying to use the UI to launch other
@@ -686,7 +686,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
     def get_job_id_from_slave(self):
         # Get the current machine's hostname
         machine_name = socket.gethostname()
-        
+
         # Query the Deadline API for this specific slave's info and settings
         url = f"http://gracie:8081/api/slaves?Name={machine_name}&Data=infosettings"
         headers = {"Content-Type": "application/json"}
@@ -701,7 +701,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                     # Assuming the first item in the list corresponds to this machine
                     slave_data = slave_info[0].get("Info", {})
                     job_id = slave_data.get("JobId")  # Extract the Job ID
-                    
+
                     if job_id:
                         unreal.log(f"Found Job ID: {job_id} for slave: {machine_name}")
                         return job_id
@@ -726,7 +726,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             unreal.log(f"Job ID: {job_id}")
             self.rendering = True
             self.start_time = unreal.MathLibrary.utc_now()
-            
+
             # Start the progress update thread, passing the job ID
             progress_thread = threading.Thread(target=self.update_progress_periodically, args=(job_id,))
             progress_thread.start()
@@ -739,11 +739,11 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             progress = self.currentjob.get_status_progress()  # Between 0-1
             progress = progress * 100  # Convert to percentage
             progress = round(progress)
-            
+
             # Convert progress to string format with a percentage sign
             progress_str = f"{progress}%"
-            
+
             # Log the calculated progress
             unreal.log_warning(f"progress: {progress_str}")
-            
+
             time.sleep(2)  # Adjust the interval as needed

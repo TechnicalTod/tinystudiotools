@@ -3,14 +3,12 @@ import unreal
 import sys
 import subprocess
 from PySide2 import QtGui, QtWidgets, QtCore
-
 import re
 from importlib import reload
 import unrealFilePaths
-reload(unrealFilePaths)
 
-import levelTools.UE_USDSceneBuilder as usd_builder
-import levelTools.UE_USDSceneExporter as usd_exporter
+import UnrealRepository.scripts.levelTools.USDSceneBuilderUnreal as usd_builder
+import UnrealRepository.scripts.levelTools.USDSceneExporterUnreal as usd_exporter
 
 import ImportExportUSDUI as simpleUI
 
@@ -22,7 +20,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(400, 50)
         self.setWindowTitle('Import / Export USD Scene description')

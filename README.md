@@ -14,11 +14,21 @@ In addition to this it requires the following folders to be created
 **Unreal Generic project setup docs**
 https://docs.google.com/document/d/1NRxG60mvPhEzeWD2NCXaiJ-_0_pyBCbX-a-44ctsJb8/edit
 
+### Prerequisite additional apps
+
+- Prism asset manager
+- Advanced skeleton
+
 ### Prerequisite python libs
+These libraries should be pip installed directly into the corresponding tools folder
 
 **MAYA:**
 - Numpy
 
 **UNREAL**
 - Pyside2
+- Numpy
 - transforms3d
+
+**FAQ:**
+1. Must disable Antivirus when re-building the launcher, otherwise it will try to delete the newly created .EXE

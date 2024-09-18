@@ -3,7 +3,7 @@ import os
 # Windows username
 windowsUserName = os.environ.get('USERNAME')
 libDir = os.environ.get('SAGA_LIB_DIR')
-showDir = os.environ.get('SAGA_SHOW_DIR')
+showDir = os.environ.get('SAGA_BASE_SHOW_DIR')
 
 # Directory for artist assets
 artistDir = '{}Artist/{}/'.format(libDir, windowsUserName)

@@ -4,12 +4,9 @@ import unreal
 import sys
 import subprocess
 from PySide2 import QtGui, QtWidgets, QtCore
-
 from importlib import reload
 import unrealFilePaths
-reload(unrealFilePaths)
 import genTools.genUnrealImportUtils as genUnrealImportUtils
-reload(genUnrealImportUtils)
 
 class MainWindow(QtWidgets.QWidget):
 

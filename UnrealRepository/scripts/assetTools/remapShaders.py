@@ -1,13 +1,11 @@
 from PySide2 import QtGui, QtWidgets, QtCore
 from PySide2.QtWidgets import QStyledItemDelegate, QStyleOptionButton, QStyle
 from PySide2.QtCore import Qt, QRect, QEvent
-import json
 import os
 import sys
 import unreal
 from importlib import reload
 import unrealFilePaths
-reload(unrealFilePaths)
 
 class MainWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
