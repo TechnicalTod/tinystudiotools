@@ -32,3 +32,7 @@ These libraries should be pip installed directly into the corresponding tools fo
 
 **FAQ:**
 1. Must disable Antivirus when re-building the launcher, otherwise it will try to delete the newly created .EXE
+2. had to install numpy directly into unreal using:
+**      cd "C:\Program Files\Epic Games\UE_5.3\Engine\Binaries\ThirdParty\Python3\Win64"
+      .\python.exe -m pip install --upgrade numpy**
+

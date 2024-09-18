@@ -277,7 +277,7 @@ class MainWindow(QtWidgets.QWidget):
             self.USDName.setText(f'{assetdir}_{vardir}_{itemver}.usda')
 
     def browseButtonLaunch(self):
-        simpleUI.openWindow()
+        simpleUI.launch()
         self.close()
 
 #open UI

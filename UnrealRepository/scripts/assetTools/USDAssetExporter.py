@@ -5,7 +5,7 @@ from PySide2 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import unrealFilePaths
 
-import UnrealRepository.scripts.assetTools.USDExporter as USDExporter
+import assetTools.USDExporter as USDExporter
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -30,11 +30,10 @@ class MainWindow(QtWidgets.QWidget):
         # button widget
         self.exportUSDButton = QtWidgets.QPushButton('Export Selected', self)
         self.exportUSDButton.clicked.connect(self.exportUSD)
-       
+
         # button widget
-        openFolderIconFilepath = unrealFilePaths.UNREAL_openFolderIconFilepath
         self.browseButton = QtWidgets.QPushButton()
-        self.browseButton.setIcon(QtGui.QIcon(openFolderIconFilepath))
+        self.browseButton.setIcon(QtGui.QIcon("{}/folder.png".format(unrealFilePaths.unrealIconPath)))
         self.browseButton.clicked.connect(self.browseButtonLaunch)
 
         # Initialize the grid layout with spacing
@@ -67,7 +66,7 @@ class MainWindow(QtWidgets.QWidget):
         exportDir = self.exportDir.text()
         USDExporter.exportSelectedAssets(exportDir)
         print(f"Exporting to directory: {exportDir}")
-        
+
     def browseButtonLaunch(self):
         directory = QtWidgets.QFileDialog.getExistingDirectory(self, "Select Export Directory")
         if directory:

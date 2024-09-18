@@ -7,8 +7,8 @@ import re
 from importlib import reload
 import unrealFilePaths
 
-import UnrealRepository.scripts.levelTools.USDSceneBuilderUnreal as usd_builder
-import UnrealRepository.scripts.levelTools.USDSceneExporterUnreal as usd_exporter
+import levelTools.USDSceneBuilderUnreal as usd_builder
+import levelTools.USDSceneExporterUnreal as usd_exporter
 
 import ImportExportUSDUI as simpleUI
 

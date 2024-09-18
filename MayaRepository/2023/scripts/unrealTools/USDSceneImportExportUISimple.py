@@ -1,14 +1,13 @@
 import os
 import sys
-import subprocess
 from PySide2 import QtGui, QtWidgets, QtCore
-
 import mayaFilePaths
-
 import unrealTools.USDSceneBuilderMaya as sceneBuilder
 import unrealTools.USDSceneExporterMaya as sceneExporter
 
 import unrealTools.USDSceneImportExportUISimple as simpleUI
+
+SHOWDRIVE = mayaFilePaths.showDir
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -18,7 +17,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(previsFilePaths.PREVISSHELF_styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
         self.setWindowTitle('Import / Export USD Scene description')
@@ -29,7 +28,7 @@ class MainWindow(QtWidgets.QWidget):
         # Create a combo box and populate it with files from the directory
         self.showDirLabel = QtWidgets.QLabel("Show Directory:")
         self.showDir = QtWidgets.QComboBox(self)
-        self.populateShowComboBox('Y:/')
+        self.populateShowComboBox(SHOWDRIVE)
         self.showDir.currentIndexChanged.connect(lambda: self.populateAssetComboBox())
 
         # Create a combo box and populate it with files from the directory
@@ -55,9 +54,9 @@ class MainWindow(QtWidgets.QWidget):
         self.exportUSDButton.clicked.connect(self.exportUSD)
         
         # button widget
-        openFolderIconFilepath = previsFilePaths.PREVISSHELF_openFolderIconFilepath
+        browseButtoniconPath = mayaFilePaths.mayaShelfIconPath + "folder.png"
         self.browseButton = QtWidgets.QPushButton()
-        self.browseButton.setIcon(QtGui.QIcon(openFolderIconFilepath))
+        self.browseButton.setIcon(QtGui.QIcon(browseButtoniconPath))
         self.browseButton.clicked.connect(lambda: self.browseButtonLaunch())
 
         # Initialize the grid layout with spacing
@@ -104,7 +103,7 @@ class MainWindow(QtWidgets.QWidget):
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         itemdir = self.itemDir.currentText()
-        USDPath = 'Y:/' + showdir + '/assets/SceneDesc/' + assetdir + '/' + itemdir
+        USDPath = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir + '/' + itemdir
         USDPath = USDPath.replace(" ", '_')
         sceneBuilder.BuildScene(USDPath)
 
@@ -114,45 +113,55 @@ class MainWindow(QtWidgets.QWidget):
         assetdir = self.assetDir.currentText()
         itemdir = self.itemDir.currentText()
         if showdir != '' and assetdir != '' and itemdir != '':
-            coredir = 'Y:/' + showdir + '/assets/SceneDesc/' + assetdir
+            coredir = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir
             coredir = coredir.replace(" ", '_')
             if not os.path.exists(coredir):
                 os.makedirs(coredir)
-            USDPath = 'Y:/' + showdir + '/assets/SceneDesc/' + assetdir + '/' + itemdir
+            USDPath = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir + '/' + itemdir
             USDPath = USDPath.replace(" ", '_')
             sceneExporter.ExportScene(USDPath)
             self.populateAssetComboBox()
             self.populateItemComboBox()
 
-
     def populateShowComboBox(self, directory):
         try:
-            # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+            unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
+            directories = [
+                d for d in os.listdir(SHOWDRIVE)
+                if os.path.isdir(os.path.join(SHOWDRIVE, d)) and not d.startswith('.') and d not in unwanted_dirs
+            ]
             self.showDir.addItems(directories)
         except Exception as e:
             self.showDir.addItem(str(e))
             print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
     
     def populateAssetComboBox(self):
-        self.assetDir.clear()
-        showdir = self.showDir.currentText()
-        directory = 'Y:/' + showdir + '/assets/SceneDesc'
+        self.assetDir.clear()  # Clear the current items in the combo box
+        showdir = self.showDir.currentText()  # Get the current text from the show directory combo box
+        directory = os.path.join(SHOWDRIVE, showdir, '03_Production', 'Assets', 'ENV')  # Construct the full directory path
+
         if not os.path.exists(directory):
-            return
+            return  # Exit the function if the directory does not exist
+
+        # Define unwanted directories
+        unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
+
         try:
-            # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
-            self.assetDir.addItems(directories)
+            # List all directories in the given path, excluding unwanted directories
+            directories = [
+                d for d in os.listdir(directory)
+                if os.path.isdir(os.path.join(directory, d)) and d not in unwanted_dirs
+            ]
+            self.assetDir.addItems(directories)  # Add directories to the combo box
         except Exception as e:
-            self.assetDir.addItem(str(e))
+            self.assetDir.addItem(str(e))  # Add the error message as an item in the combo box
             print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
 
     def populateItemComboBox(self):
         self.itemDir.clear()
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
-        directory = 'Y:/' + showdir + '/assets/SceneDesc/' + assetdir
+        directory = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir
         #print(directory)
         if not os.path.exists(directory):
             return

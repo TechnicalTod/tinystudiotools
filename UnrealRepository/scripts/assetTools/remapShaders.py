@@ -54,7 +54,7 @@ class MainWindow(QtWidgets.QWidget):
 
         # button widget
         self.browseButton = QtWidgets.QPushButton()
-        self.browseButton.setIcon(QtGui.QIcon("{}/shaderIcon.png".format(unrealFilePaths.UNREAL_shelfIconPath)))
+        self.browseButton.setIcon(QtGui.QIcon("{}/shaderIcon.png".format(unrealFilePaths.unrealIconPath)))
 
         self.browseButton.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.browseButton.customContextMenuRequested.connect(self.showShaderContextMenu)

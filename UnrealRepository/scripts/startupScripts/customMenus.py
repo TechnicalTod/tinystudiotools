@@ -92,9 +92,9 @@ ImportLevelAndSubLevelsMenuButton.register_menu_entry()
 class ENVBuilderClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import UnrealRepository.scripts.levelTools.USDSceneImportExportUIUnreal as USDSceneImportExportUIUnreal
-        reload (USDSceneImportExportUIUnreal)
-        USDSceneImportExportUIUnreal.openWindow()
+        import levelTools.EnvBuilder as EnvBuilder
+        reload (EnvBuilder)
+        EnvBuilder.openWindow()
 ENVBuilderButton = ENVBuilderClass()
  
 ENVBuilderButton.init_entry(
@@ -112,7 +112,7 @@ ENVBuilderButton.register_menu_entry()
 class USD_Asset_Exporter_Class(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import UnrealRepository.scripts.assetTools.USDAssetExporter as USDAssetExporter
+        import assetTools.USDAssetExporter as USDAssetExporter
         reload (USDAssetExporter)
         USDAssetExporter.openWindow()
 USDExporterMenuButton = USD_Asset_Exporter_Class()
@@ -132,7 +132,7 @@ USDExporterMenuButton.register_menu_entry()
 class USD_ShotVersioner_Class(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import UnrealRepository.scripts.shotTools.shotVersioner as shotVersioner
+        import shotTools.shotVersioner as shotVersioner
         reload (shotVersioner)
         shotVersioner.version_and_fix_redirectors()
 ShotVersionerButton = USD_ShotVersioner_Class()
