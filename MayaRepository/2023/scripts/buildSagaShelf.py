@@ -15,7 +15,7 @@ def createAssetDirUICMD():
 
 def loadTunnelCMD():
     import assetTools.TunnelUi
-    assetTools.TunnelUi.launch()
+    assetTools.TunnelUi.openWindow()
 
 '''CAMERA'''
 

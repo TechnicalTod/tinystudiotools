@@ -2,9 +2,11 @@ import sys
 import json
 import os
 import mayaFilePaths
+import maya.OpenMayaUI as OMUI
+import shiboken2
 from PySide2.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout,
-    QLineEdit, QTabWidget, QListView, QAction, QMessageBox,
+    QLineEdit, QTabWidget, QListView, QAction, QMessageBox, QWidget,
     QStyledItemDelegate, QStyle, QCompleter, QDialog, QLabel, QTabBar, QSizePolicy  # Added QCompleter
 )
 from PySide2.QtCore import (
@@ -13,7 +15,7 @@ from PySide2.QtCore import (
 )
 from PySide2.QtGui import QPixmap, QIcon, QPainter, QFontMetrics
 
-metadataFolderPath = r"A:\megaScansMetadata"
+metadataFolderPath = r"L:\megaScansMetadata"
 megaScansZipsPath = r"M:\Zips"
 
 class StretchedTabBar(QTabBar):
@@ -258,6 +260,13 @@ class Tunnel(QMainWindow):
         # Set window properties
         with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
+        # Get Maya's main window
+        mayaWin = OMUI.MQtUtil.mainWindow()
+        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QWidget)
+
+        # Parent your window to Maya's main window
+        self.setParent(self.mayaWin)
+        self.setWindowFlags(Qt.Window)
         self.setWindowTitle("Tunnel 4K - The Better Bridge")
 
         self.resize(900, 800)
@@ -499,11 +508,16 @@ class Tunnel(QMainWindow):
         dialog = ImageDialog(filtered_assets, clicked_asset_index, self, zip_index=self.zip_index)
         dialog.exec_()  # This will block until the dialog is closed
 
-def launch():
-     global win
-     win = Tunnel()
-     win.raise_()
-     win.activateWindow()
-     win.show()
-
-launch()
+#open UI
+def openWindow():
+    if QApplication.instance():
+        #Id any current instances of tool and destroy
+        for win in (QApplication.allWindows()):
+            print (win.objectName())
+            if 'Import Unreal Assets' in win.objectName():
+                win.destroy()
+    else:
+        QApplication(sys.argv)
+    # load UI into QApp instance
+    Tunnel.window = Tunnel()
+    Tunnel.window.show()
