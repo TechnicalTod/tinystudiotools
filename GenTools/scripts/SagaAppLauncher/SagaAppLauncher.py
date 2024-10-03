@@ -5,6 +5,14 @@ from PySide2.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, Q
 from PySide2.QtGui import QIcon
 from PySide2.QtCore import QSize, QSettings
 
+'''
+HOW TO BUILD:
+-----------------------------------------------
+cd L:\SagaTools\GenTools\scripts\SagaAppLauncher
+python -m PyInstaller .\SagaAppLauncher.spec
+-----------------------------------------------
+'''
+
 def resourcePath(relativePath):
     """Get absolute path to resource, works for PyInstaller"""
     basePath = getattr(sys, '_MEIPASS', os.path.abspath("."))
@@ -13,6 +21,7 @@ def resourcePath(relativePath):
 class SagaLauncher(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowIcon(QIcon(resourcePath('icons/appIcon.ico')))  # Set the window icon here
         self.settings = QSettings("SagaTools", "SagaLauncher")  # Create a QSettings object
         self.initUI()
 

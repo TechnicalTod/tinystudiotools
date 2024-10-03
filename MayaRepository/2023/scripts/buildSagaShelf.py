@@ -13,6 +13,10 @@ def createAssetDirUICMD():
     import assetTools.createAssetDirUI
     assetTools.createAssetDirUI.launch()
 
+def loadTunnelCMD():
+    import assetTools.TunnelUi
+    assetTools.TunnelUi.launch()
+
 '''CAMERA'''
 
 def takeSnapshotCMD():
@@ -349,7 +353,7 @@ def makeShelfAndButtons():
         slapFactoryShelf.addMenu(modellingButton, 'Extract Vis Geo', extractVisGeoCMD)
         slapFactoryShelf.addMenu(modellingButton, 'Fast Retopo Geo', fastRetopoCMD)
         slapFactoryShelf.addMenu(modellingButton, 'Convert Megascans Assets', convertMegascansAssetsCMD)
-
+        slapFactoryShelf.addMenu(modellingButton, 'Load Tunnel Asset Lib', loadTunnelCMD)
 
     except Exception as e:
         import traceback

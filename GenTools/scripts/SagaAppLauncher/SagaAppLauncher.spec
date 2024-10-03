@@ -6,6 +6,7 @@ block_cipher = None
 added_files = [
     ('icons/mayaIcon.png', 'icons'),
     ('icons/unrealIcon.png', 'icons'),
+    ('icons/appIcon.ico', 'icons'),
     ('icons/aeIcon.png', 'icons'),
     ('styles/dark.qss', 'styles'),
     ('batchFiles/launchMaya2023.bat', 'batch_files'),
@@ -34,15 +35,17 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
     [],
-    exclude_binaries=True,
     name='SagaAppLauncher',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
-    icon=None,  # Replace with 'your_icon.ico' if you have an application icon
+    console=False,  # Use False for GUI applications
+    icon='icons/appIcon.ico'  # Include your icon here if necessary
 )
 
 coll = COLLECT(
