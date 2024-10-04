@@ -122,7 +122,7 @@ class MainWindow(QtWidgets.QWidget):
         animationFolderPath = "{}/Animation".format(dirPath)
         if not unreal.EditorAssetLibrary.does_directory_exist(animationFolderPath):
             unreal.EditorAssetLibrary.make_directory(animationFolderPath)
-        
+
         # Create the "Animation" folder within the same directory
         mediaFolderPath = "{}/Media".format(dirPath)
         if not unreal.EditorAssetLibrary.does_directory_exist(mediaFolderPath):
@@ -260,16 +260,16 @@ class MainWindow(QtWidgets.QWidget):
             img_media_source_class,
             None  # No factory needed for this specific asset type
         )
-        
+
         if img_media_source_asset:
             # Create a DirectoryPath struct and set the sequence path
             directory_path = unreal.DirectoryPath(path=sequence_path)
             img_media_source_asset.set_editor_property("sequence_path", directory_path)
-            
+
             # Save the asset
             full_asset_path = f"{asset_path}/{asset_name}"
             unreal.EditorAssetLibrary.save_asset(full_asset_path)
-            
+
             print(f"Successfully created Img Media Source asset: {asset_name} at path: {full_asset_path}")
             return img_media_source_asset
         else:
@@ -299,7 +299,7 @@ class MainWindow(QtWidgets.QWidget):
         if not media_plate_gc:
             print(f"Failed to load Generated Class from MediaPlatePlus Blueprint at: {media_plate_blueprint_path}")
             return
-        
+
         # Load the CineCameraActor
         #camera_actor = unreal.load_object(None, camera_actor_path)
         if not camera_actor:
@@ -343,7 +343,7 @@ class MainWindow(QtWidgets.QWidget):
                 print(f"Failed to load ImgMediaSource asset at: {img_media_source_path}")
         else:
             print("MediaPlatePlus actor does not have a media_plate_component.")
-        
+
         self.add_media_source_to_sequence(media_plate_actor, img_media_source)
 
     def add_media_source_to_sequence(self, media_plate_actor, img_media_source):
@@ -382,7 +382,7 @@ class MainWindow(QtWidgets.QWidget):
     def importImagePlate(self, dirPath, image_plate, camera_component):
         print (image_plate)
         print (camera_component)
-        
+
         mediaFolderPath = "{}/Media".format(dirPath)
 
         pathsplit = dirPath.split('/')
@@ -442,7 +442,7 @@ class MainWindow(QtWidgets.QWidget):
                 # Set the skeletal mesh of the actor
                 skeletal_mesh_component = skeletal_mesh_actor.get_component_by_class(unreal.SkeletalMeshComponent)
                 skeletal_mesh_component.set_skeletal_mesh(loadedSkeletalMesh)
-                
+
                 possessableActor = loaded_level_sequence.add_possessable(skeletal_mesh_actor)
                 self.addSkeletalAnimationTrackOnPossessable(importedAnimation[0], possessableActor, startFrame, endFrame)
 

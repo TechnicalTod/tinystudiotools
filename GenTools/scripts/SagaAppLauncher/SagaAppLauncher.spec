@@ -7,6 +7,7 @@ added_files = [
     ('icons/mayaIcon.png', 'icons'),
     ('icons/unrealIcon.png', 'icons'),
     ('icons/appIcon.ico', 'icons'),
+    ('icons/dropDownArrow.png', 'icons'),
     ('icons/aeIcon.png', 'icons'),
     ('styles/dark.qss', 'styles'),
     ('batchFiles/launchMaya2023.bat', 'batch_files'),

@@ -202,6 +202,12 @@ def measurementToolsCMD():
     import techvisTools.measurementToolsUI
     techvisTools.measurementToolsUI.openWindow()
 
+def importST15CMD():
+    # Specify the path to the Maya scene file
+    scene_path = r'L:\SagaTools\GenTools\cranes\superTechno15.mb'
+    # Import the Maya scene file
+    mc.file(scene_path, i=True, type="mayaBinary", options="v=0", preserveReferences=True, ignoreVersion=True)
+
 '''TEXTURE TOOLS'''
 
 def splitShapesPerUDIMCMD():
@@ -437,11 +443,21 @@ def makeShelfAndButtons():
 
     try:
         techvisToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'techvis.png', 'Techvis Tools')
+
+        # Main Techvis Tools Menu
         slapFactoryShelf.addMenu(techvisToolsButton, 'Measurement Tools', measurementToolsCMD)
+
+        # Add a SubMenu (nested right-click menu)
+        techvisSubMenu = slapFactoryShelf.addSubMenu(techvisToolsButton, 'Import Crane')
+
+        # Add items to the SubMenu
+        slapFactoryShelf.addMenu(techvisSubMenu, 'Super Techno 15', importST15CMD)
+
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print("Failed building rebuildButton", e)
+        print("Failed building Techvis Tools Button", e)
+
 
     try:
         importExportMayaButton = slapFactoryShelf.shelfButton(blankCMD, 'copyPaste.png', 'Copy/Paste Selection')

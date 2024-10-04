@@ -10,6 +10,7 @@ HOW TO BUILD:
 -----------------------------------------------
 cd L:\SagaTools\GenTools\scripts\SagaAppLauncher
 python -m PyInstaller .\SagaAppLauncher.spec
+Might need to hard code the drop down arrow to the local drive?
 -----------------------------------------------
 '''
 

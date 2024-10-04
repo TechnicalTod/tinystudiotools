@@ -152,11 +152,10 @@ QComboBox::drop-down
      border-bottom-right-radius: 3px;
  }
 
-QComboBox::down-arrow
-{
-     image: url(X:\MayaRepository\2023\previs\scripts\icons\dropDownArrow.png);
-     right: 4px;
-     width: 35px;
+QComboBox::down-arrow {
+    image: url('L:/SagaTools/MayaRepository/2023/icons/dropDownArrow.png');
+    right: 4px;
+    width: 35px;
 }
 
 QGroupBox:focus
@@ -452,7 +451,7 @@ QRadioButton::indicator:hover, QCheckBox::indicator:hover
 
 QCheckBox::indicator:checked
 {
-    image:url(:/images/checkbox.png);
+    image:url(:/icons/checkbox.png);
 }
 
 QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
