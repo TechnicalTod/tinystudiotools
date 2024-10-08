@@ -32,12 +32,10 @@ class MainWindow(QtWidgets.QWidget):
         self.importJsonButton = QtWidgets.QPushButton('Import Shot from Scene Description', self)
         self.importJsonButton.clicked.connect(self.importShot)
 
-        openFolderIconFilepath = unrealFilePaths.UNREAL_openFolderIconFilepath
+        openFolderIconFilepath = unrealFilePaths.unrealIconPath + "folder.png"
         self.browseButton = QtWidgets.QPushButton()
         self.browseButton.setIcon(QtGui.QIcon(openFolderIconFilepath))
         self.browseButton.clicked.connect(self.showFileDialog)
-
-        self.importMediaPlateCheckbox = QtWidgets.QCheckBox("Import Media Plate", self)
 
         # layout
         self.grid = QtWidgets.QGridLayout()
@@ -47,11 +45,10 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.addWidget(self.jsonFilePath, 0, 0, 1, 3)
         self.grid.addWidget(self.browseButton, 0, 3, 1, 1)
         self.grid.addWidget(self.importJsonButton, 1, 0, 1, 4)
-        self.grid.addWidget(self.importMediaPlateCheckbox, 2, 0, 1, 4)
         self.setLayout(self.grid)
 
     def showFileDialog(self):
-        initialDir = unrealFilePaths.UNREAL_downloadsFolder
+        initialDir = unrealFilePaths.downloadsFolder
         options = QtWidgets.QFileDialog.Options()
         fileFilter = "Json Files (*.json);;All Files (*)"
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName(self,
@@ -238,9 +235,8 @@ class MainWindow(QtWidgets.QWidget):
 
                 #add cameras to the CAM folder
                 camFolder.add_child_object_binding(possessableActor)
-                if self.importMediaPlateCheckbox.isChecked():
-                    self.importImagePlate(dirPath, ImagePlate, camera_component)
-                    print ("Camera imported into sequencer: {}".format(camera))
+                self.importImagePlate(dirPath, ImagePlate, camera_component)
+                print ("Camera imported into sequencer: {}".format(camera))
                 print ("From import path: {}".format(cameraFbxPath))
 
         # Assign the last imported camera to the track section via the binding ID

@@ -19,7 +19,8 @@ REM Set the Sagatools Unreal repo dir
 set UNREAL_REPO=%SCRIPT_DIR%UnrealRepository/
 
 REM Set the Unreal project directory for the specific show
-set UNREAL_PROJECT_DIR=%SAGA_BASE_SHOW_DIR%%CURRENT_SHOW%\05_Unreal\SAGA_%CURRENT_SHOW%\SAGA_%CURRENT_SHOW%.uproject
+set UNREAL_PROJECT_BASE_DIR=%SAGA_BASE_SHOW_DIR%%CURRENT_SHOW%/05_Unreal/SAGA_%CURRENT_SHOW%/
+set UNREAL_PROJECT_DIR=%UNREAL_PROJECT_BASE_DIR%SAGA_%CURRENT_SHOW%.uproject
 
 set UNREAL_SCRIPT_PATH=^
 %UNREAL_REPO%scripts;^
@@ -36,6 +37,16 @@ echo CURRENT_SHOW is set to %CURRENT_SHOW%
 echo UNREAL_PROJECT_DIR is set to %UNREAL_PROJECT_DIR%
 echo UNREAL_SCRIPT_PATH is set to %UNREAL_SCRIPT_PATH%
 echo PYTHONPATH is set to %PYTHONPATH%
+
+REM Check if Unreal project exists
+if not exist "%UNREAL_PROJECT_DIR%" (
+    echo Unreal project file not found at %UNREAL_PROJECT_DIR%. Exiting...
+
+    REM PowerShell to show a popup message
+    powershell -command "Add-Type -AssemblyName PresentationCore,PresentationFramework;[System.Windows.MessageBox]::Show('Unreal project file not found at %UNREAL_PROJECT_DIR%', 'Error', 'OK', 'Error')"
+
+    exit /b 1
+)
 
 REM Launch Unreal project
 start "" "%UNREAL_PROJECT_DIR%"

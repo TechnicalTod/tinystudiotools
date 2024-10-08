@@ -1,13 +1,15 @@
 import os
 import json
 
-'''import keyring'''
+#import keyring
 
 import unreal
 
-import perforceTools.perforceAutomation as perforceAutomation
+import unrealFilePaths
 
-import renderTools.CustomPIEExecutor
+#import perforceTools.perforceAutomation as perforceAutomation
+
+#import renderTools.CustomPIEExecutor
 
 # Path to the JSON configuration file
 config_file_path = 'config.json'
@@ -23,7 +25,9 @@ os.environ['Ftrack_Server'] = "https://causeandfx.ftrackapp.com"
 '''
 
 # Json Variables
-project_dir = unreal.SystemLibrary.get_project_directory()
+project_dir = unrealFilePaths.unrealBaseDir
+
+print (project_dir)
 
 # Construct the path to the config.json file
 config_file_path = os.path.join(project_dir, 'config.json')
@@ -50,5 +54,5 @@ depth = int(os.getenv('Uproject_Depth'))
 depth += 2
 os.environ['Workspace'] = parts[-depth]
 
-perforceAutomation.pull_unreal_changes_to_perforce(os.getenv("workspace"))
-perforceAutomation.pull_unreal_changes_to_perforce(os.getenv("Shared_Render_Workspace"))
+#perforceAutomation.pull_unreal_changes_to_perforce(os.getenv("workspace"))
+#perforceAutomation.pull_unreal_changes_to_perforce(os.getenv("Shared_Render_Workspace"))
