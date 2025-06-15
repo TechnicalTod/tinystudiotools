@@ -59,7 +59,7 @@ class MainWindow(QtWidgets.QWidget):
     # definition that sets UI to be created in center (used in window prefs)
     def center(self):
         qr = self.frameGeometry()
-        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        cp = QtWidgets.QApplication.primaryScreen().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 

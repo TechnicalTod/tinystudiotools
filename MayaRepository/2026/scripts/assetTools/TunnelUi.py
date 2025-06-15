@@ -3,7 +3,7 @@ import json
 import os
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
-import shiboken2
+import shiboken6
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -289,7 +289,7 @@ class Tunnel(QMainWindow):
             self.setStyleSheet(fh.read())
         # Get Maya's main window
         mayaWin = OMUI.MQtUtil.mainWindow()
-        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QWidget)
+        self.mayaWin = shiboken6.wrapInstance(int(mayaWin), QWidget)
 
         # Parent your window to Maya's main window
         self.setParent(self.mayaWin)

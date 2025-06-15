@@ -4,7 +4,7 @@ from genTools.genUtils import warningPopup
 from PySide6 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
-import shiboken2
+import shiboken6
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -13,7 +13,7 @@ class MainWindow(QtWidgets.QWidget):
         super(MainWindow, self).__init__(parent)
         # Get Maya's main window
         mayaWin = OMUI.MQtUtil.mainWindow()
-        self.mayaWin = shiboken2.wrapInstance(int(mayaWin), QtWidgets.QWidget)
+        self.mayaWin = shiboken6.wrapInstance(int(mayaWin), QtWidgets.QWidget)
 
         # Parent your window to Maya's main window
         self.setParent(self.mayaWin)
@@ -58,7 +58,7 @@ class MainWindow(QtWidgets.QWidget):
     # definition that sets UI to be created in center (used in window prefs)
     def center(self):
         qr = self.frameGeometry()
-        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        cp = QtWidgets.QApplication.primaryScreen().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
