@@ -4,6 +4,7 @@ from genTools.genUtils import warningPopup
 from PySide2 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 
+
 class MainWindow(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
@@ -12,11 +13,10 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        self.style_sheet_file_loc = mayaFilePaths.styleSheetFilepath
-        with open(self.style_sheet_file_loc, "r") as fh:
+        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
-        self.setWindowTitle('Convert textures to PNG')
+        self.setWindowTitle("Convert textures to PNG")
         self.setFocus()
         self.center()
         self.show()
@@ -26,7 +26,7 @@ class MainWindow(QtWidgets.QWidget):
         self.getFilePath.setPlaceholderText("File path")
 
         # button widget
-        self.convertButton = QtWidgets.QPushButton('Convert Image', self)
+        self.convertButton = QtWidgets.QPushButton("Convert Image", self)
         self.convertButton.clicked.connect(self.ConvertImage)
 
         browseButtoniconPath = mayaFilePaths.mayaShelfIconPath + "folder.png"
@@ -48,11 +48,9 @@ class MainWindow(QtWidgets.QWidget):
         initialDir = mayaFilePaths.downloadsFolder
         options = QtWidgets.QFileDialog.Options()
         fileFilter = "Image Files (*.jpg *.jpeg *.png *.bmp *.gif *.tif *.exr);;All Files (*)"
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                "Open Image File",
-                                                initialDir,
-                                                fileFilter,
-                                                options=options)
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open Image File", initialDir, fileFilter, options=options
+        )
         if filePath:
             # Set the selected file path in the QLineEdit
             self.getFilePath.setText(filePath)
@@ -68,25 +66,27 @@ class MainWindow(QtWidgets.QWidget):
     def ConvertImage(self):
         originalImagePath = self.getFilePath.text()
         if not originalImagePath:
-            warningPopup('No texture selected')
+            warningPopup("No texture selected")
         else:
-            originalImagePath = originalImagePath.replace('\\', '\\')
-            print (originalImagePath)
+            originalImagePath = originalImagePath.replace("\\", "\\")
+            print(originalImagePath)
             outputImagePath = originalImagePath[:-4] + ".png"
-            print (outputImagePath)
-            #os.system("ocioconvert " +"%s" % (originalImagePath) +" digisx " "%s" % (outputImagePath) +" srgb")
+            print(outputImagePath)
+            # os.system("ocioconvert " +"%s" % (originalImagePath) +" digisx " "%s" % (outputImagePath) +" srgb")
             cmd = "magick convert {0}".format(originalImagePath) + " {0}".format(outputImagePath)
             returned_value = subprocess.check_output(cmd, shell=True)
-            print (returned_value)
+            print(returned_value)
+
 
 # definition to open UI
 
+
 def launch():
-     global win
-     win = MainWindow()
-     win.raise_()
-     win.activateWindow()
-     win.show()
+    global win
+    win = MainWindow()
+    win.raise_()
+    win.activateWindow()
+    win.show()
 
 
 launch()

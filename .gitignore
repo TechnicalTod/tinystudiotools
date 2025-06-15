@@ -6,7 +6,6 @@ __pycache__/
 
 # Ignore the tools folder
 tools/
-TODO.txt
 
 GenTools/scripts/SagaAppLauncher/build/
 GenTools/scripts/SagaAppLauncher/dist/

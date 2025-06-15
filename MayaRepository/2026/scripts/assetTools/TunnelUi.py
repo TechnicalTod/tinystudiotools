@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QTabWidget,
     QListView,
-    QAction,
     QMessageBox,
     QWidget,
     QStyledItemDelegate,
@@ -36,7 +35,7 @@ from PySide6.QtCore import (
     QRect,
     QStringListModel,  # Added QStringListModel
 )
-from PySide6.QtGui import QPixmap, QIcon, QPainter, QFontMetrics
+from PySide6.QtGui import QPixmap, QIcon, QPainter, QFontMetrics, QAction
 
 metadataFolderPath = r"L:\megaScansMetadata"
 megaScansZipsPath = r"M:\Zips"

@@ -1,0 +1,9 @@
+* Build default Unreal project 
+* get unreal media plate blueprint
+* Get UE master materials
+* Finish testing unreal tools
+* shot publisher needs thourough test
+* Rig puppet with advanced skeleton 
+* Tunnel to import assets ready for setdec
+* Set dec asset publisher should swap out texture paths before publishing
+* artist folders should be under the show drive L:/Artist/werks/assets/test
