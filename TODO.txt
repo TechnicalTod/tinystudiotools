@@ -1,3 +1,7 @@
+maya publisher
+*setup backend DB
+*loooooooooots of fixes and tests
+
 * Build default Unreal project 
 * get unreal media plate blueprint
 * Get UE master materials

@@ -34,6 +34,7 @@ SHELF_ICONS = {
     "Techvis Tools": "techvis.png",
     "Copy/Paste Selection": "copyPaste.png",
     "Take Snapshot": "snapshotTools.png",
+    "Maya Publisher": "publisher.png",
     "Unreal Tools": "unrealTools.png",
 }
 

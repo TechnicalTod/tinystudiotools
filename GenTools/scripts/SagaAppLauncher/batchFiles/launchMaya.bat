@@ -30,13 +30,17 @@ set MAYA_SCRIPT_PATH=^
 %MAYA_REPO%scripts;^
 %MAYA_REPO%shared;^
 %MAYA_REPO%scripts/melScripts;^
-%MAYA_REPO%tools
+%MAYA_REPO%tools;^
+%MAYA_REPO%scripts/Publisher;^
+%MAYA_REPO%scripts/Publisher/src
 
 set PYTHONPATH=^
 %MAYA_REPO%scripts;^
 %MAYA_REPO%shared;^
 %MAYA_REPO%scripts/melScripts;^
-%MAYA_REPO%tools
+%MAYA_REPO%tools;^
+%MAYA_REPO%scripts/Publisher;^
+%MAYA_REPO%scripts/Publisher/src
 
 REM Display the environment paths for verification
 echo MAYA_SCRIPT_PATH is set to %MAYA_SCRIPT_PATH%

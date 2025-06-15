@@ -424,6 +424,13 @@
       "function": "snap"
     },
     {
+      "type": "button",
+      "label": "Maya Publisher",
+      "module": "Publisher.src.ui.main_window",
+      "function": "main",
+      "icon": "L:\\SagaTools\\MayaRepository\\2026\\icons\\test.png"
+    },
+    {
       "type": "spacer"
     },
     {
