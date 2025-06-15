@@ -1,7 +1,7 @@
 import os
 import subprocess
 from genTools.genUtils import warningPopup
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide2 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
@@ -23,7 +23,7 @@ class MainWindow(QtWidgets.QWidget):
     def initUI(self):
         # window prefs
         self.resize(600, 50)
-        self.setWindowTitle("Create asset directories")
+        self.setWindowTitle('Create asset directories')
         self.setFocus()
         self.style_sheet_file_loc = mayaFilePaths.styleSheetFilepath
         with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
@@ -36,12 +36,13 @@ class MainWindow(QtWidgets.QWidget):
         self.getAssetName.setPlaceholderText("Asset Name")
 
         # button widget
-        button = QtWidgets.QPushButton("Create folder structure", self)
+        button = QtWidgets.QPushButton('Create folder structure', self)
         button.clicked.connect(self.makeAssetDir)
 
         # radio widget
-        self.AssetDirRadioButton = QtWidgets.QRadioButton("Asset Directory")
-        self.techvisDirRadioButton = QtWidgets.QRadioButton("Techvis Directory")
+        self.AssetDirRadioButton = QtWidgets.QRadioButton('Asset Directory')
+        self.techvisDirRadioButton = QtWidgets.QRadioButton(
+            'Techvis Directory')
 
         # layout
         self.grid = QtWidgets.QGridLayout()
@@ -67,14 +68,14 @@ class MainWindow(QtWidgets.QWidget):
         folderName = None
 
         if self.AssetDirRadioButton.isChecked():
-            folderName = "assets/"
+            folderName = 'assets/'
         if self.techvisDirRadioButton.isChecked():
-            folderName = "techvis/"
+            folderName = 'techvis/'
 
         assetname = self.getAssetName.text()
 
         if not assetname:
-            warningPopup("No asset name specified")
+            warningPopup('No asset name specified')
         else:
             baseUserDir = mayaFilePaths.artistDir + folderName
 
@@ -83,42 +84,36 @@ class MainWindow(QtWidgets.QWidget):
             dirList.append(mayaFilePaths.artistDir)
             dirList.append(baseUserDir)
             dirList.append(baseUserDir + assetname)
-            dirList.append(baseUserDir + assetname + "/scenes")
-            dirList.append(baseUserDir + assetname + "/sourceimages")
-            dirList.append(baseUserDir + assetname + "/sourceimages/ref")
-            dirList.append(baseUserDir + assetname + "/sourceimages/textures")
-            dirList.append(baseUserDir + assetname + "/tempOBJ")
+            dirList.append(baseUserDir + assetname + '/scenes')
+            dirList.append(baseUserDir + assetname + '/sourceimages')
+            dirList.append(baseUserDir + assetname + '/sourceimages/ref')
+            dirList.append(baseUserDir + assetname + '/sourceimages/textures')
+            dirList.append(baseUserDir + assetname + '/tempOBJ')
 
-            print(baseUserDir + assetname)
+            print (baseUserDir + assetname)
 
             for dir in dirList:
                 try:
                     os.mkdir(dir)
                 except:
-                    print("looks like {0} already exists...skipping".format(dir))
+                    print ('looks like {0} already exists...skipping'.format(dir))
 
             fileList = []
 
-            fileList.append(
-                baseUserDir + assetname + "/scenes/{0}_workingMayaFile_V001.ma".format(assetname)
-            )
-            fileList.append(
-                baseUserDir
-                + assetname
-                + "/scenes/{0}_workingSubstanceFile_V001.spp".format(assetname)
-            )
+            fileList.append(baseUserDir + assetname +
+                            '/scenes/{0}_workingMayaFile_V001.ma'.format(assetname))
+            fileList.append(baseUserDir + assetname +
+                            '/scenes/{0}_workingSubstanceFile_V001.spp'.format(assetname))
 
             for fileName in fileList:
-                with open(fileName, "a"):
+                with open(fileName, 'a'):
                     os.utime(fileName, None)
-
 
 # definition to open UI
 
-
 def launch():
-    global win
-    win = MainWindow()
-    win.raise_()
-    win.activateWindow()
-    win.show()
+     global win
+     win = MainWindow()
+     win.raise_()
+     win.activateWindow()
+     win.show()

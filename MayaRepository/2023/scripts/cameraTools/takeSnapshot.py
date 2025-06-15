@@ -4,41 +4,35 @@ from genTools.genUtils import viewportMessage
 import genTools.versionFile
 import mayaFilePaths
 
-
 def versionSnapshotFile():
     saveDir = mayaFilePaths.downloadsFolder
     fileName = "TmpSnapshot"
     fileExtension = ".png"
-    existing_file, new_file = genTools.versionFile.VersionExistingFilePath(
-        saveDir, fileName, fileExtension
-    )
+    existing_file, new_file = genTools.versionFile.VersionExistingFilePath(saveDir, fileName, fileExtension)
 
     return new_file
 
-
-def capture(
-    camera=None,
-    width=None,
-    height=None,
-    filename=None,
-    complete_filename=versionSnapshotFile(),
-    start_frame=None,
-    end_frame=None,
-    frame=None,
-    format="image",
-    compression="png",
-    quality=100,
-    off_screen=False,
-    viewer=True,
-    isolate=None,
-    maintain_aspect_ratio=True,
-    overwrite=True,
-    raw_frame_numbers=False,
-    camera_options=None,
-    display_options=None,
-    viewport_options=None,
-    viewport2_options=None,
-):
+def capture(camera=None,
+            width=None,
+            height=None,
+            filename=None,
+            complete_filename=versionSnapshotFile(),
+            start_frame=None,
+            end_frame=None,
+            frame=None,
+            format='image',
+            compression='png',
+            quality=100,
+            off_screen=False,
+            viewer=True,
+            isolate=None,
+            maintain_aspect_ratio=True,
+            overwrite=True,
+            raw_frame_numbers=False,
+            camera_options=None,
+            display_options=None,
+            viewport_options=None,
+            viewport2_options=None):
 
     camera = camera or "persp"
 
@@ -57,9 +51,9 @@ def capture(
 
     playblast_kwargs = dict()
     if complete_filename:
-        playblast_kwargs["completeFilename"] = complete_filename
+        playblast_kwargs['completeFilename'] = complete_filename
     if frame:
-        playblast_kwargs["frame"] = frame
+        playblast_kwargs['frame'] = frame
 
     mc.currentTime(mc.currentTime(q=1))
 
@@ -76,41 +70,39 @@ def capture(
         filename=filename,
         widthHeight=[width, height],
         rawFrameNumbers=raw_frame_numbers,
-        **playblast_kwargs
-    )
+        **playblast_kwargs)
     return output
 
 
 def snap(*args, **kwargs):
     # capture single frame
-    frame = kwargs.pop("frame", mc.currentTime(q=1))
-    kwargs["start_frame"] = frame
-    kwargs["end_frame"] = frame
-    kwargs["frame"] = frame
+    frame = kwargs.pop('frame', mc.currentTime(q=1))
+    kwargs['start_frame'] = frame
+    kwargs['end_frame'] = frame
+    kwargs['frame'] = frame
 
     if not isinstance(frame, (int, float)):
-        raise TypeError(
-            "frame must be a single frame (integer or float). " "Use `capture()` for sequences."
-        )
+        raise TypeError("frame must be a single frame (integer or float). "
+                        "Use `capture()` for sequences.")
 
     # override capture defaults
-    format = kwargs.pop("format", "image")
-    compression = kwargs.pop("compression", "png")
-    viewer = kwargs.pop("viewer", False)
-    raw_frame_numbers = kwargs.pop("raw_frame_numbers", True)
-    kwargs["compression"] = compression
-    kwargs["format"] = format
-    kwargs["viewer"] = viewer
-    kwargs["raw_frame_numbers"] = raw_frame_numbers
+    format = kwargs.pop('format', "image")
+    compression = kwargs.pop('compression', "png")
+    viewer = kwargs.pop('viewer', False)
+    raw_frame_numbers = kwargs.pop('raw_frame_numbers', True)
+    kwargs['compression'] = compression
+    kwargs['format'] = format
+    kwargs['viewer'] = viewer
+    kwargs['raw_frame_numbers'] = raw_frame_numbers
 
     # pop snap only keyword arguments
-    clipboard = kwargs.pop("clipboard", False)
+    clipboard = kwargs.pop('clipboard', False)
 
     # perform capture
     output = capture(*args, **kwargs)
 
     def replace(m):
-        """Substitute with frame number"""
+        '''Substitute with frame number'''
         return str(int(frame)).zfill(len(m.group()))
 
     output = re.sub("#+", replace, output)
@@ -118,15 +110,16 @@ def snap(*args, **kwargs):
     # add image to clipboard
     if clipboard:
         image_to_clipboard(output)
-
-    print(output)
-    viewportMessage("Saving screengrab.......", output, "#00ff00")
+    
+    print (output)
+    viewportMessage('Saving screengrab.......', output, '#00ff00')
     return output
 
-
 def image_to_clipboard(path):
-    from PySide6 import QtGui, QtWidgets
-
+    from PySide2 import QtGui, QtWidgets
     image = QtGui.QImage(path)
     clipboard = QtWidgets.QApplication.clipboard()
     clipboard.setImage(image, mode=QtGui.QClipboard.Clipboard)
+
+
+

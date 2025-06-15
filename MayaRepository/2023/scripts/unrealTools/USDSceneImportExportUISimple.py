@@ -1,6 +1,6 @@
 import os
 import sys
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide2 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 import unrealTools.USDSceneBuilderMaya as sceneBuilder
 import unrealTools.USDSceneExporterMaya as sceneExporter
@@ -8,7 +8,6 @@ import unrealTools.USDSceneExporterMaya as sceneExporter
 import unrealTools.USDSceneImportExportUISimple as simpleUI
 
 SHOWDRIVE = mayaFilePaths.showDir
-
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -21,7 +20,7 @@ class MainWindow(QtWidgets.QWidget):
         with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
-        self.setWindowTitle("Import / Export USD Scene description")
+        self.setWindowTitle('Import / Export USD Scene description')
         self.setFocus()
         self.center()
         self.show()
@@ -45,15 +44,15 @@ class MainWindow(QtWidgets.QWidget):
         self.itemDir = QtWidgets.QComboBox(self)
         self.populateItemComboBox()
         self.itemDir.setEditable(True)
-
+        
         # button widget
-        self.importUSDButton = QtWidgets.QPushButton("Import USD", self)
+        self.importUSDButton = QtWidgets.QPushButton('Import USD', self)
         self.importUSDButton.clicked.connect(self.importUSD)
 
         # button widget
-        self.exportUSDButton = QtWidgets.QPushButton("Export USD", self)
+        self.exportUSDButton = QtWidgets.QPushButton('Export USD', self)
         self.exportUSDButton.clicked.connect(self.exportUSD)
-
+        
         # button widget
         browseButtoniconPath = mayaFilePaths.mayaShelfIconPath + "folder.png"
         self.browseButton = QtWidgets.QPushButton()
@@ -65,15 +64,9 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.setSpacing(10)
 
         # Set size policies for buttons
-        self.importUSDButton.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
-        )
-        self.exportUSDButton.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
-        )
-        self.browseButton.setSizePolicy(
-            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
-        )
+        self.importUSDButton.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        self.exportUSDButton.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        self.browseButton.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
 
         # Add widgets to layout with consistent spanning
         self.grid.addWidget(self.showDirLabel, 1, 0)
@@ -84,12 +77,8 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.addWidget(self.itemDir, 3, 1, 1, -1)  # Consistent span
 
         # Adding buttons with adjusted spans to fill space appropriately
-        self.grid.addWidget(
-            self.importUSDButton, 4, 0, 1, 2
-        )  # Spans two columns, adjusted for more space
-        self.grid.addWidget(
-            self.exportUSDButton, 4, 2, 1, 2
-        )  # Spans two columns, adjusted for equal size
+        self.grid.addWidget(self.importUSDButton, 4, 0, 1, 2)  # Spans two columns, adjusted for more space
+        self.grid.addWidget(self.exportUSDButton, 4, 2, 1, 2)  # Spans two columns, adjusted for equal size
         self.grid.addWidget(self.browseButton, 4, 4)  # Single column on the right end
 
         # Set column stretches to manage space distribution effectively
@@ -114,8 +103,8 @@ class MainWindow(QtWidgets.QWidget):
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         itemdir = self.itemDir.currentText()
-        USDPath = SHOWDRIVE + showdir + "/assets/SceneDesc/" + assetdir + "/" + itemdir
-        USDPath = USDPath.replace(" ", "_")
+        USDPath = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir + '/' + itemdir
+        USDPath = USDPath.replace(" ", '_')
         sceneBuilder.BuildScene(USDPath)
 
     # definition called when export button is pressed
@@ -123,97 +112,80 @@ class MainWindow(QtWidgets.QWidget):
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         itemdir = self.itemDir.currentText()
-        if showdir != "" and assetdir != "" and itemdir != "":
-            coredir = SHOWDRIVE + showdir + "/assets/SceneDesc/" + assetdir
-            coredir = coredir.replace(" ", "_")
+        if showdir != '' and assetdir != '' and itemdir != '':
+            coredir = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir
+            coredir = coredir.replace(" ", '_')
             if not os.path.exists(coredir):
                 os.makedirs(coredir)
-            USDPath = SHOWDRIVE + showdir + "/assets/SceneDesc/" + assetdir + "/" + itemdir
-            USDPath = USDPath.replace(" ", "_")
+            USDPath = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir + '/' + itemdir
+            USDPath = USDPath.replace(" ", '_')
             sceneExporter.ExportScene(USDPath)
             self.populateAssetComboBox()
             self.populateItemComboBox()
 
     def populateShowComboBox(self, directory):
         try:
-            unwanted_dirs = {"$RECYCLE.BIN", "System Volume Information"}
+            unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
             directories = [
-                d
-                for d in os.listdir(SHOWDRIVE)
-                if os.path.isdir(os.path.join(SHOWDRIVE, d))
-                and not d.startswith(".")
-                and d not in unwanted_dirs
+                d for d in os.listdir(SHOWDRIVE)
+                if os.path.isdir(os.path.join(SHOWDRIVE, d)) and not d.startswith('.') and d not in unwanted_dirs
             ]
             self.showDir.addItems(directories)
         except Exception as e:
             self.showDir.addItem(str(e))
-            print(
-                f"Error accessing the directory: {str(e)}"
-            )  # Print the error to console for debugging
-
+            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
+    
     def populateAssetComboBox(self):
         self.assetDir.clear()  # Clear the current items in the combo box
-        showdir = (
-            self.showDir.currentText()
-        )  # Get the current text from the show directory combo box
-        directory = os.path.join(
-            SHOWDRIVE, showdir, "03_Production", "Assets", "ENV"
-        )  # Construct the full directory path
+        showdir = self.showDir.currentText()  # Get the current text from the show directory combo box
+        directory = os.path.join(SHOWDRIVE, showdir, '03_Production', 'Assets', 'ENV')  # Construct the full directory path
 
         if not os.path.exists(directory):
             return  # Exit the function if the directory does not exist
 
         # Define unwanted directories
-        unwanted_dirs = {"$RECYCLE.BIN", "System Volume Information"}
+        unwanted_dirs = {'$RECYCLE.BIN', 'System Volume Information'}
 
         try:
             # List all directories in the given path, excluding unwanted directories
             directories = [
-                d
-                for d in os.listdir(directory)
+                d for d in os.listdir(directory)
                 if os.path.isdir(os.path.join(directory, d)) and d not in unwanted_dirs
             ]
             self.assetDir.addItems(directories)  # Add directories to the combo box
         except Exception as e:
             self.assetDir.addItem(str(e))  # Add the error message as an item in the combo box
-            print(
-                f"Error accessing the directory: {str(e)}"
-            )  # Print the error to console for debugging
+            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
 
     def populateItemComboBox(self):
         self.itemDir.clear()
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
-        directory = SHOWDRIVE + showdir + "/assets/SceneDesc/" + assetdir
-        # print(directory)
+        directory = SHOWDRIVE + showdir + '/assets/SceneDesc/' + assetdir
+        #print(directory)
         if not os.path.exists(directory):
             return
         try:
             # List all directories in the given path
-            directories = [
-                d for d in os.listdir(directory) if os.path.isfile(os.path.join(directory, d))
-            ]
+            directories = [d for d in os.listdir(directory) if os.path.isfile(os.path.join(directory, d))]
             self.itemDir.addItems(directories)
             if directories:
                 self.itemDir.setCurrentIndex(len(directories) - 1)
         except Exception as e:
             self.assetDir.addItem(str(e))
-            print(
-                f"Error accessing the directory: {str(e)}"
-            )  # Print the error to console for debugging
+            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
 
     def browseButtonLaunch(self):
         simpleUI.launch()
         self.close()
 
-
-# open UI
+#open UI
 def launch():
     if QtWidgets.QApplication.instance():
-        # Id any current instances of tool and destroy
-        for win in QtWidgets.QApplication.allWindows():
-            print(win.objectName())
-            if "Import/Export Tool" in win.objectName():
+        #Id any current instances of tool and destroy
+        for win in (QtWidgets.QApplication.allWindows()):
+            print (win.objectName())
+            if 'Import/Export Tool' in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)

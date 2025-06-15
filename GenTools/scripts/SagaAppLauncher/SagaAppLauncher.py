@@ -3,7 +3,7 @@ import subprocess
 import os
 import logging
 from datetime import datetime
-from PySide6.QtWidgets import (
+from PySide2.QtWidgets import (
     QApplication,
     QWidget,
     QPushButton,
@@ -13,8 +13,8 @@ from PySide6.QtWidgets import (
     QLabel,
     QTextEdit,
 )
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import QSize, QSettings
+from PySide2.QtGui import QIcon
+from PySide2.QtCore import QSize, QSettings
 
 """
 HOW TO BUILD:

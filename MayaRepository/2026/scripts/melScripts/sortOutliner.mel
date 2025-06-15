@@ -1,0 +1,13 @@
+global proc sortOutliner()
+{
+    string $sel[] = `ls -sl`;
+    //print $sel;
+
+    string $resorted[] = sort($sel);
+    //print $resorted;
+
+    for ($each in $resorted)
+    {
+        reorder -back $each;
+    }
+}

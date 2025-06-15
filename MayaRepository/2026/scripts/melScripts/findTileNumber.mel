@@ -1,0 +1,62 @@
+
+//  ======================================================================
+//  findTileNumber
+//
+//  Description:  Prints the numbers of the tiles containing the selected UVs.
+//
+//  Important:  The script requires a rmanF__mapUDim attribute to perform the calculation.
+//  ======================================================================
+
+
+global proc string[] findTileNumber()
+
+    {
+    string $selUvs[] = `ls -sl -fl`;
+    string $selShape[] = `listRelatives -p -s $selUvs`;
+    // get the udim value  
+    int $fudimValue;
+        if (`attributeExists "rmanF__mapUDim" $selShape[0]`)
+            {
+            $fudimValue = `getAttr ($selShape[0] + ".rmanF__mapUDim")`;
+            }
+        else if (`attributeExists "rmanFudim" $selShape[0]`)
+            {
+            $fudimValue = `getAttr ($selShape[0] + ".rmanFudim")`;
+            }
+        else
+            {
+            error ("Please assign the rmanFudim or rmanF__mapUDim attribute to " + $selShape[0]);
+            }
+
+    // calculate the tile numbers
+    int $getTileNumbers[];
+    string $tileNumbers[];
+        int $i = 0;
+        for ($each in $selUvs)
+            {
+            float $UVtmp[] = `polyEditUV -q -u $each`;
+            int $U = `ceil $UVtmp[0]`;
+            int $V = `ceil $UVtmp[1]`;
+            $getTileNumbers[$i] = ($V - 1) * $fudimValue + $U + 1000;
+            $tileNumbers[$i] = $getTileNumbers[$i];
+            $i++;
+            }          
+
+    string $tileNumbers[] = stringArrayRemoveDuplicates($tileNumbers);
+    $tileNumbers = `sort $tileNumbers`;
+
+    string $printTiles;
+    int $a;
+    for ($each in $tileNumbers)
+        {
+         if ($a==0)
+             $printTiles = $each;
+         else
+            $printTiles = ($printTiles + "," + $each );
+         $a++;
+        }
+   
+    print "\n// The selected UVs are located in the following tiles:\n";
+    print ("//\n// " + $printTiles + "\n//\n");
+    return $tileNumbers;
+    }

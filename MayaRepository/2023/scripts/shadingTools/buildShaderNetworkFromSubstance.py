@@ -1,5 +1,5 @@
 from importlib import reload
-from PySide6 import QtWidgets, QtGui
+from PySide2 import QtWidgets, QtGui
 import genTools.genUtils as genUtils
 from genTools.genUtils import warningPopup
 import os
@@ -10,47 +10,18 @@ import maya.cmds as mc
 import mayaFilePaths
 
 parameterList = {
-    "USDPreviewMaterial": {
-        "diffuse": {
-            "suffix": "Diffuse",
-            "mayaParameter": "diffuseColor",
-            "fileNodeParameter": "outColor",
-        },
-        "emissive": {
-            "suffix": "Emissive",
-            "mayaParameter": "emissiveColor",
-            "fileNodeParameter": "outColor",
-        },
-        "ao": {"suffix": "AO", "mayaParameter": "occlusion", "fileNodeParameter": "outAlpha"},
-        "opacity": {
-            "suffix": "Opacity.",
-            "mayaParameter": "opacity",
-            "fileNodeParameter": "outAlpha",
-        },
-        "metallic": {
-            "suffix": "Metallic",
-            "mayaParameter": "metallic",
-            "fileNodeParameter": "outAlpha",
-        },
-        "roughness": {
-            "suffix": "Roughness",
-            "mayaParameter": "roughness",
-            "fileNodeParameter": "outAlpha",
-        },
-        "normal": {"suffix": "Normal", "mayaParameter": "normal", "fileNodeParameter": "outColor"},
-        "subsurface": {
-            "suffix": "Translucency",
-            "mayaParameter": "clearcoat",
-            "fileNodeParameter": "outAlpha",
-        },
-        "displacement": {
-            "suffix": "Displacement",
-            "mayaParameter": "displacement",
-            "fileNodeParameter": "outAlpha",
-        },
+    'USDPreviewMaterial': {
+        'diffuse': {'suffix': 'Diffuse', 'mayaParameter': 'diffuseColor', 'fileNodeParameter': 'outColor'},
+        'emissive': {'suffix': 'Emissive', 'mayaParameter': 'emissiveColor', 'fileNodeParameter': 'outColor'},
+        'ao': {'suffix': 'AO', 'mayaParameter': 'occlusion', 'fileNodeParameter': 'outAlpha'},
+        'opacity': {'suffix': 'Opacity.', 'mayaParameter': 'opacity', 'fileNodeParameter': 'outAlpha'},
+        'metallic': {'suffix': 'Metallic', 'mayaParameter': 'metallic', 'fileNodeParameter': 'outAlpha'},
+        'roughness': {'suffix': 'Roughness', 'mayaParameter': 'roughness', 'fileNodeParameter': 'outAlpha'},
+        'normal': {'suffix': 'Normal', 'mayaParameter': 'normal', 'fileNodeParameter': 'outColor'},
+        'subsurface': {'suffix': 'Translucency', 'mayaParameter': 'clearcoat', 'fileNodeParameter': 'outAlpha'},
+        'displacement': {'suffix': 'Displacement', 'mayaParameter': 'displacement', 'fileNodeParameter': 'outAlpha'}
     }
 }
-
 
 class MainWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -62,7 +33,7 @@ class MainWindow(QtWidgets.QWidget):
         with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
-        self.setWindowTitle("Build shaders from Substance exports")
+        self.setWindowTitle('Build shaders from Substance exports')
         self.setFocus()
         self.center()
         self.show()
@@ -72,7 +43,7 @@ class MainWindow(QtWidgets.QWidget):
         self.getFilePathTextures.setPlaceholderText("Texture Directory")
 
         # button widget
-        self.createShaderButton = QtWidgets.QPushButton("Build Shader Network(s)", self)
+        self.createShaderButton = QtWidgets.QPushButton('Build Shader Network(s)', self)
         self.createShaderButton.clicked.connect(self.buildNetwork)
 
         # Create the combo box for shader preset selection
@@ -99,12 +70,11 @@ class MainWindow(QtWidgets.QWidget):
 
     def showFileDialog(self):
         initialDir = mayaFilePaths.downloadsFolder
-        dirPath = QtWidgets.QFileDialog.getExistingDirectory(
-            self,
-            "Select Folder",
-            initialDir,
-            QtWidgets.QFileDialog.ShowDirsOnly | QtWidgets.QFileDialog.DontResolveSymlinks,
-        )
+        dirPath = QtWidgets.QFileDialog.getExistingDirectory(self,
+                                                  "Select Folder",
+                                                  initialDir,
+                                                  QtWidgets.QFileDialog.ShowDirsOnly
+                                                  | QtWidgets.QFileDialog.DontResolveSymlinks)
         if dirPath:
             # Set the selected file path in the QLineEdit
             self.getFilePathTextures.setText(dirPath)
@@ -118,11 +88,9 @@ class MainWindow(QtWidgets.QWidget):
 
     def createShader(self, shaderName, shaderType="usdPreviewSurface"):
         newShader = mc.shadingNode(shaderType, name=shaderName, asShader=True)
-        newSG = mc.sets(
-            name="{}_SG".format(newShader), empty=True, renderable=True, noSurfaceShader=True
-        )
-        mc.connectAttr("{}.outColor".format(newShader), "{}.surfaceShader".format(newSG))
-        mc.setAttr("{}.diffuseColor".format(shaderName), 1, 1, 1, type="double3")
+        newSG = mc.sets(name='{}_SG'.format(newShader), empty=True, renderable=True, noSurfaceShader=True)
+        mc.connectAttr('{}.outColor'.format(newShader), '{}.surfaceShader'.format(newSG))
+        mc.setAttr("{}.diffuseColor".format(shaderName), 1,1,1, type='double3')
 
         return newShader
 
@@ -131,7 +99,7 @@ class MainWindow(QtWidgets.QWidget):
         shaderBaseName = "M_" + texSet
         try:
             shader = pm.ls(shaderBaseName, materials=True)
-            shading_engines = shader[0].listConnections(type="shadingEngine")
+            shading_engines = shader[0].listConnections(type='shadingEngine')
             connected_shapes = pm.sets(shading_engines[0], query=True)
         except:
             shader = None
@@ -150,9 +118,7 @@ class MainWindow(QtWidgets.QWidget):
                 # Check if the filename starts with "M_"
                 if not textureFilename.startswith("M_"):
                     # Warning for files not starting with "M_" and stop the function
-                    warningPopup(
-                        "Textures found with incorrect naming, all textures should start with 'M_'"
-                    )
+                    warningPopup("Textures found with incorrect naming, all textures should start with 'M_'")
                     return
 
                 # Further checks if it ends with ".png"
@@ -175,11 +141,7 @@ class MainWindow(QtWidgets.QWidget):
         texturePath = self.getFilePathTextures.text()
         textureSetList, textureList = self.getTextureSetList(texturePath)
 
-        print(
-            "found {} texture sets in the output directory.......".format(
-                len((set(textureSetList)))
-            )
-        )
+        print("found {} texture sets in the output directory.......".format(len((set(textureSetList)))))
 
         for texSet in set(textureSetList):
             print("Processing Texture set ........M_" + texSet)
@@ -187,53 +149,37 @@ class MainWindow(QtWidgets.QWidget):
             existingShader, connected_shapes = self.findExistingShadersInScene(texSet)
 
             if not existingShader:
-                print(
-                    "No shader or connected shapes found for this material, please connect the shader manually"
-                )
-                shader = self.createShader("M_{0}".format(texSet))
-                print(shader)
+                print ("No shader or connected shapes found for this material, please connect the shader manually")
+                shader = self.createShader('M_{0}'.format(texSet))
+                print (shader)
             else:
                 pm.delete(existingShader)
-                print("Existing shader found attempting to connect to existing objects")
+                print ("Existing shader found attempting to connect to existing objects")
                 if not connected_shapes:
-                    print("Shader found but cannot find any connected shapes")
-                shader = self.createShader("M_{0}".format(texSet))
-                shadingGroup = mc.listConnections(shader, type="shadingEngine")
+                    print ("Shader found but cannot find any connected shapes")
+                shader = self.createShader('M_{0}'.format(texSet))
+                shadingGroup = mc.listConnections(shader, type='shadingEngine')
                 pm.sets(shadingGroup[0], e=True, forceElement=connected_shapes)
-                print(shader)
+                print (shader)
 
             # Create and connect textures
             for texPath in textureList:
                 fileName = texPath.split("/")[-1]
                 if texSet in fileName:
                     try:
-                        print(fileName)
+                        print (fileName)
                         fileNameOnly = fileName.split(".1001.png")[0]
                         fileNameParameter = fileName.split(".1001.png")[0].split("_")[-1]
-                        shaderConnectionAttr = (
-                            parameterList.get("USDPreviewMaterial")
-                            .get(fileNameParameter.lower())
-                            .get("mayaParameter")
-                        )
-                        fileNodeConnectionAttr = (
-                            parameterList.get("USDPreviewMaterial")
-                            .get(fileNameParameter.lower())
-                            .get("fileNodeParameter")
-                        )
-                        fileNode = pm.shadingNode("file", asTexture=True)
+                        shaderConnectionAttr = parameterList.get('USDPreviewMaterial').get(fileNameParameter.lower()).get('mayaParameter')
+                        fileNodeConnectionAttr = parameterList.get('USDPreviewMaterial').get(fileNameParameter.lower()).get('fileNodeParameter')
+                        fileNode = pm.shadingNode('file', asTexture=True)
                         fileNode.rename("{}".format(fileNameOnly))
                         pm.setAttr("{}.fileTextureName".format(fileNode), texPath, type="string")
-                        pm.connectAttr(
-                            "{}.{}".format(fileNode, fileNodeConnectionAttr),
-                            "{}.{}".format(shader, shaderConnectionAttr),
-                            force=True,
-                        )
+                        pm.connectAttr("{}.{}".format(fileNode, fileNodeConnectionAttr), "{}.{}".format(shader, shaderConnectionAttr), force=True)
                     except:
                         pass
 
-
 # definition to open UI
-
 
 def launch():
     global win

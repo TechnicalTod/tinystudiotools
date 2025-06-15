@@ -1,20 +1,17 @@
 import os
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide2 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
 import mayaFilePaths
 
 WINDOW = None
 
-
 def getPluginLoaded(plugin):
 
     return mc.pluginInfo(plugin, q=True, loaded=True)
 
-
 def getPluginAutoLoad(plugin):
 
     return mc.pluginInfo(plugin, q=True, autoload=True)
-
 
 def getAllPluginPaths(existingOnly=True):
 
@@ -28,7 +25,7 @@ def getAllPluginPaths(existingOnly=True):
 
 def getPluginsforPath(path):
 
-    fileFilters = [".py", ".so", ".mll"]  # filter by these file types
+    fileFilters = ['.py', '.so', '.mll'] # filter by these file types
 
     if os.path.exists(path):
         pluginFiles = os.listdir(path)
@@ -36,9 +33,8 @@ def getPluginsforPath(path):
         return None
 
     plugins = [i for i in pluginFiles if any(j for j in fileFilters if i.endswith(j))]
-    plugins = [i for i in plugins if not "__" in i]
+    plugins = [i for i in plugins if not '__' in i]
     return plugins or None
-
 
 def getAllPluginsAndPluginPaths():
 
@@ -53,7 +49,6 @@ def getAllPluginsAndPluginPaths():
 
     return output
 
-
 class MainWindow(QtWidgets.QWidget):
 
     def __init__(self):
@@ -61,7 +56,7 @@ class MainWindow(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self)
 
         self.setGeometry(100, 100, 700, 650)
-        self.setWindowTitle("Plugin Manager")
+        self.setWindowTitle('Plugin Manager')
         self.centralLayout = QtWidgets.QVBoxLayout(self)
 
         self.filterBox = FilterBox()
@@ -80,17 +75,17 @@ class MainWindow(QtWidgets.QWidget):
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
 
         button = QtWidgets.QPushButton()
-        button.setText("Browse")
+        button.setText('Browse')
         button.released.connect(self.browseButtonCallback)
         self.horizontalLayout.addWidget(button)
 
         button = QtWidgets.QPushButton()
-        button.setText("Refresh")
+        button.setText('Refresh')
         button.released.connect(self.refreshButtonCallback)
         self.horizontalLayout.addWidget(button)
 
         button = QtWidgets.QPushButton()
-        button.setText("Close")
+        button.setText('Close')
         button.released.connect(self.closeButtonCallback)
         self.horizontalLayout.addWidget(button)
 
@@ -99,11 +94,9 @@ class MainWindow(QtWidgets.QWidget):
     def browseButtonCallback(self):
 
         fileTypeMsg = None
-        msg = ""
-        default = ""
-        fileName, selectedFilter = QtWidgets.QFileDialog.getOpenFileName(
-            None, msg, default, fileTypeMsg
-        )
+        msg = ''
+        default = ''
+        fileName, selectedFilter = QtWidgets.QFileDialog.getOpenFileName(None, msg, default, fileTypeMsg)
         if fileName:
             mc.loadPlugin(fileName)
 
@@ -126,7 +119,6 @@ class MainWindow(QtWidgets.QWidget):
             self.pluginsArea.filterWidgets(textFilter=text, includeCommandsInFilter=True)
         else:
             self.pluginsArea.filterWidgets(textFilter=text, includeCommandsInFilter=False)
-
 
 class PluginContents(QtWidgets.QWidget):
 
@@ -164,9 +156,7 @@ class PluginContents(QtWidgets.QWidget):
 
             self.groupBoxes.append(groupBox)
 
-        spacerItem = QtWidgets.QSpacerItem(
-            20, 122, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
-        )
+        spacerItem = QtWidgets.QSpacerItem(20, 122, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.centralLayout.addItem(spacerItem)
 
     def showAll(self):
@@ -250,7 +240,7 @@ class FilterBox(QtWidgets.QWidget):
 
         # Label
         self.label = QtWidgets.QLabel(self)
-        self.label.setText("Filter")
+        self.label.setText('Filter')
         self.horizontalLayout.addWidget(self.label)
 
         # EditBox
@@ -260,7 +250,7 @@ class FilterBox(QtWidgets.QWidget):
 
         # Checkbox
         self.checkbox = QtWidgets.QCheckBox()
-        self.checkbox.setText("Filter for Commands or Nodes")
+        self.checkbox.setText('Filter for Commands or Nodes')
         self.checkbox.setChecked(False)
         self.checkbox.stateChanged.connect(self.checkBoxClickedCallback)
         self.horizontalLayout.addWidget(self.checkbox)
@@ -272,17 +262,16 @@ class FilterBox(QtWidgets.QWidget):
         else:
             self.modeCheckboxClicked = False
 
-
 class PluginItem(QtWidgets.QWidget):
 
-    def __init__(self, label="pluginName.so", plugin=None):
+    def __init__(self, label='pluginName.so', plugin=None):
 
         QtWidgets.QWidget.__init__(self)
 
         # plugin name
         self.plugin = plugin
 
-        # self.fullPluginPath=fullPluginPath
+        #self.fullPluginPath=fullPluginPath
         loaded = getPluginLoaded(plugin)
         autoLoad = getPluginAutoLoad(plugin)
 
@@ -296,28 +285,26 @@ class PluginItem(QtWidgets.QWidget):
         self.horizontalLayout.addWidget(self.label)
 
         # Spacer
-        spacerItem = QtWidgets.QSpacerItem(
-            40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
-        )
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
 
         # Loaded Checkbox
         self.loadedCheckbox = QtWidgets.QCheckBox()
-        self.loadedCheckbox.setText("Loaded")
+        self.loadedCheckbox.setText('Loaded')
         self.loadedCheckbox.setChecked(loaded)
         self.loadedCheckbox.stateChanged.connect(self.loadedCheckboxCallback)
         self.horizontalLayout.addWidget(self.loadedCheckbox)
 
         # AutoLoad Checkbox
         self.autoLoadCheckbox = QtWidgets.QCheckBox()
-        self.autoLoadCheckbox.setText("Auto Load")
+        self.autoLoadCheckbox.setText('Auto Load')
         self.autoLoadCheckbox.setChecked(autoLoad)
         self.autoLoadCheckbox.stateChanged.connect(self.autoLoadCheckboxCallback)
         self.horizontalLayout.addWidget(self.autoLoadCheckbox)
 
         # Plugin Info Button
         self.infoButton = QtWidgets.QPushButton()
-        self.infoButton.setText("info")
+        self.infoButton.setText('info')
         self.infoButton.released.connect(self.infoButtonCallback)
         if not loaded:
             self.infoButton.setEnabled(False)
@@ -330,11 +317,11 @@ class PluginItem(QtWidgets.QWidget):
             if not getPluginLoaded(self.plugin):
 
                 self.loadedCheckbox.setChecked(False)
-                # raise RuntimeError ('Problem loading plug-in: ' + self.plugin)
+                #raise RuntimeError ('Problem loading plug-in: ' + self.plugin)
         else:
             mc.unloadPlugin(self.plugin)
-            # if getPluginLoaded(self.plugin):
-            # raise RuntimeError ('Problem unloading plug-in: ' + self.plugin)
+            #if getPluginLoaded(self.plugin):
+                #raise RuntimeError ('Problem unloading plug-in: ' + self.plugin)
 
         if self.loadedCheckbox.isChecked():
             self.infoButton.setEnabled(True)
@@ -357,12 +344,12 @@ class PluginItem(QtWidgets.QWidget):
 
     def infoButtonCallback(self):
 
-        name = mc.pluginInfo(self.plugin, query=True, name=True)
+        name = mc.pluginInfo(self.plugin, query=True, name=True )
         path = mc.pluginInfo(self.plugin, query=True, path=True)
         vendor = mc.pluginInfo(self.plugin, query=True, vendor=True)
         version = mc.pluginInfo(self.plugin, query=True, version=True)
         apiVersion = mc.pluginInfo(self.plugin, query=True, apiVersion=True)
-        # unloadOk = mc.pluginInfo(self.plugin, query=True, unloadOk=True)
+        #unloadOk = mc.pluginInfo(self.plugin, query=True, unloadOk=True)
         command = mc.pluginInfo(self.plugin, query=True, command=True)
         tool = mc.pluginInfo(self.plugin, query=True, tool=True)
         dependNode = mc.pluginInfo(self.plugin, query=True, dependNode=True)
@@ -375,29 +362,28 @@ class PluginItem(QtWidgets.QWidget):
         userNamed = mc.pluginInfo(self.plugin, query=True, userNamed=True)
         serviceDescriptions = mc.pluginInfo(self.plugin, query=True, serviceDescriptions=True)
 
-        text = ""
-        text += "Name:\n{0}\n\n".format(name)
-        text += "Path:\n{0}\n\n".format(path)
-        text += "Vendor:\n{0}\n\n".format(vendor)
-        text += "Version:\n{0}\n\n".format(version)
-        text += "Api Version:\n{0}\n\n".format(apiVersion)
+        text = ''
+        text += 'Name:\n{0}\n\n'.format(name)
+        text += 'Path:\n{0}\n\n'.format(path)
+        text += 'Vendor:\n{0}\n\n'.format(vendor)
+        text += 'Version:\n{0}\n\n'.format(version)
+        text += 'Api Version:\n{0}\n\n'.format(apiVersion)
         if command:
-            text += "Command(s):\n{0}\n\n".format("\n".join(command))
+            text += 'Command(s):\n{0}\n\n'.format('\n'.join(command))
         if tool:
-            text += "Tool(s):\n{0}\n\n".format("\n".join(tool))
+            text += 'Tool(s):\n{0}\n\n'.format('\n'.join(tool))
         if dependNode:
-            text += "Dependency Nodes(s):\n{0}\n\n".format("\n".join(dependNode))
+            text += 'Dependency Nodes(s):\n{0}\n\n'.format('\n'.join(dependNode))
 
-        title = name + " Information"
+        title = name + ' Information'
         t = TextOutputForm(parent=self, text=text, width=500, height=500, title=title)
         t.show()
-
 
 class TextOutputForm(QtWidgets.QDialog):
 
     valueChanged = QtCore.Signal(float)
 
-    def __init__(self, parent=None, text="", width=700, height=800, title="Information"):
+    def __init__(self, parent=None, text='', width=700, height=800, title='Information'):
 
         QtWidgets.QDialog.__init__(self, parent)
 
@@ -411,7 +397,7 @@ class TextOutputForm(QtWidgets.QDialog):
         self.verticalLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
 
         self.plainTextEdit = QtWidgets.QPlainTextEdit(self)
-        # self.plainTextEdit = MayaDropableQPlainTextEdit(self)
+        #self.plainTextEdit = MayaDropableQPlainTextEdit(self)
 
         self.plainTextEdit.setPlainText(text)
         self.plainTextEdit.setReadOnly(True)
@@ -421,7 +407,7 @@ class TextOutputForm(QtWidgets.QDialog):
 
         okButton = QtWidgets.QDialogButtonBox.Ok
         self.buttonBox.setStandardButtons(okButton)
-        copyButton = self.buttonBox.addButton("Copy", QtWidgets.QDialogButtonBox.ActionRole)
+        copyButton = self.buttonBox.addButton('Copy', QtWidgets.QDialogButtonBox.ActionRole)
 
         self.verticalLayout.addWidget(self.buttonBox)
 
@@ -432,18 +418,15 @@ class TextOutputForm(QtWidgets.QDialog):
     def copyTextAction(self):
 
         QtWidgets.QApplication.clipboard().setText(self.plainTextEdit.toPlainText())
-        QtWidgets.QApplication.clipboard().setText(
-            self.plainTextEdit.toPlainText(), QtGui.QClipboard.Selection
-        )
+        QtWidgets.QApplication.clipboard().setText(self.plainTextEdit.toPlainText(), QtGui.QClipboard.Selection)
 
     def formatText(self, text):
 
         if isinstance(text, str):
             return str(text)
         if isinstance(text, list):
-            return "\n".join([str(i) for i in text])
+            return '\n'.join([str(i) for i in text])
         return str(text)
-
 
 def launch():
     global win

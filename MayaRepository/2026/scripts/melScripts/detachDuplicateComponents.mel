@@ -1,0 +1,26 @@
+global proc detachDuplicateComponents(){
+	string $cursel[];
+	string $sel[] = `ls -l -sl`;
+	int $index=0;
+	string $allNew[];
+	int $size = `size ($sel)`;
+	while ($index < $size) {
+		$index = `polyNextSelectionBatch $sel $cursel $index`;
+		select -r $cursel;
+		string $oneObjFacets[] = `ls -l -sl`;
+		string $oneObjShape[] = `ls -l -sl -o`;
+		string $newName[] = `duplicate -st $oneObjShape[0]`;
+		print $newName[0];
+		int $i;
+		string $subed[];
+		for ($i = 0; $i < `size ($cursel)`; $i++){
+			$subed[$i] = `substitute ".*\\."  $cursel[$i] ($newName[0]+".")`;
+		}
+	select -r ($newName[0]+".f[0:1000000]");
+	select -d $subed;
+	delete;
+	$allNew[`size $allNew`] = $newName[0];
+	}
+	select -r $allNew;
+	//delete $sel;
+}

@@ -1,0 +1,9 @@
+QPushButton
+{
+    color: #b1b1b1;
+    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #0153a0, stop: 0.1 #0153a0, stop: 0.5 #014c8c, stop: 0.9 #014c8c, stop: 1 #014c8c);
+}
+QPushButton:pressed
+{
+    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #2d2dff, stop: 0.1 #2b2bff, stop: 0.5 #2929ff, stop: 0.9 #2828ff, stop: 1 #2525ff);
+}

@@ -1,0 +1,12 @@
+global proc randomVertCol()
+{
+    polyColorPerVertex -r 0.5 -g 0.5 -b 0.5 -a 1 -cdo;
+    string $Objects[] = `ls -sl -fl`; // Store current selection
+    for ($Obj in $Objects) { // Start a loop that will go through each object in your selection list
+    select -r $Obj; // Select the first object in the loop
+    polyColorPerVertex -rem ; // Remove any vertex color data on the selection
+    float $Color[] = `rand <<1,1,1>>`; // Create 3 random floating numbers
+    polyColorPerVertex -r $Color[0] -g $Color[1] -b $Color[2] -a 0 -rel -cdo; // Assign the random numbers to each RGB channel
+    } // Close your loop
+    select $Objects; // Reselect the original selection
+}
