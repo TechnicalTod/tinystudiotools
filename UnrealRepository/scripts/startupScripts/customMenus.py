@@ -52,9 +52,9 @@ ImportShotFromMayaMenuButton.register_menu_entry()
 class ImportExportUSDUIClass(unreal.ToolMenuEntryScript):
     @unreal.ufunction(override=True)
     def execute(self, context):
-        import levelTools.ImportExportUSDUI_V2 as ImportExportUSDUI_V2
-        reload (ImportExportUSDUI_V2)
-        ImportExportUSDUI_V2.openWindow()
+        import levelTools.USDSceneImportExportUIUnreal as USDSceneImportExportUIUnreal
+        reload (USDSceneImportExportUIUnreal)
+        USDSceneImportExportUIUnreal.openWindow()
 ImportExportUSDUIMenuButton = ImportExportUSDUIClass()
  
 ImportExportUSDUIMenuButton.init_entry(

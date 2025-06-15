@@ -11,7 +11,7 @@ import getpass
 
 import subprocess
 
-'''import keyring'''
+"""import keyring"""
 
 import socket
 
@@ -21,13 +21,15 @@ import threading
 
 import shutil
 
-from PySide2.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
+from PySide6.QtWidgets import QApplication, QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton
 
 from importlib import reload
 import unrealFilePaths
+
 reload(unrealFilePaths)
 
 pieExecutor = None
+
 
 # Publish Comment Window
 class UserInputDialog(QDialog):
@@ -68,26 +70,29 @@ class UserInputDialog(QDialog):
         self.user_input = self.textBox.text()
         self.accept()
 
+
 @unreal.uclass()
-class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostExecutor):
+class MoviePipelineMyCustomEditorRenderExecutor(unreal.MoviePipelinePythonHostExecutor):
     pieExecutor = unreal.uproperty(unreal.MoviePipelinePIEExecutor)
     loadedQueue = unreal.uproperty(unreal.MoviePipelineQueue)
     currentQueue = unreal.uproperty(unreal.MoviePipelineQueue)
     jobIndex = unreal.uproperty(int)
 
-    jobdir = ''
+    jobdir = ""
 
-    def generate_publish_json(self, shotname, start_frame, end_frame, comment, workdir, source_file, xres, yres):
-        FTRACK_API_KEY = os.getenv('Ftrack_API_Key')
-        FTRACK_API_USER = os.getenv('Ftrack_API_User')
-        FTRACK_SERVER = os.getenv('Ftrack_Server')
+    def generate_publish_json(
+        self, shotname, start_frame, end_frame, comment, workdir, source_file, xres, yres
+    ):
+        FTRACK_API_KEY = os.getenv("Ftrack_API_Key")
+        FTRACK_API_USER = os.getenv("Ftrack_API_User")
+        FTRACK_SERVER = os.getenv("Ftrack_Server")
 
-        pattern = r'LS_|_v00\d'
-        cleaned_name = re.sub(pattern, '', shotname)
+        pattern = r"LS_|_v00\d"
+        cleaned_name = re.sub(pattern, "", shotname)
 
-        AVALON_PROJECT = os.getenv('Project_Name')
+        AVALON_PROJECT = os.getenv("Project_Name")
         AVALON_ASSET = cleaned_name
-        AVALON_TASK = os.getenv('Render_Task_Name')
+        AVALON_TASK = os.getenv("Render_Task_Name")
         AVALON_APP_NAME = "unreal/5-0"
         AVALON_WORKDIR = workdir
 
@@ -109,12 +114,9 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             "ftrack": {
                 "FTRACK_API_KEY": FTRACK_API_KEY,
                 "FTRACK_API_USER": FTRACK_API_USER,
-                "FTRACK_SERVER": FTRACK_SERVER
+                "FTRACK_SERVER": FTRACK_SERVER,
             },
-            "intent": {
-                "label": "Dailies",
-                "value": "dailies"
-            },
+            "intent": {"label": "Dailies", "value": "dailies"},
             "instances": [
                 {
                     "asset": AVALON_ASSET,
@@ -128,10 +130,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                     "source": source_file,
                     "subset": "unreal_render_main",
                     "family": "unreal_render",
-                    "families": [
-                        "unreal_render",
-                        "ftrack"
-                    ],
+                    "families": ["unreal_render", "ftrack"],
                     "version": None,
                     "representations": [
                         {
@@ -139,14 +138,12 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                             "files": list_of_files,
                             "stagingDir": workdir,
                             "name": "exr",
-                            "is_sequence": True
+                            "is_sequence": True,
                         }
-                    ]
+                    ],
                 }
             ],
-            "job": {
-                "_id": ""
-            },
+            "job": {"_id": ""},
             "session": {
                 "AVALON_ASSET": AVALON_ASSET,
                 "AVALON_PROJECT": AVALON_PROJECT,
@@ -161,8 +158,8 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                 "AVALON_TIMEOUT": "1000",
                 "schema": "openpype:session-3.0",
                 "OPENPYPE_PUBLISH_JOB": "1",
-                "OPENPYPE_RENDER_JOB": "0"
-            }
+                "OPENPYPE_RENDER_JOB": "0",
+            },
         }
 
         publish_json_file = os.path.join(workdir, "publish_metadata", f"{shotname}_metadata.json")
@@ -173,17 +170,19 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
         return publish_json_file
 
-    def submit_publish_job(self, layer_name, dl_comment, publish_json_file, batch_name, job_dependency, output_dir):
-        FTRACK_API_KEY = os.getenv('Ftrack_API_Key')
-        FTRACK_API_USER = os.getenv('Ftrack_API_User')
-        FTRACK_SERVER = os.getenv('Ftrack_Server')
+    def submit_publish_job(
+        self, layer_name, dl_comment, publish_json_file, batch_name, job_dependency, output_dir
+    ):
+        FTRACK_API_KEY = os.getenv("Ftrack_API_Key")
+        FTRACK_API_USER = os.getenv("Ftrack_API_User")
+        FTRACK_SERVER = os.getenv("Ftrack_Server")
 
-        pattern = r'LS_|_v00\d'
-        cleaned_name = re.sub(pattern, '', layer_name)
+        pattern = r"LS_|_v00\d"
+        cleaned_name = re.sub(pattern, "", layer_name)
 
-        AVALON_PROJECT = os.getenv('Project_Name')
+        AVALON_PROJECT = os.getenv("Project_Name")
         AVALON_ASSET = cleaned_name
-        AVALON_TASK = os.getenv('Render_Task_Name')
+        AVALON_TASK = os.getenv("Render_Task_Name")
         AVALON_APP_NAME = "unreal/5-0"
 
         OPENPYPE_USERNAME = getpass.getuser()
@@ -217,15 +216,11 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                 "EnvironmentKeyValue6": f"AVALON_APP_NAME={AVALON_APP_NAME}",
                 "EnvironmentKeyValue7": f"OPENPYPE_USERNAME={OPENPYPE_USERNAME}",
                 "EnvironmentKeyValue8": "OPENPYPE_PUBLISH_JOB=1",
-                "EnvironmentKeyValue9": "OPENPYPE_RENDER_JOB=0"
+                "EnvironmentKeyValue9": "OPENPYPE_RENDER_JOB=0",
             },
-            "PluginInfo": {
-                "Arguments": publish_cmds,
-                "SingleFrameOnly": True,
-                "Version": "3.0"
-            },
+            "PluginInfo": {"Arguments": publish_cmds, "SingleFrameOnly": True, "Version": "3.0"},
             "AuxFiles": [],
-            "IdOnly": True
+            "IdOnly": True,
         }
 
         url = "http://gracie:8081/api/jobs"
@@ -235,20 +230,44 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         if response.status_code == 200:
             print("Publish job submitted successfully")
             response_json = response.json()
-            return response_json.get('JobID')
+            return response_json.get("JobID")
         else:
             print("Failed to submit publish job")
             print("Status Code:", response.status_code)
             print("Response:", response.text)
             return None
 
-    def submit_to_deadline(self, project_name, sequence_name, deadlineQueue, frame_range, deadlinepath, exe, args, chunksize, source_file, xres, yres, comment, publish):
-        #post_render_script = "X:/UnrealRepository/scripts/post_render_script.py"
+    def submit_to_deadline(
+        self,
+        project_name,
+        sequence_name,
+        deadlineQueue,
+        frame_range,
+        deadlinepath,
+        exe,
+        args,
+        chunksize,
+        source_file,
+        xres,
+        yres,
+        comment,
+        publish,
+    ):
+        # post_render_script = "X:/UnrealRepository/scripts/post_render_script.py"
 
-        start_frame, end_frame = frame_range.split('-')
+        start_frame, end_frame = frame_range.split("-")
 
-        if(publish):
-            publish_json_file = self.generate_publish_json(sequence_name, start_frame, end_frame, comment, deadlinepath, source_file, xres, yres)
+        if publish:
+            publish_json_file = self.generate_publish_json(
+                sequence_name,
+                start_frame,
+                end_frame,
+                comment,
+                deadlinepath,
+                source_file,
+                xres,
+                yres,
+            )
 
         user = getpass.getuser()
 
@@ -276,15 +295,15 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                 "EnvironmentKeyValue": [
                     f"RENDER_DIR={deadlinepath}",
                     f"SOURCE_BASE_NAME={os.path.splitext(os.path.basename(source_file))[0]}",
-                    f"LAYER_NAME={sequence_name}"
-                ]
+                    f"LAYER_NAME={sequence_name}",
+                ],
             },
             "PluginInfo": {
                 "Executable": exe,
                 "Arguments": args,
                 "WorkingDirectory": deadlinepath,
             },
-            "AuxFiles": []
+            "AuxFiles": [],
         }
 
         render_job_info_json = json.dumps(render_job_info)
@@ -298,10 +317,14 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             print("Render job submitted successfully")
             try:
                 render_response_json = render_response.json()
-                render_job_id = render_response_json.get('response') or render_response_json.get('_id') or render_response_json.get('JobID')
+                render_job_id = (
+                    render_response_json.get("response")
+                    or render_response_json.get("_id")
+                    or render_response_json.get("JobID")
+                )
                 print("Render Job ID:", render_job_id)
 
-                if(publish):
+                if publish:
                     # Submit the publish job
                     publish_job_id = self.submit_publish_job(
                         layer_name=sequence_name,
@@ -309,7 +332,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                         publish_json_file=publish_json_file,
                         batch_name=f"{project_name} - {sequence_name}",
                         job_dependency=render_job_id,
-                        output_dir=deadlinepath
+                        output_dir=deadlinepath,
                     )
                     print("Publish Job ID:", publish_job_id)
 
@@ -329,15 +352,15 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         temp_asset = unreal.MoviePipelineQueue()
 
         new_job = temp_asset.allocate_new_job(unreal.MoviePipelineExecutorJob)
-        new_job.job_name = 'test'
+        new_job.job_name = "test"
         new_job.map = job.map
         new_job.sequence = job.sequence
         new_job.set_configuration(job.get_configuration())
 
         asset_path = "/Game/DeadlineQueues"
-        asset_name = "DeadlineQueueAsset" #Will need to uniquely append to names for each queue
+        asset_name = "DeadlineQueueAsset"  # Will need to uniquely append to names for each queue
         timestamp = datetime.now().strftime("%m%d%H%M%S")
-        asset_name = asset_name + timestamp + '_job' + str(jobnum)
+        asset_name = asset_name + timestamp + "_job" + str(jobnum)
         # AssetTools is used to manipulate assets
         asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
 
@@ -345,7 +368,9 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         movie_pipeline_queue_class = unreal.MoviePipelineQueue
 
         # Create a new asset using the specified class
-        queue_asset = asset_tools.create_asset(asset_name, asset_path, movie_pipeline_queue_class, None)
+        queue_asset = asset_tools.create_asset(
+            asset_name, asset_path, movie_pipeline_queue_class, None
+        )
 
         # Get the package path for the asset
         package_path = queue_asset.get_outermost().get_name()
@@ -394,22 +419,28 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             dialog = UserInputDialog()
             result = dialog.exec_()  # This line blocks execution until the dialog is closed
 
-            comment = ''
+            comment = ""
             if result == QDialog.Accepted:
                 comment = dialog.user_input
 
             project_name = unreal.SystemLibrary.get_game_name()
             jobs = memory_queue.get_jobs()
             for job in jobs:
-                if not job.is_enabled():  # Assuming this is the correct method to check if a job is enabled
+                if (
+                    not job.is_enabled()
+                ):  # Assuming this is the correct method to check if a job is enabled
                     unreal.log_warning(f"Skipping job {job.get_name()} as it is not enabled.")
                     continue
                 jobnum += 1
                 config = job.get_configuration()
                 settings = config.get_all_settings()
-                deadlinepath = ''
-                sequence_soft_ref = unreal.SystemLibrary.conv_soft_obj_path_to_soft_obj_ref(job.sequence)
-                frame_start = unreal.MovieSceneSequenceExtensions.get_playback_start(sequence_soft_ref)
+                deadlinepath = ""
+                sequence_soft_ref = unreal.SystemLibrary.conv_soft_obj_path_to_soft_obj_ref(
+                    job.sequence
+                )
+                frame_start = unreal.MovieSceneSequenceExtensions.get_playback_start(
+                    sequence_soft_ref
+                )
                 frame_end = unreal.MovieSceneSequenceExtensions.get_playback_end(sequence_soft_ref)
                 frame_end = frame_end - 1
                 chunksize = frame_end - frame_start + 1
@@ -421,30 +452,32 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                 publish = False
 
                 for setting in settings:
-                    if 'MoviePipelineOutputSetting' in setting.get_class().get_path_name():
+                    if "MoviePipelineOutputSetting" in setting.get_class().get_path_name():
                         output_setting = unreal.MoviePipelineOutputSetting.cast(setting)
                         xres = output_setting.output_resolution.x
                         yres = output_setting.output_resolution.y
                         check_path = output_setting.output_directory.path
-                        if not check_path.startswith('CUSTOM'):
+                        if not check_path.startswith("CUSTOM"):
                             seq_path = sequence_soft_ref.get_path_name()
-                            seq_path = seq_path.split('/', 3)[-1]
-                            last_slash_index = seq_path.rfind('/')
+                            seq_path = seq_path.split("/", 3)[-1]
+                            last_slash_index = seq_path.rfind("/")
                             if last_slash_index != -1:
                                 seq_path = seq_path[:last_slash_index]
-                            seq_path += '/'
-                            basedir = os.getenv('Show_Dir')
-                            seq_path = f'{basedir}/episodes/' + seq_path
+                            seq_path += "/"
+                            basedir = os.getenv("Show_Dir")
+                            seq_path = f"{basedir}/episodes/" + seq_path
 
                             # Split the path into parts and remove the last part
-                            seq_path_parts = seq_path.rstrip('/').split('/')
+                            seq_path_parts = seq_path.rstrip("/").split("/")
                             last_part = seq_path_parts.pop()
-                            seq_path = '/'.join(seq_path_parts)
+                            seq_path = "/".join(seq_path_parts)
 
                             # Construct the new path with the inserted directories
-                            new_seq_path = f'{seq_path}/work/unreal/renders/{last_part}'
+                            new_seq_path = f"{seq_path}/work/unreal/renders/{last_part}"
 
-                            output_setting.output_directory = unreal.DirectoryPath(path=new_seq_path)
+                            output_setting.output_directory = unreal.DirectoryPath(
+                                path=new_seq_path
+                            )
                             deadlinepath = new_seq_path
 
                             publish = True
@@ -459,8 +492,10 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
                 deadlineQueue, assetpath = self.create_queue_from_transient(job, jobnum)
 
-                perforceAutomation.push_specific_changes(os.getenv('Workspace'), assetpath)
-                perforceAutomation.pull_unreal_changes_to_perforce(os.getenv('Shared_Render_Workspace')) # Pull onto X:drive - This is the shared on x for remote machines
+                perforceAutomation.push_specific_changes(os.getenv("Workspace"), assetpath)
+                perforceAutomation.pull_unreal_changes_to_perforce(
+                    os.getenv("Shared_Render_Workspace")
+                )  # Pull onto X:drive - This is the shared on x for remote machines
 
                 # Define the executable path
                 exe = f'C:/Program Files/Epic Games/UE_{os.getenv("UE_version")}/Engine/Binaries/Win64/UnrealEditor-cmd.exe'
@@ -470,7 +505,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                     f'"{os.getenv("Shared_Workspace_Dir")}" '
                     f'-execcmds="py X:/UnrealRepository/scripts/CustomRenderBootstrap.py" '
                     f'-MoviePipelineConfig="/Game/DeadlineQueues/{deadlineQueue}" '
-                    '-stdout -log'
+                    "-stdout -log"
                 )
 
                 # Log for debugging
@@ -478,18 +513,32 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
                 unreal.log(f"Arguments: {args}")
 
                 path = unreal.Paths.get_project_file_path()
-                path = path.replace('\\', '/')
+                path = path.replace("\\", "/")
 
-                self.submit_to_deadline(project_name, sequence_name, deadlineQueue, frame_range, deadlinepath, exe, args, chunksize, path, xres, yres, comment, publish)
+                self.submit_to_deadline(
+                    project_name,
+                    sequence_name,
+                    deadlineQueue,
+                    frame_range,
+                    deadlinepath,
+                    exe,
+                    args,
+                    chunksize,
+                    path,
+                    xres,
+                    yres,
+                    comment,
+                    publish,
+                )
             return
 
-        unreal.log('No Memory Queue, Running Remote')
+        unreal.log("No Memory Queue, Running Remote")
         cmd_tokens, cmd_switches, cmd_parameters = unreal.SystemLibrary.parse_command_line(
             unreal.SystemLibrary.get_command_line()
         )
 
         try:
-            queue_asset_path = cmd_parameters['MoviePipelineConfig']
+            queue_asset_path = cmd_parameters["MoviePipelineConfig"]
         except Exception:
             unreal.log_error("Missing '-MoviePipelineConfig' argument")
             self.on_executor_errored_impl_impl()
@@ -517,7 +566,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
     @unreal.ufunction(ret=None, params=[int])
     def start_job_by_index(self, inIndex):
-        if(inIndex >= len(self.loadedQueue.get_jobs())):
+        if inIndex >= len(self.loadedQueue.get_jobs()):
             unreal.log_error("Out of Bounds Job Index!")
             self.on_executor_errored_impl()
 
@@ -525,16 +574,14 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
         # Load the map in the editor
         map_package_path = unreal.MoviePipelineLibrary.get_map_package_name(
-                self.loadedQueue.get_jobs()[self.jobIndex])
+            self.loadedQueue.get_jobs()[self.jobIndex]
+        )
 
         map_load_start_time = unreal.MathLibrary.utc_now()
         unreal.EditorLoadingAndSavingUtils.load_map(map_package_path)
         curr_time = unreal.MathLibrary.utc_now()
         total_seconds = unreal.MathLibrary.get_total_seconds(
-            unreal.MathLibrary.subtract_date_time_date_time(
-                curr_time,
-                map_load_start_time
-            )
+            unreal.MathLibrary.subtract_date_time_date_time(curr_time, map_load_start_time)
         )
         unreal.log(f"Map load took: {total_seconds} seconds.")
 
@@ -556,21 +603,27 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
         # create the executor and listen to it finish one job
         self.pieExecutor = unreal.MoviePipelinePIEExecutor()
-        self.pieExecutor.on_executor_finished_delegate.add_function_unique(self, "on_individual_job_finished")
+        self.pieExecutor.on_executor_finished_delegate.add_function_unique(
+            self, "on_individual_job_finished"
+        )
         self.pieExecutor.execute(self.currentQueue)
 
-        #self.start_progress_update()
+        # self.start_progress_update()
 
         # Start the progress update thread
         self.rendering = True
         self.start_time = unreal.MathLibrary.utc_now()
-        progress_thread = threading.Thread(target=self.update_progress_periodically) # Function Running on seperate thread to check progress and output to logs
+        progress_thread = threading.Thread(
+            target=self.update_progress_periodically
+        )  # Function Running on seperate thread to check progress and output to logs
         progress_thread.start()
 
     def process_exr_to_mov(self, exr_directory):
         oiiotool_path = r"C:\Program Files (x86)\OpenPype\3.14.0\vendor\bin\oiio\windows\oiiotool.exe"  # Path to oiiotool
         ffmpeg_path = r"X:\FFMPEG\bin\ffmpeg.exe"  # Path to ffmpeg
-        ocio_config_path = r"X:\CG_Repository\OCIO\aces_1.2\config.ocio"  # Path to your OCIO config file
+        ocio_config_path = (
+            r"X:\CG_Repository\OCIO\aces_1.2\config.ocio"  # Path to your OCIO config file
+        )
 
         # Set the OCIO environment variable
         env = os.environ.copy()
@@ -580,7 +633,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         print("OCIO environment variable set to:", env["OCIO"])
 
         # List all files in the directory
-        exr_files = [f for f in os.listdir(exr_directory) if f.endswith('.exr')]
+        exr_files = [f for f in os.listdir(exr_directory) if f.endswith(".exr")]
 
         # Check if there are any EXR files in the directory
         if not exr_files:
@@ -596,7 +649,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
         # Get the first EXR file to determine the starting frame
         first_exr = exr_files[0]
-        match = re.search(r'(\d+)\.exr$', first_exr)
+        match = re.search(r"(\d+)\.exr$", first_exr)
         starting_frame = match.group(1) if match else "0"
 
         # Convert each EXR file to a corresponding PNG in the "converted" folder
@@ -607,9 +660,13 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
             oiiotool_cmd = [
                 oiiotool_path,
-                "-i", exr_path,
-                "--colorconvert", "ACES - ACEScg", "Output - sRGB",  # Convert color space from ACEScg to sRGB
-                "-o", png_path
+                "-i",
+                exr_path,
+                "--colorconvert",
+                "ACES - ACEScg",
+                "Output - sRGB",  # Convert color space from ACEScg to sRGB
+                "-o",
+                png_path,
             ]
 
             try:
@@ -622,8 +679,12 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         print("Conversion complete!")
 
         # Determine the correct pattern for the PNG sequence in the converted directory
-        first_png = os.listdir(converted_dir)[0]  # Get the first PNG file in the converted directory
-        base_name = re.sub(r'\d+\.png$', '', first_png)  # Extract the base name before the frame number
+        first_png = os.listdir(converted_dir)[
+            0
+        ]  # Get the first PNG file in the converted directory
+        base_name = re.sub(
+            r"\d+\.png$", "", first_png
+        )  # Extract the base name before the frame number
 
         # Construct the PNG sequence pattern for FFMPEG
         png_sequence = os.path.join(converted_dir, f"{base_name}%04d.png")
@@ -633,15 +694,22 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
 
         ffmpeg_cmd = [
             ffmpeg_path,  # Path to your ffmpeg executable
-            '-y',  # Overwrite output files without asking
-            '-start_number', starting_frame,  # Set the starting frame number
-            '-framerate', '24',  # Frame rate
-            '-i', png_sequence,  # Input PNG sequence
-            '-vcodec', 'libx264',  # Video codec
-            '-preset', 'slow',  # Encoding preset
-            '-crf', '18',  # Quality setting (lower is better)
-            '-r', '24',  # Frame rate
-            output_file  # Output MOV file
+            "-y",  # Overwrite output files without asking
+            "-start_number",
+            starting_frame,  # Set the starting frame number
+            "-framerate",
+            "24",  # Frame rate
+            "-i",
+            png_sequence,  # Input PNG sequence
+            "-vcodec",
+            "libx264",  # Video codec
+            "-preset",
+            "slow",  # Encoding preset
+            "-crf",
+            "18",  # Quality setting (lower is better)
+            "-r",
+            "24",  # Frame rate
+            output_file,  # Output MOV file
         ]
 
         try:
@@ -663,13 +731,13 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
     def on_individual_job_finished(self, executor, fatal_error):
         unreal.log("Job finished! Job Index: " + str(self.jobIndex))
 
-        print('ffmpeg output')
+        print("ffmpeg output")
         self.process_exr_to_mov(self.jobdir)
 
         self.currentQueue = None
         self.rendering = False
         # Render the next job in the queue (if any)
-        if (self.jobIndex < len(self.loadedQueue.get_jobs()) - 1):
+        if self.jobIndex < len(self.loadedQueue.get_jobs()) - 1:
             self.start_job_by_index(self.jobIndex + 1)
         else:
             # Notify whoever created us that we're done
@@ -681,8 +749,7 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
         # jobs and cause confusion
         return self.pieExecutor is not None
 
-
-    '''
+    """
     def get_job_id_from_slave(self):
         # Get the current machine's hostname
         machine_name = socket.gethostname()
@@ -732,7 +799,8 @@ class MoviePipelineMyCustomEditorRenderExecutor (unreal.MoviePipelinePythonHostE
             progress_thread.start()
         else:
             unreal.log("JOB ID Is not valid")
-    '''
+    """
+
     def update_progress_periodically(self):
         while self.rendering:
             # Calculate progress (this is your logic for tracking progress)

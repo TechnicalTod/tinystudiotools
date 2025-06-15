@@ -1,11 +1,12 @@
 import os
 import unreal
 import sys
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import unrealFilePaths
 
 import assetTools.USDExporter as USDExporter
+
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -18,7 +19,7 @@ class MainWindow(QtWidgets.QWidget):
         with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(400, 50)
-        self.setWindowTitle('Bulk Export Assets to USD')
+        self.setWindowTitle("Bulk Export Assets to USD")
         self.setFocus()
         self.center()
         self.show()
@@ -28,12 +29,14 @@ class MainWindow(QtWidgets.QWidget):
         self.exportDir = QtWidgets.QLineEdit(self)
 
         # button widget
-        self.exportUSDButton = QtWidgets.QPushButton('Export Selected', self)
+        self.exportUSDButton = QtWidgets.QPushButton("Export Selected", self)
         self.exportUSDButton.clicked.connect(self.exportUSD)
 
         # button widget
         self.browseButton = QtWidgets.QPushButton()
-        self.browseButton.setIcon(QtGui.QIcon("{}/folder.png".format(unrealFilePaths.unrealIconPath)))
+        self.browseButton.setIcon(
+            QtGui.QIcon("{}/folder.png".format(unrealFilePaths.unrealIconPath))
+        )
         self.browseButton.clicked.connect(self.browseButtonLaunch)
 
         # Initialize the grid layout with spacing
@@ -41,8 +44,12 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.setSpacing(10)
 
         # Set size policies for buttons
-        self.exportUSDButton.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
-        self.browseButton.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        self.exportUSDButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
+        self.browseButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
+        )
 
         # Add widgets to layout with consistent spanning
         self.grid.addWidget(self.exportDirLabel, 1, 0)
@@ -72,13 +79,14 @@ class MainWindow(QtWidgets.QWidget):
         if directory:
             self.exportDir.setText(directory)
 
-#open UI
+
+# open UI
 def openWindow():
     if QtWidgets.QApplication.instance():
-        #Id any current instances of tool and destroy
-        for win in (QtWidgets.QApplication.allWindows()):
+        # Id any current instances of tool and destroy
+        for win in QtWidgets.QApplication.allWindows():
             print(win.objectName())
-            if 'Import Unreal Assets' in win.objectName():
+            if "Import Unreal Assets" in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)
@@ -87,4 +95,5 @@ def openWindow():
     MainWindow.window.show()
     unreal.parent_external_window_to_slate(MainWindow.window.winId())
 
-#openWindow()
+
+# openWindow()

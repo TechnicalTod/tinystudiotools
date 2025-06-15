@@ -1,11 +1,12 @@
-from PySide2 import QtGui, QtWidgets, QtCore
-from PySide2.QtWidgets import QStyledItemDelegate, QStyleOptionButton, QStyle
-from PySide2.QtCore import Qt, QRect, QEvent
+from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6.QtWidgets import QStyledItemDelegate, QStyleOptionButton, QStyle
+from PySide6.QtCore import Qt, QRect, QEvent
 import os
 import sys
 import unreal
 from importlib import reload
 import unrealFilePaths
+
 
 class MainWindow(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -16,17 +17,17 @@ class MainWindow(QtWidgets.QWidget):
         # window prefs
         with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
-        self.setWindowTitle('Remap multiple shaders')
+        self.setWindowTitle("Remap multiple shaders")
         self.setFocus()
         self.center()
         self.show()
         self.setGeometry(100, 100, 500, 500)
 
-        #window layout setup
+        # window layout setup
         self.createWidgets()
         self.connectLayout()
 
-    #sets UI to be created in center (used in window prefs)
+    # sets UI to be created in center (used in window prefs)
     def center(self):
         qr = self.frameGeometry()
         cp = QtGui.QGuiApplication.primaryScreen().availableGeometry().center()
@@ -35,7 +36,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def createWidgets(self):
         self.treeView = QtWidgets.QTreeView()
-        #self.treeView.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        # self.treeView.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         self.addSelectedButton = QtWidgets.QPushButton("Add (select in CB)")
         self.removeButton = QtWidgets.QPushButton("Remove Selected From List")
         self.toggleButton = QtWidgets.QPushButton("Toggle Selection")
@@ -54,20 +55,22 @@ class MainWindow(QtWidgets.QWidget):
 
         # button widget
         self.browseButton = QtWidgets.QPushButton()
-        self.browseButton.setIcon(QtGui.QIcon("{}/shaderIcon.png".format(unrealFilePaths.unrealIconPath)))
+        self.browseButton.setIcon(
+            QtGui.QIcon("{}/shaderIcon.png".format(unrealFilePaths.unrealIconPath))
+        )
 
         self.browseButton.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.browseButton.customContextMenuRequested.connect(self.showShaderContextMenu)
-        
-        #adjust the import button style sheet
+
+        # adjust the import button style sheet
         with open("{}/importButton.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.remapShadersButton.setStyleSheet(fh.read())
         with open("{}/openButton.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.browseButton.setStyleSheet(fh.read())
 
-    #connect and populate the layout
+    # connect and populate the layout
     def connectLayout(self):
-        #self.treeView.clicked.connect("")
+        # self.treeView.clicked.connect("")
         self.addSelectedButton.clicked.connect(self.populateListWithSelected)
         self.clearButton.clicked.connect(self.clearList)
         self.removeButton.clicked.connect(self.removeSelectedItems)
@@ -83,7 +86,6 @@ class MainWindow(QtWidgets.QWidget):
         buttonLayout.addWidget(self.toggleButton, 2, 0)
         buttonLayout.addWidget(self.clearButton, 3, 0)
 
-
         shaderLayout = QtWidgets.QGridLayout()
         shaderLayout.addWidget(self.loaderShaderName, 0, 0, 1, 5)
         shaderLayout.addWidget(self.browseButton, 0, 5, 1, 1)
@@ -92,8 +94,8 @@ class MainWindow(QtWidgets.QWidget):
         mainLayout.setRowStretch(1, 1)
         mainLayout.addLayout(shaderLayout, 0, 0, 1, 6)
         mainLayout.addWidget(self.treeView, 1, 0, 5, 5)
-        mainLayout.addLayout(buttonLayout, 1, 5, 3, 1, alignment= QtCore.Qt.AlignTop)
-        mainLayout.addWidget(self.remapShadersButton, 4, 5, alignment= QtCore.Qt.AlignBottom)
+        mainLayout.addLayout(buttonLayout, 1, 5, 3, 1, alignment=QtCore.Qt.AlignTop)
+        mainLayout.addWidget(self.remapShadersButton, 4, 5, alignment=QtCore.Qt.AlignBottom)
 
     def populateListWithSelected(self):
         # Get the selected assets from the content browser
@@ -101,7 +103,10 @@ class MainWindow(QtWidgets.QWidget):
         for asset in selected_assets:
             if isinstance(asset, unreal.StaticMesh):
                 staticMeshName = asset.get_name()
-                staticMeshItem = QtGui.QStandardItem(QtGui.QIcon("{}/shaderIcon.png".format(unrealFilePaths.UNREAL_shelfIconPath)), str(staticMeshName))
+                staticMeshItem = QtGui.QStandardItem(
+                    QtGui.QIcon("{}/shaderIcon.png".format(unrealFilePaths.UNREAL_shelfIconPath)),
+                    str(staticMeshName),
+                )
                 staticMeshItem.setFlags(staticMeshItem.flags() & ~QtCore.Qt.ItemIsEditable)
                 staticMeshItem.setData(asset.get_path_name(), Qt.UserRole)
                 self.makeItemBold([staticMeshItem], QtCore.Qt.black)
@@ -115,7 +120,7 @@ class MainWindow(QtWidgets.QWidget):
                     material_item.setData(asset.get_path_name(), Qt.UserRole)
                 self.model.appendRow(staticMeshItem)
 
-        #Expand all groups
+        # Expand all groups
         self.treeView.expandAll()
 
     ##TODO: the following four functions are pretty much copies of each other. these need to be combined. sorry ran out of time
@@ -126,29 +131,29 @@ class MainWindow(QtWidgets.QWidget):
             findAction = menu.addAction("Find in Content Browser")
             findAction.triggered.connect(self.findInContentBrowser)
             menu.exec_(self.treeView.viewport().mapToGlobal(position))
- 
+
     def findInContentBrowser(self):
         indexes = self.treeView.selectedIndexes()
         if indexes:
             index = indexes[0]
             static_mesh = self.model.itemFromIndex(index).data(Qt.UserRole)
-            print (static_mesh)
-            static_mesh_path = static_mesh.split('.')[0]
-            print (static_mesh_path)
+            print(static_mesh)
+            static_mesh_path = static_mesh.split(".")[0]
+            print(static_mesh_path)
             unreal.EditorAssetLibrary.sync_browser_to_objects([static_mesh_path])
 
     def showShaderContextMenu(self, position):
         contextMenu = QtWidgets.QMenu(self)
-        copyAction = contextMenu.addAction('Find in Content Browser')
+        copyAction = contextMenu.addAction("Find in Content Browser")
         copyAction.triggered.connect(self.findShaderInContentBrowser)
         contextMenu.exec_(QtGui.QCursor.pos())
 
     def findShaderInContentBrowser(self):
         indexes = self.treeView.selectedIndexes()
-        shader = self.loaderShaderName.property('material_path')
-        print (shader)
-        shaderPath = shader.split('.')[0]
-        print (shaderPath)
+        shader = self.loaderShaderName.property("material_path")
+        print(shader)
+        shaderPath = shader.split(".")[0]
+        print(shaderPath)
         unreal.EditorAssetLibrary.sync_browser_to_objects([shaderPath])
 
     def getSelectedShader(self):
@@ -160,8 +165,10 @@ class MainWindow(QtWidgets.QWidget):
                 material_name = material.get_name()
                 material_path = material.get_path_name()
                 self.loaderShaderName.setText(material_name)
-                self.loaderShaderName.setProperty('material_path', material_path)
-                self.loaderShaderName.setStyleSheet("QLineEdit { font-weight: bold; color: rgb(80, 153, 255); }")
+                self.loaderShaderName.setProperty("material_path", material_path)
+                self.loaderShaderName.setStyleSheet(
+                    "QLineEdit { font-weight: bold; color: rgb(80, 153, 255); }"
+                )
 
     def remapShaders(self):
         selected_paths = []
@@ -171,9 +178,9 @@ class MainWindow(QtWidgets.QWidget):
                 material_item = static_mesh_item.child(j, 0)
                 if material_item.checkState() == Qt.Checked:
                     static_mesh_path = material_item.data(Qt.UserRole)
-                    static_mesh_path = static_mesh_path.split('.')[0]
-                    loadedShaderPath = self.loaderShaderName.property('material_path')
-                    loadedShaderPath = loadedShaderPath.split('.')[0]
+                    static_mesh_path = static_mesh_path.split(".")[0]
+                    loadedShaderPath = self.loaderShaderName.property("material_path")
+                    loadedShaderPath = loadedShaderPath.split(".")[0]
                     # Load the static mesh
                     static_mesh = unreal.EditorAssetLibrary.load_asset(static_mesh_path)
                     # Load the material instance
@@ -182,7 +189,7 @@ class MainWindow(QtWidgets.QWidget):
                     slot_index = static_mesh.get_material_index(material_item.text())
                     # Apply the material instance to the slot
                     static_mesh.set_material(slot_index, material_instance)
-                    #unreal.EditorAssetLibrary.save_asset(static_mesh_path)
+                    # unreal.EditorAssetLibrary.save_asset(static_mesh_path)
 
     def toggleAll(self):
         # Iterate over all rows (parent items)
@@ -216,7 +223,7 @@ class MainWindow(QtWidgets.QWidget):
         for row in sorted(rows_to_remove, reverse=True):
             self.model.removeRow(row)
 
-    #helper function to make certain items bold with argument to feed in a color
+    # helper function to make certain items bold with argument to feed in a color
     def makeItemBold(self, items, color):
         for item in items:
             font = QtGui.QFont()
@@ -224,7 +231,7 @@ class MainWindow(QtWidgets.QWidget):
             item.setFont(font)
             item.setForeground(QtGui.QBrush(color))
 
-    #funtion to check if folder exists, if not create it
+    # funtion to check if folder exists, if not create it
     def createDir(self, path):
         if not os.path.exists(path):
             os.makedirs(path)
@@ -232,13 +239,14 @@ class MainWindow(QtWidgets.QWidget):
         else:
             print(f"Directory '{path}' already exists.")
 
-#load UI
+
+# load UI
 def openWindow():
     if QtWidgets.QApplication.instance():
-        #Id any current instances of tool and destroy
-        for win in (QtWidgets.QApplication.allWindows()):
-            print (win.objectName())
-            if 'Import Unreal Assets' in win.objectName():
+        # Id any current instances of tool and destroy
+        for win in QtWidgets.QApplication.allWindows():
+            print(win.objectName())
+            if "Import Unreal Assets" in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)

@@ -3,7 +3,7 @@ import os
 # Windows username and Maya version 
 windowsUserName = os.environ.get('USERNAME')
 libDir = os.environ.get('SAGA_LIB_DIR')
-showDir = os.environ.get('SAGA_SHOW_DIR')
+showDir = os.environ.get('SAGA_BASE_SHOW_DIR')
 
 unrealBaseDir = os.environ.get('UNREAL_PROJECT_BASE_DIR')
 unrealProjectDir = os.environ.get('UNREAL_PROJECT_DIR')

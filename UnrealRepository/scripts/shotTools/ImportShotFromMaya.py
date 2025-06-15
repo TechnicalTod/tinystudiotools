@@ -3,10 +3,11 @@ import os
 import unreal
 import sys
 import subprocess
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import unrealFilePaths
 import genTools.genUnrealImportUtils as genUnrealImportUtils
+
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -19,7 +20,7 @@ class MainWindow(QtWidgets.QWidget):
         with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(600, 50)
-        self.setWindowTitle('Import published Shot')
+        self.setWindowTitle("Import published Shot")
         self.setFocus()
         self.center()
         self.show()
@@ -29,7 +30,7 @@ class MainWindow(QtWidgets.QWidget):
         self.jsonFilePath.setPlaceholderText("File path")
 
         # button widget
-        self.importJsonButton = QtWidgets.QPushButton('Import Shot from Scene Description', self)
+        self.importJsonButton = QtWidgets.QPushButton("Import Shot from Scene Description", self)
         self.importJsonButton.clicked.connect(self.importShot)
 
         openFolderIconFilepath = unrealFilePaths.unrealIconPath + "folder.png"
@@ -51,11 +52,9 @@ class MainWindow(QtWidgets.QWidget):
         initialDir = unrealFilePaths.downloadsFolder
         options = QtWidgets.QFileDialog.Options()
         fileFilter = "Json Files (*.json);;All Files (*)"
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(self,
-                                                "Open Json File",
-                                                initialDir,
-                                                fileFilter,
-                                                options=options)
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open Json File", initialDir, fileFilter, options=options
+        )
         if filePath:
             # Set the selected file path in the QLineEdit
             self.jsonFilePath.setText(filePath)
@@ -69,30 +68,32 @@ class MainWindow(QtWidgets.QWidget):
 
     def importShot(self):
         jsonPath = self.jsonFilePath.text()
-        with open(jsonPath, 'r') as file:
+        with open(jsonPath, "r") as file:
             shotSceneDescription = json.load(file)
 
         shotInfoDict = shotSceneDescription[2]["Shot Info"]
-        dirPath, levelAssetPath, sequenceAssetPath, startFrame, endFrame = self.createShotFolders(shotInfoDict)
+        dirPath, levelAssetPath, sequenceAssetPath, startFrame, endFrame = self.createShotFolders(
+            shotInfoDict
+        )
 
         try:
             cameraDict = shotSceneDescription[0]["Cameras"]
             self.importCameras(dirPath, cameraDict, sequenceAssetPath, startFrame, endFrame)
         except:
-            print ("No cameras found in published json")
+            print("No cameras found in published json")
             pass
 
         try:
             puppetDict = shotSceneDescription[1]["Puppets"]
             self.importPuppets(dirPath, puppetDict, sequenceAssetPath, startFrame, endFrame)
         except:
-            print ("No puppets found in published json")
+            print("No puppets found in published json")
             pass
 
         self.saveAssets([levelAssetPath, sequenceAssetPath])
 
     def createShotFolders(self, shotInfoDict):
-        #Unpack Shot Data
+        # Unpack Shot Data
         for shotInfo in shotInfoDict:
             for info, attrs in shotInfo.items():
                 if "Shot Number" in info:
@@ -102,8 +103,8 @@ class MainWindow(QtWidgets.QWidget):
                 if "Version" in info:
                     versionNumber = attrs[0]
                 if "Timeline" in info:
-                    startFrame = attrs[0].get('Start Frame')
-                    endFrame = attrs[0].get('End Frame') + 1
+                    startFrame = attrs[0].get("Start Frame")
+                    endFrame = attrs[0].get("End Frame") + 1
                 if "FPS" in info:
                     fpsVal = attrs[0]
 
@@ -151,8 +152,8 @@ class MainWindow(QtWidgets.QWidget):
             else:
                 print("Failed to create Level Sequence.")
 
-        #update level sequence data
-        #load and open sequence
+        # update level sequence data
+        # load and open sequence
         loadedLevelSequence = unreal.load_asset(sequenceAssetPath)
         unreal.LevelSequenceEditorBlueprintLibrary.open_level_sequence(loadedLevelSequence)
 
@@ -166,11 +167,10 @@ class MainWindow(QtWidgets.QWidget):
             newFrameRate.numerator = int(24.0 * 1000)
             newFrameRate.denominator = 1001
 
-
         loadedLevelSequence.set_display_rate(newFrameRate)
-        #set current frame
+        # set current frame
         unreal.LevelSequenceEditorBlueprintLibrary.set_current_time(float(startFrame))
-        #set playback start/end
+        # set playback start/end
         loadedLevelSequence.set_playback_start(float(startFrame))
         loadedLevelSequence.set_playback_end(float(endFrame))
         loadedLevelSequence.set_view_range_start(float(startFrame - 0) / float(fpsVal))
@@ -182,36 +182,42 @@ class MainWindow(QtWidgets.QWidget):
 
         return dirPath, levelAssetPath, sequenceAssetPath, startFrame, endFrame
 
-    def importCameras(self, dirPath,  cameraDict, sequenceAssetPath, startFrame, endFrame):
+    def importCameras(self, dirPath, cameraDict, sequenceAssetPath, startFrame, endFrame):
         # Specify the path to the Level Sequence asset
         sequence_asset_path = sequenceAssetPath
         # Load the Level Sequence asset
         loaded_level_sequence = unreal.load_asset(sequenceAssetPath)
         # Open the Level Sequence in the editor
         unreal.LevelSequenceEditorBlueprintLibrary.open_level_sequence(loaded_level_sequence)
-        #create Cam Folder
+        # create Cam Folder
         camFolderName = "CAM"
-        camFolder = unreal.MovieSceneSequenceExtensions.add_root_folder_to_sequence(loaded_level_sequence, camFolderName)
+        camFolder = unreal.MovieSceneSequenceExtensions.add_root_folder_to_sequence(
+            loaded_level_sequence, camFolderName
+        )
 
-        #Unpack Camera Data
+        # Unpack Camera Data
         for cameraInfo in cameraDict:
             for camera, attrs in cameraInfo.items():
-                cameraFbxPath = attrs[0].get('Export Path')
-                SensorWidth = attrs[0].get('horizontalFilmAperture')
-                SensorHeight = attrs[0].get('verticalFilmAperture')
-                ImagePlate = attrs[0].get('ImagePlate')
+                cameraFbxPath = attrs[0].get("Export Path")
+                SensorWidth = attrs[0].get("horizontalFilmAperture")
+                SensorHeight = attrs[0].get("verticalFilmAperture")
+                ImagePlate = attrs[0].get("ImagePlate")
 
                 # Spawn a Cine Camera Actor in the level
-                cine_camera = unreal.EditorLevelLibrary.spawn_actor_from_class(unreal.CineCameraActor, unreal.Vector(0,0,0))
+                cine_camera = unreal.EditorLevelLibrary.spawn_actor_from_class(
+                    unreal.CineCameraActor, unreal.Vector(0, 0, 0)
+                )
                 cine_camera.set_folder_path("CAM")
                 # Set a label for the camera actor
-                cine_camera.set_actor_label(camera + '_UECam')
+                cine_camera.set_actor_label(camera + "_UECam")
 
                 # Add the camera as a possessable to the Level Sequence
                 possessableActor = loaded_level_sequence.add_possessable(cine_camera)
                 # Create a binding ID for the camera using the GUID directly from the binding
                 binding_id = unreal.MovieSceneObjectBindingID()
-                binding_id.set_editor_property('guid', possessableActor.get_id())  # Using get_id() method to retrieve the GUID
+                binding_id.set_editor_property(
+                    "guid", possessableActor.get_id()
+                )  # Using get_id() method to retrieve the GUID
                 # Add a Camera Cut Track to the Level Sequence
                 track = loaded_level_sequence.add_track(unreal.MovieSceneCameraCutTrack)
                 # Add a new section to the Camera Cut Track
@@ -220,24 +226,28 @@ class MainWindow(QtWidgets.QWidget):
                 section.set_range(startFrame, endFrame)
 
                 importSetting = unreal.MovieSceneUserImportFBXSettings()
-                importSetting.set_editor_property('match_by_name_only', False)
-                importSetting.set_editor_property('force_front_x_axis', False)
-                importSetting.set_editor_property('create_cameras', False)
-                importSetting.set_editor_property('reduce_keys', False)
-                importSetting.set_editor_property('reduce_keys_tolerance', 0.001)
+                importSetting.set_editor_property("match_by_name_only", False)
+                importSetting.set_editor_property("force_front_x_axis", False)
+                importSetting.set_editor_property("create_cameras", False)
+                importSetting.set_editor_property("reduce_keys", False)
+                importSetting.set_editor_property("reduce_keys_tolerance", 0.001)
                 world = unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
-                cam = unreal.SequencerTools.import_level_sequence_fbx(world, loaded_level_sequence, [possessableActor], importSetting, cameraFbxPath)
+                cam = unreal.SequencerTools.import_level_sequence_fbx(
+                    world, loaded_level_sequence, [possessableActor], importSetting, cameraFbxPath
+                )
 
-                #get camera Component and adjust settings
-                filmback_settings = unreal.CameraFilmbackSettings(sensor_width=SensorWidth, sensor_height=SensorHeight)
+                # get camera Component and adjust settings
+                filmback_settings = unreal.CameraFilmbackSettings(
+                    sensor_width=SensorWidth, sensor_height=SensorHeight
+                )
                 camera_component = cine_camera.get_cine_camera_component()
-                camera_component.set_editor_property('filmback', filmback_settings)
+                camera_component.set_editor_property("filmback", filmback_settings)
 
-                #add cameras to the CAM folder
+                # add cameras to the CAM folder
                 camFolder.add_child_object_binding(possessableActor)
                 self.importImagePlate(dirPath, ImagePlate, camera_component)
-                print ("Camera imported into sequencer: {}".format(camera))
-                print ("From import path: {}".format(cameraFbxPath))
+                print("Camera imported into sequencer: {}".format(camera))
+                print("From import path: {}".format(cameraFbxPath))
 
         # Assign the last imported camera to the track section via the binding ID
         section.set_camera_binding_id(binding_id)
@@ -254,7 +264,7 @@ class MainWindow(QtWidgets.QWidget):
             asset_name,
             asset_path,
             img_media_source_class,
-            None  # No factory needed for this specific asset type
+            None,  # No factory needed for this specific asset type
         )
 
         if img_media_source_asset:
@@ -266,7 +276,9 @@ class MainWindow(QtWidgets.QWidget):
             full_asset_path = f"{asset_path}/{asset_name}"
             unreal.EditorAssetLibrary.save_asset(full_asset_path)
 
-            print(f"Successfully created Img Media Source asset: {asset_name} at path: {full_asset_path}")
+            print(
+                f"Successfully created Img Media Source asset: {asset_name} at path: {full_asset_path}"
+            )
             return img_media_source_asset
         else:
             print(f"Failed to create Img Media Source asset: {asset_name} at path: {asset_path}")
@@ -289,15 +301,19 @@ class MainWindow(QtWidgets.QWidget):
             print(f"Failed to create in-memory MediaPlaylist: {e}")
             return None
 
-    def add_media_plate_plus_to_level(self, img_media_source_path, media_plate_blueprint_path, camera_actor):
+    def add_media_plate_plus_to_level(
+        self, img_media_source_path, media_plate_blueprint_path, camera_actor
+    ):
         # Load the MediaPlatePlus Blueprint Generated Class (BPGC)
         media_plate_gc = unreal.EditorAssetLibrary.load_blueprint_class(media_plate_blueprint_path)
         if not media_plate_gc:
-            print(f"Failed to load Generated Class from MediaPlatePlus Blueprint at: {media_plate_blueprint_path}")
+            print(
+                f"Failed to load Generated Class from MediaPlatePlus Blueprint at: {media_plate_blueprint_path}"
+            )
             return
 
         # Load the CineCameraActor
-        #camera_actor = unreal.load_object(None, camera_actor_path)
+        # camera_actor = unreal.load_object(None, camera_actor_path)
         if not camera_actor:
             print(f"Failed to load camera actor")
             return
@@ -310,7 +326,9 @@ class MainWindow(QtWidgets.QWidget):
         spawn_location = unreal.Vector(0.0, 0.0, 0.0)
 
         # Spawn the MediaPlatePlus actor in the level
-        media_plate_actor = unreal.EditorLevelLibrary.spawn_actor_from_class(media_plate_gc, spawn_location)
+        media_plate_actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+            media_plate_gc, spawn_location
+        )
 
         if not media_plate_actor:
             print("Failed to spawn MediaPlatePlus actor.")
@@ -368,30 +386,36 @@ class MainWindow(QtWidgets.QWidget):
                 end_frame = level_sequence.get_playback_end()
                 media_section.set_range(start_frame, end_frame)
 
-                print(f"Successfully set media section range from frame {start_frame} to {end_frame}.")
-                print("Successfully added MediaPlatePlus to the level sequence with the correct media source.")
+                print(
+                    f"Successfully set media section range from frame {start_frame} to {end_frame}."
+                )
+                print(
+                    "Successfully added MediaPlatePlus to the level sequence with the correct media source."
+                )
             else:
                 print("Failed to create media source track on the possessable.")
         except Exception as e:
             print(f"Failed to add MediaPlatePlus to the level sequence: {e}")
 
     def importImagePlate(self, dirPath, image_plate, camera_component):
-        print (image_plate)
-        print (camera_component)
+        print(image_plate)
+        print(camera_component)
 
         mediaFolderPath = "{}/Media".format(dirPath)
 
-        pathsplit = dirPath.split('/')
+        pathsplit = dirPath.split("/")
         partnames = pathsplit[-2:]
-        name = '_'.join(partnames)
+        name = "_".join(partnames)
 
         camera_actor = camera_component.get_owner()
 
-        platedir = image_plate.split('/')
-        EXRDir = '/'.join(platedir[:-1])
+        platedir = image_plate.split("/")
+        EXRDir = "/".join(platedir[:-1])
 
         self.create_img_source(name, mediaFolderPath, EXRDir)
-        self.add_media_plate_plus_to_level(f'{mediaFolderPath}/{name}', "/Game/Blueprints/Utilities/MediaPlatePlus", camera_actor)
+        self.add_media_plate_plus_to_level(
+            f"{mediaFolderPath}/{name}", "/Game/Blueprints/Utilities/MediaPlatePlus", camera_actor
+        )
 
     def importPuppets(self, dirPath, puppetDict, sequenceAssetPath, startFrame, endFrame):
         animationFolderPath = "{}/Animation".format(dirPath)
@@ -401,19 +425,23 @@ class MainWindow(QtWidgets.QWidget):
         loaded_level_sequence = unreal.load_asset(sequenceAssetPath)
         # Open the Level Sequence in the editor
         unreal.LevelSequenceEditorBlueprintLibrary.open_level_sequence(loaded_level_sequence)
-        #create Cam Folder
+        # create Cam Folder
         puppetFolderName = "ANIM"
-        puppetFolder = unreal.MovieSceneSequenceExtensions.add_root_folder_to_sequence(loaded_level_sequence, puppetFolderName)
-        #Unpack Puppet Data
+        puppetFolder = unreal.MovieSceneSequenceExtensions.add_root_folder_to_sequence(
+            loaded_level_sequence, puppetFolderName
+        )
+        # Unpack Puppet Data
         for puppetInfo in puppetDict:
             for puppet, attrs in puppetInfo.items():
-                puppetAssetType = attrs[0].get('assetType')
-                puppetAssetName = attrs[0].get('assetName')
-                puppetVariantName = attrs[0].get('variant')
-                puppetVersion = attrs[0].get('version')
-                puppetFbxPath = attrs[0].get('Export Path')
+                puppetAssetType = attrs[0].get("assetType")
+                puppetAssetName = attrs[0].get("assetName")
+                puppetVariantName = attrs[0].get("variant")
+                puppetVersion = attrs[0].get("version")
+                puppetFbxPath = attrs[0].get("Export Path")
 
-                skeletalMeshBasePath = "/Game/01_Assets/{}/{}/{}/{}/".format(puppetAssetType, puppetAssetName, puppetVariantName, puppetVersion)
+                skeletalMeshBasePath = "/Game/01_Assets/{}/{}/{}/{}/".format(
+                    puppetAssetType, puppetAssetName, puppetVariantName, puppetVersion
+                )
 
                 # List all assets in the specified folder
                 all_assets = unreal.EditorAssetLibrary.list_assets(skeletalMeshBasePath)
@@ -429,54 +457,68 @@ class MainWindow(QtWidgets.QWidget):
                     if isinstance(asset, unreal.Skeleton):
                         skeletonPath = asset_path
 
-                importedAnimation = self.importAnimationFBX(puppetFbxPath, animationFolderPath, skeletonPath)
+                importedAnimation = self.importAnimationFBX(
+                    puppetFbxPath, animationFolderPath, skeletonPath
+                )
                 loadedSkeletalMesh = unreal.load_asset(skeletalMeshPath)
                 # Spawn the skeletal mesh actor
-                skeletal_mesh_actor = unreal.EditorLevelLibrary.spawn_actor_from_class(unreal.SkeletalMeshActor, unreal.Vector(0,0,0))
+                skeletal_mesh_actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+                    unreal.SkeletalMeshActor, unreal.Vector(0, 0, 0)
+                )
                 skeletal_mesh_actor.set_actor_label(puppet)
                 skeletal_mesh_actor.set_folder_path("ANIM")
                 # Set the skeletal mesh of the actor
-                skeletal_mesh_component = skeletal_mesh_actor.get_component_by_class(unreal.SkeletalMeshComponent)
+                skeletal_mesh_component = skeletal_mesh_actor.get_component_by_class(
+                    unreal.SkeletalMeshComponent
+                )
                 skeletal_mesh_component.set_skeletal_mesh(loadedSkeletalMesh)
 
                 possessableActor = loaded_level_sequence.add_possessable(skeletal_mesh_actor)
-                self.addSkeletalAnimationTrackOnPossessable(importedAnimation[0], possessableActor, startFrame, endFrame)
+                self.addSkeletalAnimationTrackOnPossessable(
+                    importedAnimation[0], possessableActor, startFrame, endFrame
+                )
 
                 puppetFolder.add_child_object_binding(possessableActor)
 
     def importAnimationFBX(self, puppetFbxPath, animationFolderPath, skeletonPath):
-        #build import task and run it
-        importMeshTask = genUnrealImportUtils.buildImportTask(puppetFbxPath,
-                                                            animationFolderPath,
-                                                            genUnrealImportUtils.buildAnimationImportOptions(skeletonPath)
+        # build import task and run it
+        importMeshTask = genUnrealImportUtils.buildImportTask(
+            puppetFbxPath,
+            animationFolderPath,
+            genUnrealImportUtils.buildAnimationImportOptions(skeletonPath),
         )
         importedMesh = genUnrealImportUtils.executeImportTasks([importMeshTask])
         return importedMesh
 
-    def addSkeletalAnimationTrackOnPossessable(self, animation_path, possessableActor, startFrame, endFrame):
+    def addSkeletalAnimationTrackOnPossessable(
+        self, animation_path, possessableActor, startFrame, endFrame
+    ):
         # Get Animation
         animation_asset = unreal.AnimSequence.cast(unreal.load_asset(animation_path))
         params = unreal.MovieSceneSkeletalAnimationParams()
-        params.set_editor_property('Animation', animation_asset)
+        params.set_editor_property("Animation", animation_asset)
         # Add track
-        animation_track = possessableActor.add_track(track_type=unreal.MovieSceneSkeletalAnimationTrack)
+        animation_track = possessableActor.add_track(
+            track_type=unreal.MovieSceneSkeletalAnimationTrack
+        )
         # Add section
         animation_section = animation_track.add_section()
-        animation_section.set_editor_property('Params', params)
+        animation_section.set_editor_property("Params", params)
         animation_section.set_range(startFrame, endFrame)
 
     def saveAssets(self, assetList):
         for asset in assetList:
-            assetNameClean = str(asset).split('.')[0]
+            assetNameClean = str(asset).split(".")[0]
             unreal.EditorAssetLibrary.save_asset(assetNameClean)
 
-#open UI
+
+# open UI
 def openWindow():
     if QtWidgets.QApplication.instance():
-        #Id any current instances of tool and destroy
-        for win in (QtWidgets.QApplication.allWindows()):
-            print (win.objectName())
-            if 'Import Unreal Assets' in win.objectName():
+        # Id any current instances of tool and destroy
+        for win in QtWidgets.QApplication.allWindows():
+            print(win.objectName())
+            if "Import Unreal Assets" in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)

@@ -4,19 +4,43 @@ import os
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
-from PySide2.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QHBoxLayout,
-    QLineEdit, QTabWidget, QListView, QAction, QMessageBox, QWidget,
-    QStyledItemDelegate, QStyle, QCompleter, QDialog, QLabel, QTabBar, QSizePolicy  # Added QCompleter
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QPushButton,
+    QHBoxLayout,
+    QLineEdit,
+    QTabWidget,
+    QListView,
+    QAction,
+    QMessageBox,
+    QWidget,
+    QStyledItemDelegate,
+    QStyle,
+    QCompleter,
+    QDialog,
+    QLabel,
+    QTabBar,
+    QSizePolicy,  # Added QCompleter
 )
-from PySide2.QtCore import (
-    Qt, QAbstractListModel, QModelIndex, QSize,
-    QThreadPool, QRunnable, QEvent, QRect, QStringListModel  # Added QStringListModel
+from PySide6.QtCore import (
+    Qt,
+    QAbstractListModel,
+    QModelIndex,
+    QSize,
+    QThreadPool,
+    QRunnable,
+    QEvent,
+    QRect,
+    QStringListModel,  # Added QStringListModel
 )
-from PySide2.QtGui import QPixmap, QIcon, QPainter, QFontMetrics
+from PySide6.QtGui import QPixmap, QIcon, QPainter, QFontMetrics
 
 metadataFolderPath = r"L:\megaScansMetadata"
 megaScansZipsPath = r"M:\Zips"
+
 
 class StretchedTabBar(QTabBar):
     def __init__(self):
@@ -33,11 +57,13 @@ class StretchedTabBar(QTabBar):
                 size.setWidth(total_width // tab_count)  # Divide the width by the number of tabs
         return size
 
+
 class ImageLoadedEvent(QEvent):
     def __init__(self, asset_id, pixmap):
         super().__init__(QEvent.User)
         self.asset_id = asset_id
         self.pixmap = pixmap
+
 
 class ImageLoader(QRunnable):
     def __init__(self, asset_id, image_path, callback):
@@ -54,10 +80,8 @@ class ImageLoader(QRunnable):
             pixmap = QPixmap(150, 150)
             pixmap.fill(Qt.gray)
         # Post the event to the main thread
-        QApplication.postEvent(
-            self.callback,
-            ImageLoadedEvent(self.asset_id, pixmap)
-        )
+        QApplication.postEvent(self.callback, ImageLoadedEvent(self.asset_id, pixmap))
+
 
 class AssetListModel(QAbstractListModel):
     def __init__(self, assets, image_directory, inverted_index, parent=None):
@@ -81,7 +105,9 @@ class AssetListModel(QAbstractListModel):
         if role == Qt.DisplayRole:
             # Get asset name from the inverted index (fall back to asset_id if not found)
             asset_info = self.inverted_index.get(asset_id, {})
-            asset_name = next(iter(asset_info.values()), asset_id)  # Get asset name or fallback to asset_id
+            asset_name = next(
+                iter(asset_info.values()), asset_id
+            )  # Get asset name or fallback to asset_id
             return asset_name
         elif role == Qt.DecorationRole:
             pixmap = self.asset_pixmaps.get(asset_id)
@@ -114,6 +140,7 @@ class AssetListModel(QAbstractListModel):
             model_index = self.index(index)
             self.dataChanged.emit(model_index, model_index, [Qt.DecorationRole])
 
+
 class AssetItemDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         asset_name = index.data(Qt.DisplayRole)  # This gets the asset name
@@ -131,14 +158,11 @@ class AssetItemDelegate(QStyledItemDelegate):
 
         # Draw the asset name
         text_rect = QRect(rect.left(), rect.bottom() - 20, rect.width(), 20)
-        painter.drawText(
-            text_rect,
-            Qt.AlignCenter,
-            asset_name
-        )
+        painter.drawText(text_rect, Qt.AlignCenter, asset_name)
 
     def sizeHint(self, option, index):
         return QSize(150, 170)  # Adjust size to include the thumbnail and asset name
+
 
 class ImageDialog(QDialog):
     def __init__(self, assets, current_index, parent=None, zip_index=None):
@@ -182,7 +206,9 @@ class ImageDialog(QDialog):
         """Load the image based on the current index."""
         asset_id = self.assets[self.current_index]
         asset_info = self.parent.inverted_index.get(asset_id, {})
-        asset_name = next(iter(asset_info.values()), asset_id)  # Get asset name or fallback to asset_id
+        asset_name = next(
+            iter(asset_info.values()), asset_id
+        )  # Get asset name or fallback to asset_id
 
         # Get the current tab's directory mapping dynamically
         current_tab_index = self.parent.tabs.currentIndex()  # Get the current tab index
@@ -227,7 +253,7 @@ class ImageDialog(QDialog):
         self.asset_info_label.setText(f"Asset Name: {asset_name}\nAsset ID: {asset_id}")
 
         # Adjust the size of the dialog to fit the new image
-        #self.resize(full_image.width(), full_image.height() + 100)
+        # self.resize(full_image.width(), full_image.height() + 100)
 
     def show_previous_image(self):
         """Show the previous image in the list."""
@@ -254,6 +280,7 @@ class ImageDialog(QDialog):
         else:
             print(f"No zip file found for asset ID: {asset_id}")
 
+
 class Tunnel(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -272,7 +299,7 @@ class Tunnel(QMainWindow):
         self.resize(900, 800)
 
         # Load the zip index from the JSON file
-        with open(f"{metadataFolderPath}/zip_index.json", 'r') as f:
+        with open(f"{metadataFolderPath}/zip_index.json", "r") as f:
             self.zip_index = json.load(f)  # Store the zip index
 
         # Internal tab names and corresponding display names
@@ -283,16 +310,16 @@ class Tunnel(QMainWindow):
             "atlas": "Atlas",
             "decals": "Decals",
             "brush": "Brushes",
-            "surface": "Surfaces"
+            "surface": "Surfaces",
         }
 
         # Load inverted index from JSON file
-        with open(f"{metadataFolderPath}/inverted_index_combined.json", 'r', encoding='utf-8') as f:
+        with open(f"{metadataFolderPath}/inverted_index_combined.json", "r", encoding="utf-8") as f:
             data = json.load(f)
 
             # Extract 'index' and 'AssetGrouping'
-            self.inverted_index = data['index']
-            self.asset_groupings = data['AssetGrouping']
+            self.inverted_index = data["index"]
+            self.asset_groupings = data["AssetGrouping"]
 
         # Create the menu bar with Settings and About
         self.create_menu()
@@ -343,7 +370,7 @@ class Tunnel(QMainWindow):
             "atlas": f"{metadataFolderPath}/atlas",
             "decals": f"{metadataFolderPath}/decals",
             "brush": f"{metadataFolderPath}/brush",
-            "surface": f"{metadataFolderPath}/surface"
+            "surface": f"{metadataFolderPath}/surface",
         }
 
         # Ensure that directories use proper OS-specific path separators
@@ -405,11 +432,11 @@ class Tunnel(QMainWindow):
         menu_bar = self.menuBar()
 
         # Create the main menu
-        menu = menu_bar.addMenu('Menu')
+        menu = menu_bar.addMenu("Menu")
 
         # Create actions
-        settings_action = QAction('Settings', self)
-        about_action = QAction('About', self)
+        settings_action = QAction("Settings", self)
+        about_action = QAction("About", self)
 
         # Connect actions to methods
         settings_action.triggered.connect(self.open_settings)
@@ -421,11 +448,11 @@ class Tunnel(QMainWindow):
 
     def open_settings(self):
         # Implement your settings dialog here
-        QMessageBox.information(self, 'Settings', 'Settings dialog not implemented.')
+        QMessageBox.information(self, "Settings", "Settings dialog not implemented.")
 
     def show_about(self):
         # Implement your about dialog here
-        QMessageBox.information(self, 'About', 'Tunnel Asset Browser - The better bridge!!!! 2024')
+        QMessageBox.information(self, "About", "Tunnel Asset Browser - The better bridge!!!! 2024")
 
     def on_search_text_changed(self, text):
         text = text.lower().strip()
@@ -466,7 +493,12 @@ class Tunnel(QMainWindow):
             filtered_assets = assets_in_tab.intersection(matching_assets)
 
             # Sort the filtered assets alphabetically by their name (not the ID)
-            assets = sorted(filtered_assets, key=lambda asset_id: next(iter(self.inverted_index.get(asset_id, {}).values()), asset_id).lower())
+            assets = sorted(
+                filtered_assets,
+                key=lambda asset_id: next(
+                    iter(self.inverted_index.get(asset_id, {}).values()), asset_id
+                ).lower(),
+            )
 
             print("Filtered Assets: ", assets)
 
@@ -508,13 +540,14 @@ class Tunnel(QMainWindow):
         dialog = ImageDialog(filtered_assets, clicked_asset_index, self, zip_index=self.zip_index)
         dialog.exec_()  # This will block until the dialog is closed
 
-#open UI
+
+# open UI
 def openWindow():
     if QApplication.instance():
-        #Id any current instances of tool and destroy
-        for win in (QApplication.allWindows()):
-            print (win.objectName())
-            if 'Import Unreal Assets' in win.objectName():
+        # Id any current instances of tool and destroy
+        for win in QApplication.allWindows():
+            print(win.objectName())
+            if "Import Unreal Assets" in win.objectName():
                 win.destroy()
     else:
         QApplication(sys.argv)

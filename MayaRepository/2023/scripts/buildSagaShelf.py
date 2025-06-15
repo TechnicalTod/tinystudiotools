@@ -1,503 +1,222 @@
-import shelfCreate
-import maya.cmds as mc
-import maya.mel as mm
-import genTools.genUtils as genUtils
+"""
+Saga Tools Shelf Builder with Auto-Discovery
+
+This module builds the Maya shelf using auto-discovery of tools
+with SAGA_TOOL_CONFIG metadata, organized into category buttons
+with right-click menus (matching the original system).
+"""
+
+import os
+import json
+import maya.cmds as cmds
 import mayaFilePaths
-
-def blankCMD():
-    return
-
-'''ASSET TOOLS'''
-
-def createAssetDirUICMD():
-    import assetTools.createAssetDirUI
-    assetTools.createAssetDirUI.launch()
-
-def loadTunnelCMD():
-    import assetTools.TunnelUi
-    assetTools.TunnelUi.openWindow()
-
-'''CAMERA'''
-
-def takeSnapshotCMD():
-    import cameraTools.takeSnapshot
-    cameraTools.takeSnapshot.snap(clipboard=True)
-
-'''GEN TOOLS AND UTILS'''
-
-def centerPivotCMD():
-    genUtils.centerPivot()
-
-def freezeTransformsCMD():
-    genUtils.freezeTransforms()
-
-def deleteHistoryCMD():
-    genUtils.deleteHistory()
-
-def deleteUnconnectedShapesCMD():
-    genUtils.deleteUnconnectedShapes()
-
-def moveBACMD():
-    genUtils.moveBA()
-
-def combineObjectsCMD():
-    genUtils.combineObjects()
-
-def separateObjectsCMD():
-    genUtils.separateObjects()
-
-def deleteUnknownNodesCMD():
-    genUtils.deleteUnknownNodes()
-
-def detachComponentsCMD():
-    genUtils.detachComponents()
-
-def selectByPolycountCMD():
-    genUtils.selectSame()
-
-def deleteAllNameSpacesCMD():
-    genUtils.deleteAllNameSpaces()
-
-def unlockAllNodesCMD():
-    genUtils.unlockAllNodes()
-
-def setCurrentUVsToMap1CMD():
-    genUtils.setCurrentUVsToMap1()
-
-def createLocAtPivotCMD():
-    genUtils.createLocAtPivot()
-
-def deleteDisplayLayersCMD():
-    genUtils.deleteAllDisplayLayers()
-
-def importMayaCMD():
-    import genTools.importExportMaya
-    genTools.importExportMaya.importAsset()
-
-def exportMayaCMD():
-    import genTools.importExportMaya
-    genTools.importExportMaya.exportAsset()
-
-def moveToOriginCMD():
-    import genTools.moveToOrigin
-    genTools.moveToOrigin.moveToOrigin()
-
-def versionUpCurrentFileCMD():
-    import genTools.versionFile
-    genTools.versionFile.versionOpenMayaFile()
-
-def pluginManagerCMD():
-    import genTools.pluginManager
-    genTools.pluginManager.launch()
-
-def movePivotBACMD():
-    mm.eval('movePivotBA();')
-
-def movePivotToOriginCMD():
-    mm.eval('movePivotToOrigin();')
-
-def sortOutlinerCMD():
-    mm.eval('sortOutliner();')
-
-def UVEditorCMD():
-    for panel in mc.getPanel(sty="polyTexturePlacementPanel") or []:
-        mc.scriptedPanel(panel, e=True, to=True)
-
-def cometRenameCMD():
-    mm.eval('cometRename();')
-
-def copyCurrentScenePathCMD():
-    from PySide2 import QtGui
-    maya_file = mc.file(sceneName=True, q=True)
-    clip = QtGui.QClipboard()
-    clip.setText(str(maya_file))
-
-'''MODELLING TOOLS'''
-
-def extractVisGeoCMD():
-    import modellingTools.extractVisGeo
-    modellingTools.extractVisGeo.extractSelected()
-
-def exportOBJCMD():
-    import modellingTools.exportOBJ
-    modellingTools.exportOBJ.launch()
-
-def fastRetopoCMD():
-    import modellingTools.retopoMultiple
-    modellingTools.retopoMultiple.fastRetopoMultiple()
-
-def cubeUVsCMD():
-    import modellingTools.cubeUVs
-    modellingTools.cubeUVs.applyCubeUVs()
-
-def cubinateCMD():
-    import modellingTools.cubinate
-    modellingTools.cubinate.cubinate()
-
-def cardGeneratorCMD():
-    import modellingTools.cardGenerator
-    modellingTools.cardGenerator.launch()
-
-def selectByAngleCMD():
-    if not mc.polySelectConstraint(query=True, ap=True) is True:
-        mc.polySelectConstraint(ap=True, at=38)
-    else:
-        mc.polySelectConstraint(ap=False, at=0)
-
-def detachDuplicateComponentsCMD():
-    mm.eval('detachDuplicateComponents();')
-
-def selectNthEdgeCMD():
-    mm.eval('polySelectEdgesEveryN "edgeRing" 2;')
-
-'''RIGGING TOOLS'''
-
-def exportPuppetForSkeletalMeshCMD():
-    import riggingTools.exportPuppetForSkeletalMesh
-    riggingTools.exportPuppetForSkeletalMesh.main()
-
-def mzCtrlCreatorCMD():
-    import riggingTools.mz_ctrlCreator
-    riggingTools.mz_ctrlCreator.buildWindow()
-
-def DoraSkinWeightCMD():
-    mm.eval('DoraSkinWeightImpExp();')
-
-def loadAdvancedSkeletonCMD():
-    advancedSkeletonInstallPath = 'L:/SagaTools/GenTools/AdvancedSkeleton/install.mel'
-    mm.eval(f'source "{advancedSkeletonInstallPath}"')
-
-'''SHADER TOOLS'''
-
-def renameShaderToShapeNameCMD():
-    import shadingTools.genShaderUtils
-    shadingTools.genShaderUtils.renameShaderToShapeName()
-
-def separateByShadingGroupsCMD():
-    import shadingTools.separateByShadingGroups
-    shadingTools.separateByShadingGroups.main()
-
-def toggleVertexColorDisplayCMD():
-    import shadingTools.genShaderUtils
-    shadingTools.genShaderUtils.toggleVertexColorDisplay()
-
-def createBlinnPerShapeCMD():
-    import shadingTools.genShaderUtils
-    shadingTools.genShaderUtils.createBlinnPerShape()
-
-def copyShaderToObjectsCMD():
-    import shadingTools.genShaderUtils
-    shadingTools.genShaderUtils.copyShaderToObjects()
-
-def buildShaderNetworkFromSubstanceCMD():
-    import shadingTools.buildShaderNetworkFromSubstance
-    shadingTools.buildShaderNetworkFromSubstance.launch()
-
-def randomVertColCMD():
-    mm.eval('randomVertCol();')
-
-'''TECHVIS TOOLS'''
-
-def measurementToolsCMD():
-    import techvisTools.measurementToolsUI
-    techvisTools.measurementToolsUI.openWindow()
-
-def importST15CMD():
-    # Specify the path to the Maya scene file
-    scene_path = r'L:\SagaTools\GenTools\cranes\superTechno15.mb'
-    # Import the Maya scene file
-    mc.file(scene_path, i=True, type="mayaBinary", options="v=0", preserveReferences=True, ignoreVersion=True)
-
-'''TEXTURE TOOLS'''
-
-def splitShapesPerUDIMCMD():
-    import textureTools.splitShapesPerUDIM
-    textureTools.splitShapesPerUDIM.splitShapesPerUDIM()
-
-def convertTextureUICMD():
-    import textureTools.convertTextureUI
-    textureTools.convertTextureUI.launch()
-
-def convertDirtyTexturesToSetDecCMD():
-    import unrealTools.convertDirtyTexturesToSetDec
-    unrealTools.convertDirtyTexturesToSetDec.ConvertTextures()
-
-def convertTextureUICMD():
-    import textureTools.convertTextureUI
-    textureTools.convertTextureUI.launch()
-
-'''UNREAL TOOLS'''
-
-def exportSetDecAssetsCMD():
-    import unrealTools.exportSetDecAssets
-    unrealTools.exportSetDecAssets.openWindow()
-
-def convertMegascansAssetsCMD():
-    import unrealTools.convertMegascansAssets
-    unrealTools.convertMegascansAssets.launch()
-
-def publishShotForUnrealCMD():
-    import unrealTools.publishShotForUnreal
-    unrealTools.publishShotForUnreal.launch()
-
-def USDSceneImportExportUIMayaCMD():
-    import unrealTools.USDSceneImportExportUIMaya
-    unrealTools.USDSceneImportExportUIMaya.launch()
-
-
-'''
-BUILD SHELF
-'''
-
-def makeShelfAndButtons():
-    iconPath = mayaFilePaths.mayaShelfIconPath
-    slapFactoryShelf = shelfCreate.ShelfTool('SAGA_SHELF', iconPath)
-
-    slapFactoryShelf.createShelf()
+import shelfCreate
+
+
+# Hardcoded icon mapping for shelf items
+SHELF_ICONS = {
+    "spacer": "spacer.png",
+    "Version Up File": "VersionUp.png",
+    "Center Pivot": "centerPivot.png",
+    "Freeze Transforms": "freezeTransforms.png",
+    "Delete History": "deleteHistory.png",
+    "Move B to A": "moveBA.png",
+    "Move To Origin": "moveToOrigin.png",
+    "Move Pivot B to A": "movePivotBA.png",
+    "Move Pivot To Origin": "movePivotToOrigin.png",
+    "Modelling Tools": "modelling.png",
+    "Rigging Tools": "rigging.png",
+    "UV Tools": "UVTools.png",
+    "Texture Tools": "textureTools.png",
+    "Shader Tools": "shaderTools.png",
+    "Camera Tools": "cameraTools.png",
+    "General Tools": "genTools.png",
+    "Techvis Tools": "techvis.png",
+    "Copy/Paste Selection": "copyPaste.png",
+    "Take Snapshot": "snapshotTools.png",
+    "Unreal Tools": "unrealTools.png",
+}
+
+DEFAULT_ICON = "defaultTool.png"
+
+
+def load_tool_config():
+    """Load tool configuration from JSON file"""
+    script_dir = os.path.dirname(__file__)
+    config_path = os.path.join(script_dir, "..", "config", "saga_tools.json")
 
     try:
-        shelfSpacer01 = slapFactoryShelf.addShelfSpacer(iconImage='spacer.png')
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
+        print(f"Error loading config: {e}")
+        return {"categories": {}}
 
+
+def create_tool_command(module_name, function_name, label):
+    """Create a command function that safely imports and runs a tool"""
+
+    def command():
+        try:
+            # Dynamic import and execution
+            module = __import__(module_name, fromlist=[function_name])
+            func = getattr(module, function_name)
+            func()
+        except Exception as e:
+            cmds.warning(f"Error running {label}: {e}")
+
+    return command
+
+
+def get_icon_for_item(label, item_type):
+    """Get the appropriate icon for a shelf item"""
+    if item_type == "spacer":
+        return SHELF_ICONS.get("spacer", "spacer.png")
+
+    # Only top-level buttons get icons
+    return SHELF_ICONS.get(label, DEFAULT_ICON)
+
+
+def buildSagaShelf():
+    """Build the SAGA shelf from config file"""
+    print("Building SAGA shelf from config...")
+
+    # Load configuration
+    config = load_tool_config()
+    shelf_items = config.get("shelf_items", [])
+
+    if not shelf_items:
+        print("No shelf items found in config!")
+        return
+
+    # Create shelf using existing system
+    icon_path = mayaFilePaths.mayaShelfIconPath
+    saga_shelf = shelfCreate.ShelfTool("SAGA_SHELF", icon_path)
+    saga_shelf.createShelf()
+
+    # Process each shelf item in order
+    for item in shelf_items:
+        item_type = item.get("type")
+
+        try:
+            if item_type == "spacer":
+                # Add spacer
+                icon = get_icon_for_item("spacer", "spacer")
+                saga_shelf.addShelfSpacer(iconImage=icon)
+                print(f"  Added spacer")
+
+            elif item_type == "button":
+                # Add individual button
+                label = item.get("label", "Unknown")
+                module_name = item.get("module")
+                function_name = item.get("function")
+                icon = get_icon_for_item(label, "button")
+
+                if module_name and function_name:
+                    # Create command for the button
+                    cmd = create_tool_command(module_name, function_name, label)
+                    button = saga_shelf.shelfButton(cmd, icon, label)
+
+                    # Add menu items if they exist (no icons for menu items)
+                    menu_items = item.get("menu", [])
+                    if menu_items:
+                        for menu_item in menu_items:
+                            menu_label = menu_item.get("label", "")
+                            menu_module = menu_item.get("module")
+                            menu_function = menu_item.get("function")
+
+                            if menu_module and menu_function:
+                                menu_cmd = create_tool_command(
+                                    menu_module, menu_function, menu_label
+                                )
+                                saga_shelf.addMenu(button, menu_label, menu_cmd)
+
+                    print(f"  Added button: {label}")
+
+            elif item_type == "category_button":
+                # Add category button with primary action and menu
+                label = item.get("label", "Unknown")
+                primary_action = item.get("primary_action", {})
+                icon = get_icon_for_item(label, "category_button")
+
+                # Create primary command
+                primary_module = primary_action.get("module")
+                primary_function = primary_action.get("function")
+
+                if primary_module and primary_function:
+                    primary_cmd = create_tool_command(primary_module, primary_function, label)
+                else:
+                    # Default to blank command
+                    primary_cmd = create_tool_command("genTools.sceneUtils", "blank", "Blank")
+
+                # Create the category button
+                button = saga_shelf.shelfButton(primary_cmd, icon, label)
+
+                # Add menu items (no icons for menu items)
+                menu_items = item.get("menu", [])
+                if menu_items:
+                    for menu_item in menu_items:
+                        menu_type = menu_item.get("type")
+
+                        if menu_type == "blank_item":
+                            # Add blank menu item
+                            saga_shelf.addMenu(
+                                button,
+                                "",
+                                create_tool_command("genTools.sceneUtils", "blank", "Blank"),
+                            )
+
+                        elif menu_type == "spacer":
+                            # Add menu spacer with label
+                            menu_label = menu_item.get("label", "")
+                            saga_shelf.addMenuSpacer(button, label=menu_label)
+
+                        elif menu_type == "submenu":
+                            # Add submenu
+                            submenu_label = menu_item.get("label", "")
+                            submenu = saga_shelf.addSubMenu(button, submenu_label)
+
+                            # Add submenu items (no icons)
+                            submenu_items = menu_item.get("items", [])
+                            for submenu_item in submenu_items:
+                                sub_label = submenu_item.get("label", "")
+                                sub_module = submenu_item.get("module")
+                                sub_function = submenu_item.get("function")
+
+                                if sub_module and sub_function:
+                                    sub_cmd = create_tool_command(
+                                        sub_module, sub_function, sub_label
+                                    )
+                                    saga_shelf.addMenu(submenu, sub_label, sub_cmd)
+
+                        else:
+                            # Regular menu item (no icons)
+                            menu_label = menu_item.get("label", "")
+                            menu_module = menu_item.get("module")
+                            menu_function = menu_item.get("function")
+
+                            if menu_module and menu_function:
+                                menu_cmd = create_tool_command(
+                                    menu_module, menu_function, menu_label
+                                )
+                                saga_shelf.addMenu(button, menu_label, menu_cmd)
+
+                print(f"  Added category button: {label}")
+
+        except Exception as e:
+            print(f"  Error creating {item_type} '{item.get('label', 'Unknown')}': {e}")
+            import traceback
+
+            traceback.print_exc()
+
+    print(f"SAGA shelf built with {len(shelf_items)} items!")
+
+
+if __name__ == "__main__":
     try:
-        versionUpCurrentFileButton = slapFactoryShelf.shelfButton(versionUpCurrentFileCMD, 'VersionUp.png', 'Version up open Maya file')
+        buildSagaShelf()
     except Exception as e:
+        print(f"Error building shelf: {e}")
         import traceback
+
         traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        centerPivotButton = slapFactoryShelf.shelfButton(centerPivotCMD, 'centerPivot.png', 'Center Pivot')
-        slapFactoryShelf.addMenu(centerPivotButton, 'Create Locator at selection', createLocAtPivotCMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        freezeTransformsButton = slapFactoryShelf.shelfButton(freezeTransformsCMD, 'freezeTransforms.png', 'Freeze Transforms')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        deleteHistoryButton = slapFactoryShelf.shelfButton(deleteHistoryCMD, 'deleteHistory.png', 'Delete History')
-        slapFactoryShelf.addMenu(deleteHistoryButton, 'Delete all unconnected shapes', deleteUnconnectedShapesCMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        shelfSpacer02 = slapFactoryShelf.addShelfSpacer(iconImage='spacer.png')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        moveBAButton = slapFactoryShelf.shelfButton(moveBACMD, 'moveBA.png', 'Move B to A')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        moveToOriginButton = slapFactoryShelf.shelfButton(moveToOriginCMD, 'moveToOrigin.png', 'Move To Origin')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        shelfSpacer03 = slapFactoryShelf.addShelfSpacer(iconImage='spacer.png')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        movePivotBAButton = slapFactoryShelf.shelfButton(movePivotBACMD, 'movePivotBA.png', 'Move Pivot B to A')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        movePivotToOriginButton = slapFactoryShelf.shelfButton(movePivotToOriginCMD, 'movePivotToOrigin.png', 'Move Pivot To Origin')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        shelfSpacer04 = slapFactoryShelf.addShelfSpacer(iconImage='spacer.png')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        modellingButton = slapFactoryShelf.shelfButton(combineObjectsCMD, 'modelling.png', 'Modelling Tools')
-        slapFactoryShelf.addMenu(modellingButton, '', blankCMD)
-        slapFactoryShelf.addMenuSpacer(modellingButton, label='Commands')
-        slapFactoryShelf.addMenu(modellingButton, 'Separate objects', separateObjectsCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Select Nth edge', selectNthEdgeCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Select by angle', selectByAngleCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Select same Obj by polycount', selectByPolycountCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Separate selected faces', detachComponentsCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Dulicate selected faces', detachDuplicateComponentsCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Separate shapes by shading groups', separateByShadingGroupsCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Separate shapes by UDIM', splitShapesPerUDIMCMD)
-        slapFactoryShelf.addMenuSpacer(modellingButton, label='Tools')
-        slapFactoryShelf.addMenu(modellingButton, 'Cubinate', cubinateCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Card generator', cardGeneratorCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Extract Vis Geo', extractVisGeoCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Fast Retopo Geo', fastRetopoCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Convert Megascans Assets', convertMegascansAssetsCMD)
-        slapFactoryShelf.addMenu(modellingButton, 'Load Tunnel Asset Lib', loadTunnelCMD)
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        riggingButton = slapFactoryShelf.shelfButton(blankCMD, 'rigging.png', 'Rigging Tools')
-        slapFactoryShelf.addMenu(riggingButton, '', blankCMD)
-        slapFactoryShelf.addMenuSpacer(riggingButton, label='Commands')
-        slapFactoryShelf.addMenu(riggingButton, 'Export puppet for Skeletal Mesh', exportPuppetForSkeletalMeshCMD)
-        slapFactoryShelf.addMenu(riggingButton, 'Dora Skin Weight Importer', DoraSkinWeightCMD)
-        slapFactoryShelf.addMenu(riggingButton, 'MZ Ctrl Creator', mzCtrlCreatorCMD)
-        slapFactoryShelf.addMenuSpacer(riggingButton, label='Tools')
-        slapFactoryShelf.addMenu(riggingButton, 'Load Advanced Skelton Shelf', loadAdvancedSkeletonCMD)
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        UVToolsButton = slapFactoryShelf.shelfButton(UVEditorCMD, 'UVTools.png', 'UV Tools')
-        slapFactoryShelf.addMenu(UVToolsButton, 'Cube UVs', cubeUVsCMD)
-        slapFactoryShelf.addMenu(UVToolsButton, 'Set Current UVs to map1', setCurrentUVsToMap1CMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        textureToolsButton = slapFactoryShelf.shelfButton(convertTextureUICMD, 'textureTools.png', 'Texture Tools')
-        slapFactoryShelf.addMenu(textureToolsButton, 'Convert texture UI', convertTextureUICMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        shaderToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'shaderTools.png', 'Shader Tools')
-        slapFactoryShelf.addMenu(shaderToolsButton, '', blankCMD)
-        slapFactoryShelf.addMenuSpacer(shaderToolsButton, label='Commands')
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Rename shader to shape name', renameShaderToShapeNameCMD)
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Apply random vertex colour to selection', randomVertColCMD)
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Toggle vertex color display', toggleVertexColorDisplayCMD)
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Create Blinn for substance export', createBlinnPerShapeCMD)
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Copy shader to objects', copyShaderToObjectsCMD)
-        slapFactoryShelf.addMenuSpacer(shaderToolsButton, label='Tools')
-        slapFactoryShelf.addMenu(shaderToolsButton, 'Build shader network from Substance', buildShaderNetworkFromSubstanceCMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        cameraButton = slapFactoryShelf.shelfButton(blankCMD, 'cameraTools.png', 'Shader Tools')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        genToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'genTools.png', 'Shader Tools')
-        slapFactoryShelf.addMenu(genToolsButton, '', blankCMD)
-        slapFactoryShelf.addMenuSpacer(genToolsButton, label='Commands')
-        slapFactoryShelf.addMenu(genToolsButton, 'Delete all unknown nodes', deleteUnknownNodesCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Unlock all nodes', unlockAllNodesCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Copy current scene path', copyCurrentScenePathCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Delete All Display Layers', deleteDisplayLayersCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Delete All NameSpaces', deleteAllNameSpacesCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Sort outliner', sortOutlinerCMD)
-        slapFactoryShelf.addMenuSpacer(genToolsButton, label='Tools')
-        slapFactoryShelf.addMenu(genToolsButton, 'Comet rename', cometRenameCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Create Asset Directories', createAssetDirUICMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Export Selected as OBJs', exportOBJCMD)
-        slapFactoryShelf.addMenu(genToolsButton, 'Plugin manager', pluginManagerCMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        techvisToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'techvis.png', 'Techvis Tools')
-
-        # Main Techvis Tools Menu
-        slapFactoryShelf.addMenu(techvisToolsButton, 'Measurement Tools', measurementToolsCMD)
-
-        # Add a SubMenu (nested right-click menu)
-        techvisSubMenu = slapFactoryShelf.addSubMenu(techvisToolsButton, 'Import Crane')
-
-        # Add items to the SubMenu
-        slapFactoryShelf.addMenu(techvisSubMenu, 'Super Techno 15', importST15CMD)
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building Techvis Tools Button", e)
-
-
-    try:
-        importExportMayaButton = slapFactoryShelf.shelfButton(blankCMD, 'copyPaste.png', 'Copy/Paste Selection')
-        slapFactoryShelf.addMenu(importExportMayaButton, 'Copy selected', exportMayaCMD)
-        slapFactoryShelf.addMenu(importExportMayaButton, 'Paste selected', importMayaCMD)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        snapshotToolsButton = slapFactoryShelf.shelfButton(takeSnapshotCMD, 'snapshotTools.png', 'Take snapshot of viewport')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        shelfSpacer05 = slapFactoryShelf.addShelfSpacer(iconImage='spacer.png')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        unrealToolsButton = slapFactoryShelf.shelfButton(blankCMD, 'unrealTools.png', 'Unreal Tools')
-        slapFactoryShelf.addMenuSpacer(unrealToolsButton, label='Commands')
-        slapFactoryShelf.addMenuSpacer(unrealToolsButton, label='Tools')
-        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Setdec Assets', exportSetDecAssetsCMD)
-        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Shot To Unreal', publishShotForUnrealCMD)
-        slapFactoryShelf.addMenu(unrealToolsButton, 'Publish Layout Scene Description', USDSceneImportExportUIMayaCMD)
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)
-
-    try:
-        shelfSpacer06 = slapFactoryShelf.addShelfSpacer(iconImage='spacer.png')
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        print("Failed building rebuildButton", e)

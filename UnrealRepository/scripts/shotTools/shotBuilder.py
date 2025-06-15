@@ -1,9 +1,10 @@
 import unreal
 import os
 import sys
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import unrealFilePaths
+
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -15,7 +16,7 @@ class MainWindow(QtWidgets.QWidget):
         with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(500, 100)
-        self.setWindowTitle('Shot Builder')
+        self.setWindowTitle("Shot Builder")
         self.setFocus()
         self.center()
         self.show()
@@ -33,7 +34,7 @@ class MainWindow(QtWidgets.QWidget):
         # Label and Dropdown for 'Shot Name'
         self.shotNameLabel = QtWidgets.QLabel("Shot Name:")
         self.shotNameDropdown = QtWidgets.QComboBox()
-        self.updateComboBox(self.shotNameDropdown, self.getUnrealDir('02_Episodes'))
+        self.updateComboBox(self.shotNameDropdown, self.getUnrealDir("02_Episodes"))
         self.shotNameDropdown.currentIndexChanged.connect(lambda: self.updateShotNumberDropdown())
         self.shotNameDropdown.setEditable(True)
         self.shotNameDropdown.editTextChanged.connect(lambda: self.updateShotNumberDropdown())
@@ -42,7 +43,9 @@ class MainWindow(QtWidgets.QWidget):
         self.shotNumberLabel = QtWidgets.QLabel("Shot Number:")
         self.shotNumberDropdown = QtWidgets.QComboBox()
         self.updateShotNumberDropdown()
-        self.shotNumberDropdown.currentIndexChanged.connect(lambda: self.updateShotVersionDropdown())
+        self.shotNumberDropdown.currentIndexChanged.connect(
+            lambda: self.updateShotVersionDropdown()
+        )
         self.shotNumberDropdown.setEditable(True)
         self.shotNumberDropdown.editTextChanged.connect(lambda: self.updateShotVersionDropdown())
 
@@ -79,12 +82,17 @@ class MainWindow(QtWidgets.QWidget):
 
     def updateShotNumberDropdown(self):
         selected_shot_name = self.shotNameDropdown.currentText()
-        self.updateComboBox(self.shotNumberDropdown, self.getUnrealDir(f'02_Episodes/{selected_shot_name}'))
+        self.updateComboBox(
+            self.shotNumberDropdown, self.getUnrealDir(f"02_Episodes/{selected_shot_name}")
+        )
 
     def updateShotVersionDropdown(self):
         selected_shot_name = self.shotNameDropdown.currentText()
         selected_shot_number = self.shotNumberDropdown.currentText()
-        self.updateComboBox(self.shotVersionDropdown, self.getUnrealDir(f'02_Episodes/{selected_shot_name}/{selected_shot_number}'))
+        self.updateComboBox(
+            self.shotVersionDropdown,
+            self.getUnrealDir(f"02_Episodes/{selected_shot_name}/{selected_shot_number}"),
+        )
 
     def createShotFolders(self):
         # Ensure selections are not empty
@@ -103,7 +111,7 @@ class MainWindow(QtWidgets.QWidget):
         # Create the directory if it doesn't exist
         if not unreal.EditorAssetLibrary.does_directory_exist(dir_path):
             unreal.EditorAssetLibrary.make_directory(dir_path)
-        
+
         # Create the "Animation" folder within the same directory
         animation_folder_path = f"{dir_path}/Animation"
         if not unreal.EditorAssetLibrary.does_directory_exist(animation_folder_path):
@@ -135,18 +143,19 @@ class MainWindow(QtWidgets.QWidget):
                 print("Failed to create Level Sequence.")
 
         print(f"Folder structure and assets created under: {dir_path}")
-        
+
     def center(self):
         qr = self.frameGeometry()
         cp = QtWidgets.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+
 def openWindow():
     if QtWidgets.QApplication.instance():
         for win in QtWidgets.QApplication.allWindows():
             print(win.objectName())
-            if 'Unreal Shot Builder' in win.objectName():
+            if "Unreal Shot Builder" in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)
@@ -155,4 +164,5 @@ def openWindow():
     MainWindow.window.show()
     unreal.parent_external_window_to_slate(MainWindow.window.winId())
 
-#openWindow()
+
+# openWindow()

@@ -1,0 +1,466 @@
+{
+  "shelf_items": [
+    {
+      "type": "spacer"
+    },
+    {
+      "type": "button",
+      "label": "Version Up File",
+      "module": "genTools.versionFile",
+      "function": "versionOpenMayaFile"
+    },
+    {
+      "type": "button",
+      "label": "Center Pivot",
+      "module": "genTools.genUtils",
+      "function": "centerPivot",
+      "menu": [
+        {
+          "label": "Create Locator at selection",
+          "module": "genTools.genUtils",
+          "function": "createLocAtPivot"
+        }
+      ]
+    },
+    {
+      "type": "button",
+      "label": "Freeze Transforms",
+      "module": "genTools.genUtils",
+      "function": "freezeTransforms"
+    },
+    {
+      "type": "button",
+      "label": "Delete History",
+      "module": "genTools.genUtils",
+      "function": "deleteHistory",
+      "menu": [
+        {
+          "label": "Delete all unconnected shapes",
+          "module": "genTools.genUtils",
+          "function": "deleteUnconnectedShapes"
+        }
+      ]
+    },
+    {
+      "type": "spacer"
+    },
+    {
+      "type": "button",
+      "label": "Move B to A",
+      "module": "genTools.genUtils",
+      "function": "moveBA"
+    },
+    {
+      "type": "button",
+      "label": "Move To Origin",
+      "module": "genTools.moveToOrigin",
+      "function": "moveToOrigin"
+    },
+    {
+      "type": "spacer"
+    },
+    {
+      "type": "button",
+      "label": "Move Pivot B to A",
+      "module": "genTools.melWrappers",
+      "function": "movePivotBA"
+    },
+    {
+      "type": "button",
+      "label": "Move Pivot To Origin",
+      "module": "genTools.melWrappers",
+      "function": "movePivotToOrigin"
+    },
+    {
+      "type": "spacer"
+    },
+    {
+      "type": "category_button",
+      "label": "Modelling Tools",
+      "primary_action": {
+        "module": "genTools.genUtils",
+        "function": "combineObjects"
+      },
+      "menu": [
+        {
+          "type": "blank_item"
+        },
+        {
+          "type": "spacer",
+          "label": "Commands"
+        },
+        {
+          "label": "Separate objects",
+          "module": "genTools.genUtils",
+          "function": "separateObjects"
+        },
+        {
+          "label": "Select Nth edge",
+          "module": "genTools.melWrappers",
+          "function": "selectNthEdge"
+        },
+        {
+          "label": "Select by angle",
+          "module": "modellingTools.selectionUtils",
+          "function": "toggleSelectByAngle"
+        },
+        {
+          "label": "Select same Obj by polycount",
+          "module": "genTools.genUtils",
+          "function": "selectSame"
+        },
+        {
+          "label": "Separate selected faces",
+          "module": "genTools.genUtils",
+          "function": "detachComponents"
+        },
+        {
+          "label": "Dulicate selected faces",
+          "module": "genTools.melWrappers",
+          "function": "detachDuplicateComponents"
+        },
+        {
+          "label": "Separate shapes by shading groups",
+          "module": "shadingTools.separateByShadingGroups",
+          "function": "main"
+        },
+        {
+          "label": "Separate shapes by UDIM",
+          "module": "textureTools.splitShapesPerUDIM",
+          "function": "splitShapesPerUDIM"
+        },
+        {
+          "type": "spacer",
+          "label": "Tools"
+        },
+        {
+          "label": "Cubinate",
+          "module": "modellingTools.cubinate",
+          "function": "cubinate"
+        },
+        {
+          "label": "Card generator",
+          "module": "modellingTools.cardGenerator",
+          "function": "launch"
+        },
+        {
+          "label": "Extract Vis Geo",
+          "module": "modellingTools.extractVisGeo",
+          "function": "extractSelected"
+        },
+        {
+          "label": "Fast Retopo Geo",
+          "module": "modellingTools.retopoMultiple",
+          "function": "fastRetopoMultiple"
+        },
+        {
+          "label": "Convert Megascans Assets",
+          "module": "unrealTools.convertMegascansAssets",
+          "function": "launch"
+        },
+        {
+          "label": "Load Tunnel Asset Lib",
+          "module": "assetTools.TunnelUi",
+          "function": "openWindow"
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "Rigging Tools",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      },
+      "menu": [
+        {
+          "type": "blank_item"
+        },
+        {
+          "type": "spacer",
+          "label": "Commands"
+        },
+        {
+          "label": "Export puppet for Skeletal Mesh",
+          "module": "riggingTools.exportPuppetForSkeletalMesh",
+          "function": "main"
+        },
+        {
+          "label": "Dora Skin Weight Importer",
+          "module": "genTools.melWrappers",
+          "function": "doraSkinWeight"
+        },
+        {
+          "label": "MZ Ctrl Creator",
+          "module": "riggingTools.mz_ctrlCreator",
+          "function": "buildWindow"
+        },
+        {
+          "type": "spacer",
+          "label": "Tools"
+        },
+        {
+          "label": "Load Advanced Skelton Shelf",
+          "module": "genTools.sceneUtils",
+          "function": "loadAdvancedSkeleton"
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "UV Tools",
+      "primary_action": {
+        "module": "genTools.uiUtils",
+        "function": "openUVEditor"
+      },
+      "menu": [
+        {
+          "label": "Cube UVs",
+          "module": "modellingTools.cubeUVs",
+          "function": "applyCubeUVs"
+        },
+        {
+          "label": "Set Current UVs to map1",
+          "module": "genTools.genUtils",
+          "function": "setCurrentUVsToMap1"
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "Texture Tools",
+      "primary_action": {
+        "module": "textureTools.convertTextureUI",
+        "function": "launch"
+      },
+      "menu": [
+        {
+          "label": "Convert texture UI",
+          "module": "textureTools.convertTextureUI",
+          "function": "launch"
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "Shader Tools",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      },
+      "menu": [
+        {
+          "type": "blank_item"
+        },
+        {
+          "type": "spacer",
+          "label": "Commands"
+        },
+        {
+          "label": "Rename shader to shape name",
+          "module": "shadingTools.genShaderUtils",
+          "function": "renameShaderToShapeName"
+        },
+        {
+          "label": "Apply random vertex colour to selection",
+          "module": "genTools.melWrappers",
+          "function": "randomVertCol"
+        },
+        {
+          "label": "Toggle vertex color display",
+          "module": "shadingTools.genShaderUtils",
+          "function": "toggleVertexColorDisplay"
+        },
+        {
+          "label": "Create Blinn for substance export",
+          "module": "shadingTools.genShaderUtils",
+          "function": "createBlinnPerShape"
+        },
+        {
+          "label": "Copy shader to objects",
+          "module": "shadingTools.genShaderUtils",
+          "function": "copyShaderToObjects"
+        },
+        {
+          "type": "spacer",
+          "label": "Tools"
+        },
+        {
+          "label": "Build shader network from Substance",
+          "module": "shadingTools.buildShaderNetworkFromSubstance",
+          "function": "launch"
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "Camera Tools",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      }
+    },
+    {
+      "type": "category_button",
+      "label": "General Tools",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      },
+      "menu": [
+        {
+          "type": "blank_item"
+        },
+        {
+          "type": "spacer",
+          "label": "Commands"
+        },
+        {
+          "label": "Delete all unknown nodes",
+          "module": "genTools.genUtils",
+          "function": "deleteUnknownNodes"
+        },
+        {
+          "label": "Unlock all nodes",
+          "module": "genTools.genUtils",
+          "function": "unlockAllNodes"
+        },
+        {
+          "label": "Copy current scene path",
+          "module": "genTools.uiUtils",
+          "function": "copyCurrentScenePath"
+        },
+        {
+          "label": "Delete All Display Layers",
+          "module": "genTools.genUtils",
+          "function": "deleteAllDisplayLayers"
+        },
+        {
+          "label": "Delete All NameSpaces",
+          "module": "genTools.genUtils",
+          "function": "deleteAllNameSpaces"
+        },
+        {
+          "label": "Sort outliner",
+          "module": "genTools.melWrappers",
+          "function": "sortOutliner"
+        },
+        {
+          "type": "spacer",
+          "label": "Tools"
+        },
+        {
+          "label": "Comet rename",
+          "module": "genTools.melWrappers",
+          "function": "cometRename"
+        },
+        {
+          "label": "Create Asset Directories",
+          "module": "assetTools.createAssetDirUI",
+          "function": "launch"
+        },
+        {
+          "label": "Export Selected as OBJs",
+          "module": "modellingTools.exportOBJ",
+          "function": "launch"
+        },
+        {
+          "label": "Plugin manager",
+          "module": "genTools.pluginManager",
+          "function": "launch"
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "Techvis Tools",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      },
+      "menu": [
+        {
+          "label": "Measurement Tools",
+          "module": "techvisTools.measurementToolsUI",
+          "function": "openWindow"
+        },
+        {
+          "type": "submenu",
+          "label": "Import Crane",
+          "items": [
+            {
+              "label": "Super Techno 15",
+              "module": "techvisTools.importCranes",
+              "function": "importST15"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "category_button",
+      "label": "Copy/Paste Selection",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      },
+      "menu": [
+        {
+          "label": "Copy selected",
+          "module": "genTools.importExportMaya",
+          "function": "exportAsset"
+        },
+        {
+          "label": "Paste selected",
+          "module": "genTools.importExportMaya",
+          "function": "importAsset"
+        }
+      ]
+    },
+    {
+      "type": "button",
+      "label": "Take Snapshot",
+      "module": "cameraTools.takeSnapshot",
+      "function": "snap"
+    },
+    {
+      "type": "spacer"
+    },
+    {
+      "type": "category_button",
+      "label": "Unreal Tools",
+      "primary_action": {
+        "module": "genTools.sceneUtils",
+        "function": "blank"
+      },
+      "menu": [
+        {
+          "type": "spacer",
+          "label": "Commands"
+        },
+        {
+          "type": "spacer",
+          "label": "Tools"
+        },
+        {
+          "label": "Publish Setdec Assets",
+          "module": "unrealTools.exportSetDecAssets",
+          "function": "openWindow"
+        },
+        {
+          "label": "Publish Shot To Unreal",
+          "module": "unrealTools.publishShotForUnreal",
+          "function": "launch"
+        },
+        {
+          "label": "Publish Layout Scene Description",
+          "module": "unrealTools.USDSceneImportExportUIMaya",
+          "function": "launch"
+        }
+      ]
+    },
+    {
+      "type": "spacer"
+    }
+  ]
+}

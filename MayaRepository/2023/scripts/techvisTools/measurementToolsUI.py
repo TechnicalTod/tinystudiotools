@@ -1,12 +1,13 @@
 import os
 import sys
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 import maya.cmds as cmds
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken2
 
 import techvisTools.measurementTools as mt
+
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -25,13 +26,13 @@ class MainWindow(QtWidgets.QWidget):
         with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(500, 100)
-        self.setWindowTitle('Measurement Tool')
+        self.setWindowTitle("Measurement Tool")
         self.setFocus()
         self.center()
         self.show()
 
         self.grid = QtWidgets.QGridLayout()
-        #self.grid.setSpacing(10)
+        # self.grid.setSpacing(10)
 
         # Adjust column stretch factors
         self.grid.setColumnStretch(0, 1)
@@ -55,7 +56,7 @@ class MainWindow(QtWidgets.QWidget):
         self.gapValueLabel.setFixedWidth(40)
         self.gapValueLabel.setAlignment(QtCore.Qt.AlignLeft)
         self.gapSlider.valueChanged.connect(self.updateGapValue)
-        
+
         # Font Size Slider
         self.fontSizeLabel = QtWidgets.QLabel("Font Size:")
         self.fontSizeLabel.setFixedWidth(80)
@@ -68,8 +69,8 @@ class MainWindow(QtWidgets.QWidget):
         self.fontSizeValueLabel.setFixedWidth(40)
         self.fontSizeValueLabel.setAlignment(QtCore.Qt.AlignLeft)
         self.fontSizeSlider.valueChanged.connect(self.updateFontSizeValue)
-        
-        #Cylinder Width Slider
+
+        # Cylinder Width Slider
         self.cylwidthLabel = QtWidgets.QLabel("Cylinder Width:")
         self.cylwidthLabel.setFixedWidth(80)
         self.cylwidthLabel.setAlignment(QtCore.Qt.AlignRight)
@@ -81,8 +82,8 @@ class MainWindow(QtWidgets.QWidget):
         self.cylwidthValueLabel.setFixedWidth(40)
         self.cylwidthValueLabel.setAlignment(QtCore.Qt.AlignLeft)
         self.cylSlider.valueChanged.connect(self.updateCylWidthValue)
-        
-        #Cone Length Slider
+
+        # Cone Length Slider
         self.coneLLabel = QtWidgets.QLabel("Cone Length:")
         self.coneLLabel.setFixedWidth(80)
         self.coneLLabel.setAlignment(QtCore.Qt.AlignRight)
@@ -94,8 +95,8 @@ class MainWindow(QtWidgets.QWidget):
         self.coneLValueLabel.setFixedWidth(40)
         self.coneLValueLabel.setAlignment(QtCore.Qt.AlignLeft)
         self.coneLSlider.valueChanged.connect(self.updateConeLValue)
-        
-        #Cone Width Slider
+
+        # Cone Width Slider
         self.coneWLabel = QtWidgets.QLabel("Cone Width:")
         self.coneWLabel.setFixedWidth(80)
         self.coneWLabel.setAlignment(QtCore.Qt.AlignRight)
@@ -107,7 +108,7 @@ class MainWindow(QtWidgets.QWidget):
         self.coneWValueLabel.setFixedWidth(40)
         self.coneWValueLabel.setAlignment(QtCore.Qt.AlignLeft)
         self.coneWSlider.valueChanged.connect(self.updateConeWidthValue)
-        
+
         # Button 'Create Shot Folders'
         self.buttonLabel = QtWidgets.QLabel("Create Measurements:")
         self.buttonLabel.setFixedHeight(30)
@@ -138,19 +139,19 @@ class MainWindow(QtWidgets.QWidget):
         self.labelLayout.addWidget(self.gapLabel, 0, 0)
         self.sliderLayout.addWidget(self.gapSlider, 0, 1)
         self.valueLayout.addWidget(self.gapValueLabel, 0, 2)
-        
+
         self.labelLayout.addWidget(self.fontSizeLabel, 1, 0)
         self.sliderLayout.addWidget(self.fontSizeSlider, 1, 1)
         self.valueLayout.addWidget(self.fontSizeValueLabel, 1, 2)
-        
+
         self.labelLayout.addWidget(self.cylwidthLabel, 2, 0)
         self.sliderLayout.addWidget(self.cylSlider, 2, 1)
         self.valueLayout.addWidget(self.cylwidthValueLabel, 2, 2)
-        
+
         self.labelLayout.addWidget(self.coneLLabel, 3, 0)
         self.sliderLayout.addWidget(self.coneLSlider, 3, 1)
         self.valueLayout.addWidget(self.coneLValueLabel, 3, 2)
-        
+
         self.labelLayout.addWidget(self.coneWLabel, 4, 0)
         self.sliderLayout.addWidget(self.coneWSlider, 4, 1)
         self.valueLayout.addWidget(self.coneWValueLabel, 4, 2)
@@ -166,52 +167,62 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.addLayout(self.buttonLayout, 2, 0, 1, 3)
 
         self.setLayout(self.grid)
-   
+
     def updateGapValue(self, value):
         real_value = value / 100.0
         self.gapValueLabel.setText("{:.2f}".format(real_value))
         selected_objects = cmds.ls(selection=True)
-        measurement_group_objects = [obj for obj in selected_objects if obj.startswith('MeasurementGroup')]
+        measurement_group_objects = [
+            obj for obj in selected_objects if obj.startswith("MeasurementGroup")
+        ]
         for object in measurement_group_objects:
-            cmds.setAttr(f'{object}.GapSize', real_value)
-            
+            cmds.setAttr(f"{object}.GapSize", real_value)
+
     def updateFontSizeValue(self, value):
         real_value = value / 10.0
         self.fontSizeValueLabel.setText(str(real_value))
         selected_objects = cmds.ls(selection=True)
-        measurement_group_objects = [obj for obj in selected_objects if obj.startswith('MeasurementGroup')]
+        measurement_group_objects = [
+            obj for obj in selected_objects if obj.startswith("MeasurementGroup")
+        ]
         for object in measurement_group_objects:
-            cmds.setAttr(f'{object}.FontSize', real_value)
-            
+            cmds.setAttr(f"{object}.FontSize", real_value)
+
     def updateCylWidthValue(self, value):
         real_value = value / 10.0
         self.cylwidthValueLabel.setText(str(real_value))
         selected_objects = cmds.ls(selection=True)
-        measurement_group_objects = [obj for obj in selected_objects if obj.startswith('MeasurementGroup')]
+        measurement_group_objects = [
+            obj for obj in selected_objects if obj.startswith("MeasurementGroup")
+        ]
         for object in measurement_group_objects:
-            cmds.setAttr(f'{object}.CylinderWidth', real_value)
-    
+            cmds.setAttr(f"{object}.CylinderWidth", real_value)
+
     def updateConeLValue(self, value):
         real_value = value / 100.0
         self.coneLValueLabel.setText("{:.2f}".format(real_value))
         selected_objects = cmds.ls(selection=True)
-        measurement_group_objects = [obj for obj in selected_objects if obj.startswith('MeasurementGroup')]
+        measurement_group_objects = [
+            obj for obj in selected_objects if obj.startswith("MeasurementGroup")
+        ]
         for object in measurement_group_objects:
-            cmds.setAttr(f'{object}.coneLength', real_value)
-    
+            cmds.setAttr(f"{object}.coneLength", real_value)
+
     def updateConeWidthValue(self, value):
         real_value = value / 10.0
         self.coneWValueLabel.setText(str(real_value))
         selected_objects = cmds.ls(selection=True)
-        measurement_group_objects = [obj for obj in selected_objects if obj.startswith('MeasurementGroup')]
+        measurement_group_objects = [
+            obj for obj in selected_objects if obj.startswith("MeasurementGroup")
+        ]
         for object in measurement_group_objects:
-            cmds.setAttr(f'{object}.coneWidth', real_value)
-    
+            cmds.setAttr(f"{object}.coneWidth", real_value)
+
     def center(self):
-            qr = self.frameGeometry()
-            cp = QtWidgets.QDesktopWidget().availableGeometry().center()
-            qr.moveCenter(cp)
-            self.move(qr.topLeft())
+        qr = self.frameGeometry()
+        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
     def launchMeasurementToolRay(self):
         gap_size = self.gapSlider.value() / 100.0
@@ -228,12 +239,13 @@ class MainWindow(QtWidgets.QWidget):
         cone_length = self.coneLSlider.value() / 100
         cone_width = self.coneWSlider.value() / 10
         mt.place_locator(gap_size, font_size, cylinder_width, cone_length, cone_width)
-            
+
+
 def openWindow():
     if QtWidgets.QApplication.instance():
         for win in QtWidgets.QApplication.allWindows():
             print(win.objectName())
-            if 'Measurement Tool' in win.objectName():
+            if "Measurement Tool" in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)

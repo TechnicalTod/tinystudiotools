@@ -2,7 +2,7 @@ import os
 import unreal
 import sys
 import subprocess
-from PySide2 import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 import re
 from importlib import reload
 import unrealFilePaths
@@ -10,7 +10,10 @@ import unrealFilePaths
 import levelTools.USDSceneBuilderUnreal as usd_builder
 import levelTools.USDSceneExporterUnreal as usd_exporter
 
-import ImportExportUSDUI as simpleUI
+import levelTools.USDSceneImportExportUISimple as simpleUI
+
+SHOWDRIVE = unrealFilePaths.showDir
+
 
 class MainWindow(QtWidgets.QWidget):
 
@@ -20,10 +23,10 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
+        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
             self.setStyleSheet(fh.read())
         self.resize(400, 50)
-        self.setWindowTitle('Import / Export USD Scene description')
+        self.setWindowTitle("Import / Export USD Scene description")
         self.setFocus()
         self.center()
         self.show()
@@ -31,7 +34,7 @@ class MainWindow(QtWidgets.QWidget):
         # Create a combo box and populate it with files from the directory
         self.showDirLabel = QtWidgets.QLabel("Show Directory:")
         self.showDir = QtWidgets.QComboBox(self)
-        self.populateShowComboBox('Y:/')
+        self.populateShowComboBox(SHOWDRIVE)
         self.showDir.currentIndexChanged.connect(lambda: self.populateAssetComboBox())
 
         # Create a combo box and populate it with files from the directory
@@ -49,17 +52,17 @@ class MainWindow(QtWidgets.QWidget):
         self.varDir.setEditable(True)
         self.varDir.currentIndexChanged.connect(lambda: self.populateVerComboBoxes())
         self.varDir.editTextChanged.connect(lambda: self.populateVerComboBoxes())
-        
+
         # Create a combo box and populate it with files from the directory
         self.USDNameLabel = QtWidgets.QLabel("USD Name:")
         self.USDName = QtWidgets.QLabel("")
-        #self.itemDir.setEditable(True)
+        # self.itemDir.setEditable(True)
 
         # Create a combo box and populate it with files from the directory
         self.importVerLabel = QtWidgets.QLabel("Current Version:")
         self.importVer = QtWidgets.QComboBox(self)
-        #self.populateVerComboBoxes()
-        #self.importVer.setEditable(True)
+        # self.populateVerComboBoxes()
+        # self.importVer.setEditable(True)
         self.importVer.currentIndexChanged.connect(lambda: self.populateUSDName())
         self.importVer.editTextChanged.connect(lambda: self.populateUSDName())
 
@@ -71,15 +74,15 @@ class MainWindow(QtWidgets.QWidget):
         self.populateUSDName()
 
         # button widget
-        self.importUSDButton = QtWidgets.QPushButton('Import USD', self)
+        self.importUSDButton = QtWidgets.QPushButton("Import USD", self)
         self.importUSDButton.clicked.connect(self.importUSD)
 
         # button widget
-        self.exportUSDButton = QtWidgets.QPushButton('Export USD', self)
+        self.exportUSDButton = QtWidgets.QPushButton("Export USD", self)
         self.exportUSDButton.clicked.connect(self.exportUSD)
-        
+
         # button widget
-        openFolderIconFilepath = unrealFilePaths.UNREAL_openFolderIconFilepath
+        openFolderIconFilepath = unrealFilePaths.unrealIconPath + "folder.png"
         self.browseButton = QtWidgets.QPushButton()
         self.browseButton.setIcon(QtGui.QIcon(openFolderIconFilepath))
         self.browseButton.clicked.connect(lambda: self.browseButtonLaunch())
@@ -89,9 +92,15 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.setSpacing(10)
 
         # Set size policies for buttons
-        self.importUSDButton.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
-        self.exportUSDButton.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
-        self.browseButton.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred)
+        self.importUSDButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
+        self.exportUSDButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred
+        )
+        self.browseButton.setSizePolicy(
+            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
+        )
 
         # Add widgets to layout with consistent spanning
         self.grid.addWidget(self.showDirLabel, 1, 0)
@@ -112,8 +121,12 @@ class MainWindow(QtWidgets.QWidget):
         self.grid.addWidget(self.USDName, 5, 1, 1, -1)  # Consistent span
 
         # Adding buttons with adjusted spans to fill space appropriately
-        self.grid.addWidget(self.importUSDButton, 6, 0, 1, 2)  # Spans two columns, adjusted for more space
-        self.grid.addWidget(self.exportUSDButton, 6, 2, 1, 2)  # Spans two columns, adjusted for equal size
+        self.grid.addWidget(
+            self.importUSDButton, 6, 0, 1, 2
+        )  # Spans two columns, adjusted for more space
+        self.grid.addWidget(
+            self.exportUSDButton, 6, 2, 1, 2
+        )  # Spans two columns, adjusted for equal size
         self.grid.addWidget(self.browseButton, 6, 4)  # Single column on the right end
 
         # Set column stretches to manage space distribution effectively
@@ -140,8 +153,19 @@ class MainWindow(QtWidgets.QWidget):
         vardir = self.varDir.currentText()
         itemver = self.importVer.currentText()
         itemdir = self.USDName.text()
-        USDPath = 'Y:/' + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver + '/' + itemdir
-        USDPath = USDPath.replace(" ", '_')
+        USDPath = (
+            SHOWDRIVE
+            + showdir
+            + "/assets/ENV/"
+            + assetdir
+            + "/publish/unreal/layoutSceneDescription/"
+            + vardir
+            + "/"
+            + itemver
+            + "/"
+            + itemdir
+        )
+        USDPath = USDPath.replace(" ", "_")
         usd_builder.BuildScene(USDPath)
 
     # definition called when export button is pressed
@@ -149,17 +173,37 @@ class MainWindow(QtWidgets.QWidget):
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         vardir = self.varDir.currentText()
-        itemver = self.exportVerNum.text()     
+        itemver = self.exportVerNum.text()
         itemdir = self.USDName.text()
         itemdir = itemdir[:-9]
-        itemdir += itemver + '.usda'
-        if showdir != '' and assetdir != '':
-            coredir = USDPath = 'Y:/' + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver
-            coredir = coredir.replace(" ", '_')
+        itemdir += itemver + ".usda"
+        if showdir != "" and assetdir != "":
+            coredir = USDPath = (
+                SHOWDRIVE
+                + showdir
+                + "/assets/ENV/"
+                + assetdir
+                + "/publish/unreal/layoutSceneDescription/"
+                + vardir
+                + "/"
+                + itemver
+            )
+            coredir = coredir.replace(" ", "_")
             if not os.path.exists(coredir):
                 os.makedirs(coredir)
-            USDPath = 'Y:/' + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/' + vardir + '/' + itemver + '/' + itemdir
-            USDPath = USDPath.replace(" ", '_')
+            USDPath = (
+                SHOWDRIVE
+                + showdir
+                + "/assets/ENV/"
+                + assetdir
+                + "/publish/unreal/layoutSceneDescription/"
+                + vardir
+                + "/"
+                + itemver
+                + "/"
+                + itemdir
+            )
+            USDPath = USDPath.replace(" ", "_")
             usd_exporter.ExportScene(USDPath)
             self.populateAssetComboBox()
             self.populateVarComboBox()
@@ -168,107 +212,139 @@ class MainWindow(QtWidgets.QWidget):
 
     def populateShowComboBox(self, directory):
         try:
-            # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+            unwanted_dirs = {"$RECYCLE.BIN", "System Volume Information"}
+            directories = [
+                d
+                for d in os.listdir(SHOWDRIVE)
+                if os.path.isdir(os.path.join(SHOWDRIVE, d))
+                and not d.startswith(".")
+                and d not in unwanted_dirs
+            ]
             self.showDir.addItems(directories)
         except Exception as e:
             self.showDir.addItem(str(e))
-            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
-    
+            print(
+                f"Error accessing the directory: {str(e)}"
+            )  # Print the error to console for debugging
+
     def populateAssetComboBox(self):
         self.assetDir.clear()
         showdir = self.showDir.currentText()
-        directory = 'Y:/' + showdir + '/assets/ENV'
+        directory = SHOWDRIVE + showdir + "/assets/ENV"
         if not os.path.exists(directory):
             return
         try:
             # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+            directories = [
+                d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))
+            ]
             self.assetDir.addItems(directories)
         except Exception as e:
             self.assetDir.addItem(str(e))
-            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
+            print(
+                f"Error accessing the directory: {str(e)}"
+            )  # Print the error to console for debugging
 
     def populateVarComboBox(self):
         self.varDir.clear()
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
-        directory = 'Y:/' + showdir + '/assets/ENV/' + assetdir + '/publish/unreal/layoutSceneDescription/'
+        directory = (
+            SHOWDRIVE
+            + showdir
+            + "/assets/ENV/"
+            + assetdir
+            + "/publish/unreal/layoutSceneDescription/"
+        )
         if not os.path.exists(directory):
             return
         try:
             # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+            directories = [
+                d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))
+            ]
             self.varDir.addItems(directories)
         except Exception as e:
             self.varDir.addItem(str(e))
-            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
+            print(
+                f"Error accessing the directory: {str(e)}"
+            )  # Print the error to console for debugging
 
     def populateVerComboBoxes(self):
         self.importVer.clear()
         showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         vardir = self.varDir.currentText()
-        directory = f'Y:/{showdir}/assets/ENV/{assetdir}/publish/unreal/layoutSceneDescription/{vardir}'
-       
+        directory = (
+            f"Y:/{showdir}/assets/ENV/{assetdir}/publish/unreal/layoutSceneDescription/{vardir}"
+        )
+
         if not os.path.exists(directory):
-            self.importVer.addItem('v001')  # Add v001 as default if directory does not exist
-            self.exportVerNum.setText('v001')  # Update QLabel for next version
+            self.importVer.addItem("v001")  # Add v001 as default if directory does not exist
+            self.exportVerNum.setText("v001")  # Update QLabel for next version
             return
 
         versionNumList = []
         try:
             # List all directories in the given path
-            directories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+            directories = [
+                d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))
+            ]
             for d in directories:
-                match = re.search(r'v(\d{3})$', d)
+                match = re.search(r"v(\d{3})$", d)
                 if match:
                     versionNumber = match.group(1)
                     try:
                         num = int(versionNumber)
                         versionNumList.append(num)
                     except ValueError:
-                        print("Directory name not correctly versioned, must follow v001 with 3 numbers")
-           
+                        print(
+                            "Directory name not correctly versioned, must follow v001 with 3 numbers"
+                        )
+
             if len(versionNumList) == 0:
-                self.importVer.addItem('None')  # Add v001 as default if no versioned directories are found
+                self.importVer.addItem(
+                    "None"
+                )  # Add v001 as default if no versioned directories are found
                 self.exportVerNum.setText("v001")  # Update QLabel for next version
             else:
                 # Populate the combo box with existing versions
                 for num in sorted(versionNumList):
-                    self.importVer.addItem(f'v{num:03d}')
-                
+                    self.importVer.addItem(f"v{num:03d}")
+
                 self.importVer.setCurrentIndex(self.importVer.count() - 1)
 
                 # Determine the next version
                 nextVersion = max(versionNumList) + 1
-                nextVersion = f'v{nextVersion:03d}'
+                nextVersion = f"v{nextVersion:03d}"
                 self.exportVerNum.setText(nextVersion)  # Update QLabel with the next version
         except Exception as e:
             self.importVer.addItem(str(e))
             self.exportVerNum.setText("")  # Update QLabel if there's an error
-            print(f"Error accessing the directory: {str(e)}")  # Print the error to console for debugging
-    
+            print(
+                f"Error accessing the directory: {str(e)}"
+            )  # Print the error to console for debugging
+
     def populateUSDName(self):
-        #showdir = self.showDir.currentText()
+        # showdir = self.showDir.currentText()
         assetdir = self.assetDir.currentText()
         vardir = self.varDir.currentText()
         itemver = self.importVer.currentText()
-        if not vardir == '':
-            self.USDName.setText(f'{assetdir}_{vardir}_{itemver}.usda')
-
+        if not vardir == "":
+            self.USDName.setText(f"{assetdir}_{vardir}_{itemver}.usda")
 
     def browseButtonLaunch(self):
         simpleUI.openWindow()
         self.close()
 
-#open UI
+
+# open UI
 def openWindow():
     if QtWidgets.QApplication.instance():
-        #Id any current instances of tool and destroy
-        for win in (QtWidgets.QApplication.allWindows()):
-            print (win.objectName())
-            if 'Import Unreal Assets' in win.objectName():
+        # Id any current instances of tool and destroy
+        for win in QtWidgets.QApplication.allWindows():
+            print(win.objectName())
+            if "Import Unreal Assets" in win.objectName():
                 win.destroy()
     else:
         QtWidgets.QApplication(sys.argv)

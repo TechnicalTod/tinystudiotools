@@ -10,7 +10,7 @@ added_files = [
     ('icons/dropDownArrow.png', 'icons'),
     ('icons/aeIcon.png', 'icons'),
     ('styles/dark.qss', 'styles'),
-    ('batchFiles/launchMaya2023.bat', 'batch_files'),
+    ('batchFiles/launchMaya.bat', 'batch_files'),
     ('batchFiles/launchUnrealProject.bat', 'batch_files'),
     ('C:/Program Files/WindowsApps/PythonSoftwareFoundation.Python.3.10_3.10.3056.0_x64__qbz5n2kfra8p0/python310.dll', '.')
 ]
@@ -45,8 +45,8 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # Use False for GUI applications
-    icon='icons/appIcon.ico'  # Include your icon here if necessary
+    console=False,
+    icon='icons/appIcon.ico'
 )
 
 coll = COLLECT(
