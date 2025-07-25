@@ -22,6 +22,7 @@ https://docs.google.com/document/d/1NRxG60mvPhEzeWD2NCXaiJ-_0_pyBCbX-a-44ctsJb8/
 
 ### Prerequisite additional apps
 
+- UV package manager
 - Prism asset manager
 - Advanced skeleton
 
@@ -38,6 +39,7 @@ These libraries should be pip installed directly into the corresponding tools fo
 
 - PyMel 1.5.0
   - https://help.autodesk.com/view/MAYAUL/2025/ENU/?guid=GUID-2AA5EFCE-53B1-46A0-8E43-4CD0B2C72FB4
+  - https://www.autodesk.com/support/technical/article/caas/tsarticles/ts/6gfZgdPquwZ2qCVxfAkb1n.html
   - **Maya 2026 PyMEL Cache Fix:** If PyMEL fails to import or causes Maya to crash, you need to create Maya 2026 cache files:
     1. Navigate to Maya bin directory: `cd "C:\Program Files\Autodesk\Maya2026\bin"`
     2. Install PyMEL: `.\mayapy.exe -m pip install pymel`

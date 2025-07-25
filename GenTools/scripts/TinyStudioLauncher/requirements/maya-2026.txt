@@ -1,0 +1,6 @@
+# Maya 2026 Python Requirements
+# Migrated from L:\SagaTools\MayaRepository\2026\tools
+
+numpy==1.26.4
+pymel==1.5.0
+# pymel is included with Maya, don't install it separately

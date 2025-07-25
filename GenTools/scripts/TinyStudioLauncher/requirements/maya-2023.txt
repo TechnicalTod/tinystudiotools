@@ -1,0 +1,5 @@
+# Maya 2023 Python Requirements
+# Migrated from L:\SagaTools\MayaRepository\2023\tools
+
+numpy==1.26.4
+# pymel is included with Maya, don't install it separately

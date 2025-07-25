@@ -79,7 +79,7 @@ def get_icon_for_item(label, item_type):
 
 
 def buildSagaShelf():
-    """Build the SAGA shelf from config file"""
+    """Build the SAGA shelf from config"""
     print("Building SAGA shelf from config...")
 
     # Load configuration
@@ -92,6 +92,14 @@ def buildSagaShelf():
 
     # Create shelf using existing system
     icon_path = mayaFilePaths.mayaShelfIconPath
+
+    # Handle case where icon_path is None
+    if icon_path is None:
+        print("Warning: mayaShelfIconPath is None, using default path")
+        # Use a default path relative to the script directory
+        script_dir = os.path.dirname(__file__)
+        icon_path = os.path.join(script_dir, "..", "icons").replace("\\", "/") + "/"
+
     saga_shelf = shelfCreate.ShelfTool("SAGA_SHELF", icon_path)
     saga_shelf.createShelf()
 
