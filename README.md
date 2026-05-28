@@ -23,7 +23,6 @@ https://docs.google.com/document/d/1NRxG60mvPhEzeWD2NCXaiJ-_0_pyBCbX-a-44ctsJb8/
 ### Prerequisite additional apps
 
 - UV package manager
-- Prism asset manager
 - Advanced skeleton
 
 ### Prerequisite python libs
