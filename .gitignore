@@ -4,10 +4,14 @@ __pycache__/
 # Ignore all .pyc files
 *.pyc
 
-# Ignore the tools folder
-tools/
+# Ignore repo-root tools/ only (not AERepository/tools/)
+/tools/
 
-GenTools/scripts/SagaAppLauncher/build/
-GenTools/scripts/SagaAppLauncher/dist/
+GenTools/TinyStudioLauncher/build/
+GenTools/TinyStudioLauncher/dist/
 
 testScripts
+
+_Deprecated/*
+
+Docs/*

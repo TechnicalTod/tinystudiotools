@@ -4,27 +4,26 @@ import warnings
 import sys
 import os
 
-print("SagaTools userSetup.py loaded successfully")
+print("TinyStudio userSetup.py loaded successfully")
 
 
 def onStartUp():
-    print("Starting SagaTools initialization...")
+    print("Starting TinyStudio initialization...")
 
     try:
-        # Import and build the shelf
-        import buildSagaShelf
+        import buildTinyStudioShelf
 
-        buildSagaShelf.buildSagaShelf()
-        print("Saga Shelf built successfully")
+        buildTinyStudioShelf.buildTinyStudioShelf()
+        print("TinyStudio shelf built successfully")
     except Exception as e:
-        print(f"Error building Saga Shelf: {e}")
+        print(f"Error building TinyStudio shelf: {e}")
 
     print("##############################")
     print("##############################")
     print("###  |\/\/\/|  ###############")
-    print("###  |      |  #### SAGA #####")
-    print("###  |      |  #### PREVIS ###")
-    print("###  | (o)(o)  #### SHELF ####")
+    print("###  |      |  ## TINYSTUDIO #")
+    print("###  |      |  #### SHELF ####")
+    print("###  | (o)(o)  ##############")
     print("###  C      _) ###############")
     print("###   | ,___|  #### V1.0 #####")
     print("###   |   /    ###############")

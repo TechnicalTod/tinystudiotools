@@ -1,7 +1,7 @@
 """
 UI utility functions for Maya
 
-SAGA_TOOL_CONFIG:
+TINYSTUDIO_TOOL_CONFIG:
 {
     "category": "utility",
     "label": "UI Utilities",
@@ -10,13 +10,21 @@ SAGA_TOOL_CONFIG:
 """
 
 import maya.cmds as mc
+import mayaFilePaths
+
+
+def load_qss(filename):
+    """Load a Qt stylesheet from the shared pyQtStyleSheets folder."""
+    path = "{}/{}".format(mayaFilePaths.styleSheetFilepath, filename)
+    with open(path, "r", encoding="utf-8") as fh:
+        return fh.read()
 
 
 def openUVEditor():
     """
     Open UV Editor panel
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "UV Editor",
         "tooltip": "Open the UV Editor panel",
@@ -34,7 +42,7 @@ def copyCurrentScenePath():
     """
     Copy current Maya scene path to clipboard
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Copy Scene Path",
         "tooltip": "Copy current scene path to clipboard",

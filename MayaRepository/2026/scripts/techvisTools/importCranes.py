@@ -1,7 +1,7 @@
 """
 Techvis crane import utilities
 
-SAGA_TOOL_CONFIG:
+TINYSTUDIO_TOOL_CONFIG:
 {
     "category": "techvis",
     "label": "Crane Tools",
@@ -10,13 +10,16 @@ SAGA_TOOL_CONFIG:
 """
 
 import maya.cmds as mc
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 def importST15():
     """
     Import Super Techno 15 crane
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Super Techno 15",
         "tooltip": "Import Super Techno 15 crane",
@@ -27,7 +30,7 @@ def importST15():
     }
     """
     # Specify the path to the Maya scene file
-    scene_path = r"L:\SagaTools\GenTools\cranes\superTechno15.mb"
+    scene_path = str(_REPO_ROOT / "GenTools" / "cranes" / "superTechno15.mb")
     # Import the Maya scene file
     mc.file(
         scene_path,
@@ -43,7 +46,7 @@ def importCrane(crane_type="st15"):
     """
     Import crane by type
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Import Crane",
         "tooltip": "Import crane by type",
@@ -63,8 +66,8 @@ def importCrane(crane_type="st15"):
         print(f"Unknown crane type: {crane_type}")
         return
 
-    base_path = r"L:\SagaTools\GenTools\cranes"
-    scene_path = f"{base_path}\\{crane_files[crane_type]}"
+    base_path = _REPO_ROOT / "GenTools" / "cranes"
+    scene_path = str(base_path / crane_files[crane_type])
     mc.file(
         scene_path,
         i=True,

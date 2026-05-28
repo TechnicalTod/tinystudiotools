@@ -1,0 +1,5 @@
+# After Effects 2024 Python environment for TinyStudio external tooling.
+# After Effects has no in-process Python; this env powers the standalone
+# Workfile Publisher UI spawned from WorkfilePublisher.jsx via system.callSystem.
+
+PySide6>=6.5

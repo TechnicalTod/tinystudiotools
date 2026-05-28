@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 2,
+  "allowed_categories": ["chr", "prop", "env", "veh"],
+  "default_variant": "main",
+  "version_padding": 3,
+  "dcc": "maya",
+  "default_exports": [
+    { "id": "maya_scene" },
+    { "id": "copy_applied_textures" }
+  ],
+  "publish_types": {
+    "model": {
+      "label": "Model",
+      "checks": [
+        { "id": "asset_name_pascal_case", "severity": "warning" },
+        { "id": "materials_m_prefix_pascal", "severity": "warning" }
+      ],
+      "exports": [
+        { "id": "fbx_selection" }
+      ]
+    },
+    "rig": {
+      "label": "Rig",
+      "checks": [
+        { "id": "root_joint_exists", "severity": "error" },
+        {
+          "id": "root_joint_puppet_attrs",
+          "severity": "warning",
+          "params": {
+            "required_attrs": [
+              "assetType",
+              "assetName",
+              "variant",
+              "version",
+              "rootJointName",
+              "visGeoGroupName"
+            ]
+          }
+        }
+      ],
+      "exports": [
+        { "id": "fbx_rig" }
+      ]
+    },
+    "layout": {
+      "label": "Layout",
+      "checks": [
+        {
+          "id": "content_under_env_group",
+          "severity": "warning",
+          "params": { "group_name": "ENV" }
+        }
+      ],
+      "exports": [
+        { "id": "layout_placeholder" }
+      ],
+      "notes": "Env assets: scene description under publish/unreal (future). Chr/prop: stub manifest only in v1."
+    }
+  }
+}

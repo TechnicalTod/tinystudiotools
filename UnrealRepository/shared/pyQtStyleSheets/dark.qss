@@ -154,7 +154,7 @@ QComboBox::drop-down
 
 QComboBox::down-arrow
 {
-     image: url(L:/SagaTools/UnrealRepository/icons/dropDownArrow.png);
+     image: url(../../icons/dropDownArrow.png);
      right: 4px;
      width: 35px;
 }

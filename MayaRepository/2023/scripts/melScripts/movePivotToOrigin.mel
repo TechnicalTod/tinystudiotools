@@ -1,7 +1,0 @@
-global proc movePivotToOrigin(){
-  string $objectsToPivot[] = `ls -selection`;
-  for($obj in $objectsToPivot)
-  {
-	move 0 0 0 ($obj + ".scalePivot") ($obj + ".rotatePivot");
-  }
-}

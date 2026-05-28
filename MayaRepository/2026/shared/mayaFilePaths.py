@@ -2,8 +2,8 @@ import os
 
 # Windows username
 windowsUserName = os.environ.get("USERNAME")
-libDir = os.environ.get("SAGA_LIB_DIR")
-showDir = os.environ.get("SAGA_BASE_SHOW_DIR")
+libDir = os.environ.get("TINYSTUDIO_LIB_DIR")
+showDir = os.environ.get("TINYSTUDIO_BASE_SHOW_DIR")
 
 # Directory for artist assets
 artistDir = "{}Artist/{}/".format(libDir, windowsUserName) if libDir else None

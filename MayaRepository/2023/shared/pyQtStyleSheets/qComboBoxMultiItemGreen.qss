@@ -1,8 +1,0 @@
-QComboBox
-{
-    background-color: QLinearGradient( x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #88AF5C, stop: 0.1 #88AF5C, stop: 0.5 #6D8B4B, stop: 0.9 #6D8B4B, stop: 1 #6D8B4B);
-    color: black;
-    border-style: solid;
-    border: 1px solid #1e1e1e;
-    border-radius: 5;
-}

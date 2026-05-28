@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "show_id": "1000_TinyStudioTestShow",
+  "display_name": "Tiny Studio Test Show",
+  "application_versions": {
+    "maya": "2026",
+    "unreal": "5.6",
+    "ae": "2024"
+  }
+}

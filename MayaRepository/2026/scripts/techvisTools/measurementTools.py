@@ -26,16 +26,17 @@ def get_connected_transform(typeShape):
     return connections[0] if connections else None
 
 def set_pivot_to_center(typeToolTransform):
+    # World pivots only; BakeCustomPivot() rewrites type mesh history and spams warnings.
     bbox = typeToolTransform.getBoundingBox(space='world')
     center = [(bbox.min().x + bbox.max().x) / 2,
               (bbox.min().y + bbox.max().y) / 2,
               (bbox.min().z + bbox.max().z) / 2]
     typeToolTransform.setRotatePivot(center, worldSpace=True)
     typeToolTransform.setScalePivot(center, worldSpace=True)
-    pm.select(typeToolTransform)
-    cmds.BakeCustomPivot()
 
 def add_camera_list_attribute(object_name):
+    if not object_name or not cmds.objExists(object_name):
+        return
     # Get all cameras in the scene
     cameras = cmds.listCameras(perspective=True) + cmds.listCameras(orthographic=True)
     # Create an enum attribute with all cameras
@@ -44,6 +45,8 @@ def add_camera_list_attribute(object_name):
         cmds.addAttr(object_name, longName='cameraLink', attributeType='enum', enumName=camera_enum, keyable=True)
 
 def update_camera_list_attribute(object_name):
+    if not object_name or not cmds.objExists(object_name):
+        return
     # Get all cameras in the scene
     cameras = cmds.listCameras(perspective=True) + cmds.listCameras(orthographic=True)
     # Create an enum string from the camera list
@@ -57,6 +60,12 @@ def update_camera_list_attribute(object_name):
         cmds.addAttr(object_name, longName='cameraLink', attributeType='enum', enumName=camera_enum, keyable=True)
 
 def update_aim_constraint(group_name, target_group,attribute_name='cameraLink'):
+    if not group_name or not cmds.objExists(group_name):
+        return
+    if not target_group or not cmds.objExists(target_group):
+        return
+    if not cmds.attributeQuery(attribute_name, node=group_name, exists=True):
+        return
     # Safely handle the aim constraint update
     index = cmds.getAttr(f'{group_name}.{attribute_name}')
     cameras = cmds.listCameras(perspective=True) + cmds.listCameras(orthographic=True)
@@ -79,16 +88,36 @@ def create_camera_change_script_job(group_name, target_group):
 def setup_camera_monitor_job(object_name):
     # Monitor and update the camera list only when necessary
     previous_cameras = set(cmds.listCameras(perspective=True) + cmds.listCameras(orthographic=True))
+    job_holder = {'id': None}
 
     def camera_monitor():
         nonlocal previous_cameras
+        if not object_name or not cmds.objExists(object_name):
+            jid = job_holder.get('id')
+            if jid is not None:
+                try:
+                    cmds.scriptJob(kill=jid, force=True)
+                except RuntimeError:
+                    pass
+            return
         current_cameras = set(cmds.listCameras(perspective=True) + cmds.listCameras(orthographic=True))
         if current_cameras != previous_cameras:
             update_camera_list_attribute(object_name)
             previous_cameras = current_cameras
 
     job_id = cmds.scriptJob(event=["DagObjectCreated", camera_monitor], protected=True)
+    job_holder['id'] = job_id
     return job_id
+
+def assign_surface_shader_to_mesh_shapes(transform, shader_name, shading_group):
+    """Wire the shader to the SG and add only mesh shapes. hyperShade on the transform also targets
+    sibling aimConstraints under that transform, which shadingEngines reject."""
+    mesh_shapes = cmds.listRelatives(transform, shapes=True, path=True, type='mesh', noIntermediate=True) or []
+    if not mesh_shapes:
+        return
+    cmds.connectAttr(shader_name + '.outColor', shading_group + '.surfaceShader', force=True)
+    for shp in mesh_shapes:
+        cmds.sets(shp, edit=True, forceElement=shading_group)
 
 def cm_to_inches(cm):
     inches = cm / 2.54
@@ -179,12 +208,7 @@ def group_and_position_type_tool(typeToolShape, locator1_name, locator2_name, gr
     # Set the shader color to black
     cmds.setAttr(shader_name + '.outColor', 0, 0, 0, type='double3')
 
-    # Assign the shader to the cylinder
-    cmds.select(typeToolTransformName)
-    cmds.hyperShade(assign=shader_name)
-
-    # Connect the shader to the shading group
-    cmds.connectAttr(shader_name + '.outColor', shading_group + '.surfaceShader', force=True)
+    assign_surface_shader_to_mesh_shapes(typeToolTransformName, shader_name, shading_group)
     
     # Create script job to update text when locators move
     def update_text(dummy=None):
@@ -454,12 +478,7 @@ def create_or_update_cylinder(start_locator, end_locator, cylinder_base_name="al
     # Set the shader color to black
     cmds.setAttr(shader_name + '.outColor', 0, 0, 0, type='double3')
 
-    # Assign the shader to the cylinder
-    cmds.select(cylinder)
-    cmds.hyperShade(assign=shader_name)
-
-    # Connect the shader to the shading group
-    cmds.connectAttr(shader_name + '.outColor', shading_group + '.surfaceShader', force=True)
+    assign_surface_shader_to_mesh_shapes(cylinder, shader_name, shading_group)
     
     return cylinder
 
@@ -505,12 +524,7 @@ def create_or_update_cone(locator1, locator2, unique_id, group_name):
         # Set the shader color to black
         cmds.setAttr(shader_name + '.outColor', 0, 0, 0, type='double3')
     
-        # Assign the shader to the cylinder
-        cmds.select(cone)
-        cmds.hyperShade(assign=shader_name)
-    
-        # Connect the shader to the shading group
-        cmds.connectAttr(shader_name + '.outColor', shading_group + '.surfaceShader', force=True)
+        assign_surface_shader_to_mesh_shapes(cone, shader_name, shading_group)
         
         return cone
         

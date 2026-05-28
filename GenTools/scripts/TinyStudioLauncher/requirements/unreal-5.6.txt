@@ -1,7 +1,0 @@
-# Unreal Engine Python Requirements
-# Migrated from L:\SagaTools\UnrealRepository\tools
-
-PySide2==5.15.2.1
-numpy==2.1.1
-shiboken2==5.15.2.1
-transforms3d==0.4.2

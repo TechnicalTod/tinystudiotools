@@ -1,12 +1,12 @@
-# Saga Previs Tools Repository
+# TinyStudio Previs Tools Repository
 
-This is the repository for the Saga Studio pipeline repository
+This is the repository for the TinyStudio pipeline.
 
 ## Description
 
 This requires two main drives to be set to correctly run
 
-studioLib **(L:/SagaTools)** - This contains the contents of this repository<br />
+studioLib **(L:/TinyStudioTools)** - This contains the contents of this repository<br />
 showDrive **(S:/)** - This contains all of the Studio show project dirs<br />
 
 In addition to this it requires the following folders to be created
@@ -14,8 +14,8 @@ In addition to this it requires the following folders to be created
 **L:\Artist** - Artist folder
 
 **App Launcher**
-All artist must interact with applications through the Saga app launcher
-Make a shortcut copy of the Launcher executable: **L:\SagaAppLauncher.exe**
+All artists must interact with applications through the TinyStudio launcher.
+Make a shortcut copy of the launcher executable: **L:\TinyStudioTools\GenTools\TinyStudioLauncher\dist\TinyStudioLauncher\TinyStudioLauncher.exe** (or your installed build path).
 
 **Unreal Generic project setup docs**
 https://docs.google.com/document/d/1NRxG60mvPhEzeWD2NCXaiJ-_0_pyBCbX-a-44ctsJb8/edit

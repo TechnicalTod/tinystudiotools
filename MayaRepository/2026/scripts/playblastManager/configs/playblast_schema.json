@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "output": {
+    "subdir": "playblasts",
+    "format": "png",
+    "version_padding": 3,
+    "frame_padding": 4
+  },
+  "defaults": {
+    "frame_source": "scene",
+    "show_ornaments": true,
+    "display_mode": "smoothShaded",
+    "quality": 100
+  },
+  "display_modes": [
+    "smoothShaded",
+    "wireOnShaded",
+    "wireframe",
+    "flat",
+    "textured"
+  ]
+}

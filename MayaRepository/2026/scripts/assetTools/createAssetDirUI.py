@@ -1,6 +1,7 @@
 import os
 import subprocess
 from genTools.genUtils import warningPopup
+from genTools.uiUtils import load_qss
 from PySide6 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
@@ -25,9 +26,7 @@ class MainWindow(QtWidgets.QWidget):
         self.resize(600, 50)
         self.setWindowTitle("Create asset directories")
         self.setFocus()
-        self.style_sheet_file_loc = mayaFilePaths.styleSheetFilepath
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.center()
         self.show()
 

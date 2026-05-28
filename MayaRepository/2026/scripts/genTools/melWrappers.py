@@ -1,7 +1,7 @@
 """
 MEL command wrapper utilities for Maya
 
-SAGA_TOOL_CONFIG:
+TINYSTUDIO_TOOL_CONFIG:
 {
     "category": "utility",
     "label": "MEL Wrappers",
@@ -16,7 +16,7 @@ def movePivotBA():
     """
     Move pivot from B to A
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Move Pivot B to A",
         "tooltip": "Move pivot from object B to object A",
@@ -32,7 +32,7 @@ def movePivotToOrigin():
     """
     Move pivot to origin
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Move Pivot To Origin",
         "tooltip": "Move pivot to world origin",
@@ -48,7 +48,7 @@ def sortOutliner():
     """
     Sort outliner alphabetically
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Sort Outliner",
         "tooltip": "Sort outliner alphabetically",
@@ -65,7 +65,7 @@ def cometRename():
     """
     Launch Comet rename tool
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Comet Rename",
         "tooltip": "Launch Comet rename tool",
@@ -82,7 +82,7 @@ def detachDuplicateComponents():
     """
     Detach and duplicate selected components
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Duplicate Components",
         "tooltip": "Detach and duplicate selected components",
@@ -99,7 +99,7 @@ def selectNthEdge():
     """
     Select every Nth edge in edge ring
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Select Nth Edge",
         "tooltip": "Select every other edge in an edge ring",
@@ -116,7 +116,7 @@ def randomVertCol():
     """
     Apply random vertex colors to selection
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Random Vertex Color",
         "tooltip": "Apply random vertex colors to selection",
@@ -133,7 +133,7 @@ def doraSkinWeight():
     """
     Launch Dora Skin Weight tool
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Dora Skin Weight",
         "tooltip": "Launch Dora Skin Weight tool",

@@ -4,6 +4,7 @@ from PySide6 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
 import re
 from genTools.genUtils import warningPopup, viewportMessage
+from genTools.uiUtils import load_qss
 import mayaFilePaths
 
 
@@ -15,8 +16,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(600, 50)
         self.setWindowTitle("Export multiple Obj")
         self.setFocus()

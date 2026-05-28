@@ -2,6 +2,7 @@ from importlib import reload
 from PySide6 import QtWidgets, QtGui
 import genTools.genUtils as genUtils
 from genTools.genUtils import warningPopup
+from genTools.uiUtils import load_qss
 import os
 import subprocess
 import json
@@ -59,8 +60,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(600, 50)
         self.setWindowTitle("Build shaders from Substance exports")
         self.setFocus()

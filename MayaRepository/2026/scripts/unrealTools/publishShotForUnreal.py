@@ -4,6 +4,7 @@ import maya.mel as mm
 import maya.cmds as mc
 import json
 import os
+from genTools.uiUtils import load_qss
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken6
@@ -23,8 +24,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.setWindowTitle("Publish Shot For Unreal")
         self.setFocus()
         self.center()
@@ -55,10 +55,8 @@ class MainWindow(QtWidgets.QWidget):
         self.openFolderButton.customContextMenuRequested.connect(self.showContextMenu)
 
         # adjust the import button style sheet
-        with open("{}/importButton.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.publishButton.setStyleSheet(fh.read())
-        with open("{}/openButton.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.openFolderButton.setStyleSheet(fh.read())
+        self.publishButton.setStyleSheet(load_qss("importButton.qss"))
+        self.openFolderButton.setStyleSheet(load_qss("openButton.qss"))
 
         # Set up the model for QTreeView
         self.model = QtGui.QStandardItemModel()

@@ -1,0 +1,19 @@
+{
+  "name": "After Effects 2024",
+  "repository": "AERepository",
+  "python_version": "3.10",
+  "executable_path": "C:/Program Files/Adobe/Adobe After Effects {version}/Support Files/AfterFX.exe",
+  "icon": "aeIcon.png",
+  "additional_paths": [
+    "{AE_REPO}/scripts",
+    "{AE_REPO}/tools"
+  ],
+  "env_vars": {
+    "AE_PROJECT_DIR": "{TINYSTUDIO_BASE_SHOW_DIR}{SHOW_NAME}/ae/projects",
+    "AE_SCRIPTS_DIR": "{AE_REPO}/scripts",
+    "AE_MANIFEST": "{AE_REPO}/config/tinystudio_ae_tools.json",
+    "SCRIPT_DIR": "{SCRIPT_DIR}"
+  },
+  "script_paths": ["scripts", "tools"],
+  "supported_shows": "all"
+}

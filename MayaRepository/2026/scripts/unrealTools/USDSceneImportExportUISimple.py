@@ -1,6 +1,7 @@
 import os
 import sys
 from PySide6 import QtGui, QtWidgets, QtCore
+from genTools.uiUtils import load_qss
 import mayaFilePaths
 import unrealTools.USDSceneBuilderMaya as sceneBuilder
 import unrealTools.USDSceneExporterMaya as sceneExporter
@@ -18,8 +19,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(600, 50)
         self.setWindowTitle("Import / Export USD Scene description")
         self.setFocus()

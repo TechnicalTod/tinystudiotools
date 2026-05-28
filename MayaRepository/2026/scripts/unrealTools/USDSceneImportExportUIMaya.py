@@ -2,6 +2,7 @@ import os
 import sys
 import re
 from PySide6 import QtGui, QtWidgets, QtCore
+from genTools.uiUtils import load_qss
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
 import shiboken6
@@ -29,8 +30,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(400, 50)
         self.setWindowTitle("Import / Export USD Scene description")
         self.setFocus()

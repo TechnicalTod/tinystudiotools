@@ -2,6 +2,7 @@ import os
 from PySide6 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
 import mayaFilePaths
+from genTools.uiUtils import load_qss
 
 WINDOW = None
 
@@ -62,6 +63,7 @@ class MainWindow(QtWidgets.QWidget):
 
         self.setGeometry(100, 100, 700, 650)
         self.setWindowTitle("Plugin Manager")
+        self.setStyleSheet(load_qss("dark.qss"))
         self.centralLayout = QtWidgets.QVBoxLayout(self)
 
         self.filterBox = FilterBox()

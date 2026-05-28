@@ -1,7 +1,7 @@
 """
 Modelling selection utilities
 
-SAGA_TOOL_CONFIG:
+TINYSTUDIO_TOOL_CONFIG:
 {
     "category": "modelling",
     "label": "Selection Utilities",
@@ -16,7 +16,7 @@ def toggleSelectByAngle():
     """
     Toggle select faces by angle constraint
 
-    SAGA_TOOL_CONFIG:
+    TINYSTUDIO_TOOL_CONFIG:
     {
         "label": "Select by Angle",
         "tooltip": "Toggle selection by angle constraint",

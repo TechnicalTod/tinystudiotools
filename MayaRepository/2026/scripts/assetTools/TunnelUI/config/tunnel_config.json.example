@@ -1,0 +1,14 @@
+{
+  "metadata_path": "L:\\megaScansMetadata",
+  "assets_path": "B:\\MegascansLib\\Zips",
+  "thumbnail_size": 150,
+  "grid_spacing": 10,
+  "window_width": 900,
+  "window_height": 800,
+  "max_concurrent_loads": 10,
+  "cache_size": 100,
+  "maya_mode": true,
+  "stylesheet_path": null,
+  "debug_mode": false,
+  "log_level": "INFO"
+} 

@@ -1,6 +1,6 @@
-maya publisher
-*setup backend DB
-*loooooooooots of fixes and tests
+Test asset publisher
+test the playblast tools
+
 
 * Build default Unreal project 
 * get unreal media plate blueprint

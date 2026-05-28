@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "tools": [
+    {
+      "id": "placeholder",
+      "label": "Placeholder...",
+      "description": "Smoke test for the TinyStudio AE tool shell.",
+      "script": "tools/placeholder.jsx",
+      "enabled": false
+    },
+    {
+      "id": "workfile_publisher",
+      "label": "Workfile Publisher",
+      "description": "Publish and open versioned shot workfiles on the show drive (native ScriptUI).",
+      "script": "tools/WorkfilePublisher.jsx",
+      "enabled": true
+    }
+  ]
+}

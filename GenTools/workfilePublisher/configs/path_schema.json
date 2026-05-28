@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "show_root": {
+    "base_dir_env": "TINYSTUDIO_BASE_SHOW_DIR",
+    "show_env": "SHOW_NAME"
+  },
+  "asset": {
+    "root_segment": "assets",
+    "work_path": "{show_root}/assets/{category}/{asset}/work/{dcc}/{task}",
+    "publish_path": "{show_root}/assets/{category}/{asset}/publish/{dcc}/{task}",
+    "filename": "{asset}_{task}_{variant}_v{version:03d}.{ext}"
+  },
+  "shot": {
+    "root_segment": "episodes",
+    "work_path": "{show_root}/episodes/{episode}/{sequence}/{shot}/work/{dcc}/{task}",
+    "publish_path": "{show_root}/episodes/{episode}/{sequence}/{shot}/publish/{dcc}/{task}",
+    "filename": "{shot}_{task}_{variant}_v{version:03d}.{ext}"
+  },
+  "default_variant": "main",
+  "version_padding": 3,
+  "dcc": {
+    "maya": {
+      "label": "Maya",
+      "extension": "ma",
+      "supports_asset": true,
+      "supports_shot": true,
+      "asset_tasks": ["model", "rig", "shading"],
+      "shot_tasks": ["layout", "anim", "light", "techviz"]
+    },
+    "ae": {
+      "label": "After Effects",
+      "extension": "aep",
+      "supports_asset": false,
+      "supports_shot": true,
+      "asset_tasks": [],
+      "shot_tasks": ["layout", "anim", "light", "techviz"]
+    }
+  }
+}

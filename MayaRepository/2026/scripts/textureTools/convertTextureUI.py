@@ -1,6 +1,7 @@
 import os
 import subprocess
 from genTools.genUtils import warningPopup
+from genTools.uiUtils import load_qss
 from PySide6 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 
@@ -22,8 +23,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(mayaFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(600, 400)
         self.setWindowTitle("Advanced Texture Converter")
         self.setFocus()
@@ -74,7 +74,9 @@ class MainWindow(QtWidgets.QWidget):
         self.previewLabel = QtWidgets.QLabel("Preview:")
         self.imagePreview = QtWidgets.QLabel()
         self.imagePreview.setFixedSize(200, 150)
-        self.imagePreview.setStyleSheet("border: 1px solid gray; background-color: #2b2b2b;")
+        self.imagePreview.setStyleSheet(
+            "border: 1px solid #555555; background-color: #2b2b2b; color: #b0b0b0;"
+        )
         self.imagePreview.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.imagePreview.setText("No image selected")
         self.imagePreview.setScaledContents(True)
