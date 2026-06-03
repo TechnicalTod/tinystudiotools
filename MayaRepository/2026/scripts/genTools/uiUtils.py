@@ -9,6 +9,8 @@ TINYSTUDIO_TOOL_CONFIG:
 }
 """
 
+import os
+
 import maya.cmds as mc
 import mayaFilePaths
 
@@ -17,7 +19,15 @@ def load_qss(filename):
     """Load a Qt stylesheet from the shared pyQtStyleSheets folder."""
     path = "{}/{}".format(mayaFilePaths.styleSheetFilepath, filename)
     with open(path, "r", encoding="utf-8") as fh:
-        return fh.read()
+        qss = fh.read()
+
+    # Qt resolves url() relative to process CWD in Maya; use absolute icon paths.
+    repo_root = (os.getenv("MAYA_REPO") or "").replace("\\", "/")
+    if repo_root:
+        icons_dir = repo_root + "/icons"
+        qss = qss.replace("url(../../icons/", "url({}/".format(icons_dir))
+        qss = qss.replace("url(../icons/", "url({}/".format(icons_dir))
+    return qss
 
 
 def openUVEditor():

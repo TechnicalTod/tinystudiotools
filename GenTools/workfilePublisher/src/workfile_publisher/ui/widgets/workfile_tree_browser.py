@@ -8,34 +8,20 @@ from typing import Optional
 
 from ...core import path_schema as ps
 from ...core.discovery import ShowDiscovery
-from ...core.publish_service import WorkfileTarget
 from ..qt import Qt, QtWidgets, Signal
 
 
 @dataclass(frozen=True)
 class WorkfileTreeSelection:
-    """A selectable task leaf in the workfile tree."""
+    """A selectable asset, shot, or task leaf in the workfile tree."""
 
     kind: str  # "asset" | "shot"
-    task: str
+    task: Optional[str] = None
     category: Optional[str] = None
     asset: Optional[str] = None
     episode: Optional[str] = None
     sequence: Optional[str] = None
     shot: Optional[str] = None
-
-    def to_target(self, dcc: str, default_variant: str) -> WorkfileTarget:
-        return WorkfileTarget(
-            kind=self.kind,
-            dcc=dcc,
-            task=self.task,
-            variant=default_variant,
-            category=self.category,
-            asset=self.asset,
-            episode=self.episode,
-            sequence=self.sequence,
-            shot=self.shot,
-        )
 
 
 class WorkfileTreeBrowser(QtWidgets.QWidget):
@@ -75,8 +61,8 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
 
         self._populate()
 
-    def refresh(self) -> None:
-        path = self._selection_path()
+    def refresh(self, *, restore_path: Optional[str] = None) -> None:
+        path = restore_path if restore_path is not None else self._selection_path()
         self._discovery.invalidate()
         self._populate()
         self._restore_path(path)
@@ -84,26 +70,40 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
     def current_selection(self) -> Optional[WorkfileTreeSelection]:
         return self._selection
 
-    def current_target(self) -> Optional[WorkfileTarget]:
-        if self._selection is None:
-            return None
-        return self._selection.to_target(self._dcc, self._schema.default_variant)
-
     def _selection_path(self) -> Optional[str]:
         if not self._selection:
             return None
         sel = self._selection
         if sel.kind == "asset":
-            return f"asset/{sel.category}/{sel.asset}/{sel.task}"
-        return f"shot/{sel.episode}/{sel.sequence}/{sel.shot}/{sel.task}"
+            if sel.task:
+                return f"asset/{sel.category}/{sel.asset}/{sel.task}"
+            return f"asset/{sel.category}/{sel.asset}"
+        if sel.task:
+            return f"shot/{sel.episode}/{sel.sequence}/{sel.shot}/{sel.task}"
+        return f"shot/{sel.episode}/{sel.sequence}/{sel.shot}"
 
     def _restore_path(self, path: Optional[str]) -> None:
         if not path:
             return
         parts = path.split("/")
-        if len(parts) < 4:
+        if len(parts) < 3:
             return
         kind = parts[0]
+        if kind == "asset" and len(parts) == 3:
+            _kind, category, asset = parts
+            assets_root = self._find_child_by_text(
+                self._tree.invisibleRootItem(), "assets"
+            )
+            if assets_root is None:
+                return
+            category_item = self._find_child_by_text(assets_root, category)
+            if category_item is None:
+                return
+            asset_item = self._find_child_by_text(category_item, asset)
+            if asset_item is None:
+                return
+            self._tree.setCurrentItem(asset_item)
+            return
         if kind == "asset" and len(parts) == 4:
             _kind, category, asset, task = parts
             assets_root = self._find_child_by_text(
@@ -119,23 +119,35 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                 return
             self._select_task_child(asset_item, task)
             return
+        if kind == "shot" and len(parts) == 4:
+            _kind, episode, sequence, shot = parts
+            shot_item = self._find_shot_by_path(episode, sequence, shot)
+            if shot_item is None:
+                return
+            self._tree.setCurrentItem(shot_item)
+            return
         if kind == "shot" and len(parts) == 5:
             _kind, episode, sequence, shot, task = parts
-            episodes_root = self._find_child_by_text(
-                self._tree.invisibleRootItem(), "episodes"
-            )
-            if episodes_root is None:
-                return
-            episode_item = self._find_child_by_text(episodes_root, episode)
-            if episode_item is None:
-                return
-            sequence_item = self._find_child_by_text(episode_item, sequence)
-            if sequence_item is None:
-                return
-            shot_item = self._find_shot_item(sequence_item, shot)
+            shot_item = self._find_shot_by_path(episode, sequence, shot)
             if shot_item is None:
                 return
             self._select_task_child(shot_item, task)
+
+    def _find_shot_by_path(
+        self, episode: str, sequence: str, shot: str
+    ) -> Optional[QtWidgets.QTreeWidgetItem]:
+        episodes_root = self._find_child_by_text(
+            self._tree.invisibleRootItem(), "episodes"
+        )
+        if episodes_root is None:
+            return None
+        episode_item = self._find_child_by_text(episodes_root, episode)
+        if episode_item is None:
+            return None
+        sequence_item = self._find_child_by_text(episode_item, sequence)
+        if sequence_item is None:
+            return None
+        return self._find_shot_item(sequence_item, shot)
 
     @staticmethod
     def _find_child_by_text(
@@ -185,9 +197,8 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
         except OSError:
             return 0
 
-    def _task_label(self, task: str, folder: Path) -> str:
-        count = self._count_workfiles(folder)
-        return f"{task}  ({count})" if count else task
+    def _task_label(self, task: str, count: int) -> str:
+        return f"{task}  ({count})" if count > 1 else task
 
     def _populate(self) -> None:
         self._tree.clear()
@@ -221,7 +232,6 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                         "asset": asset,
                     },
                 )
-                asset_item.setFlags(asset_item.flags() & ~Qt.ItemIsSelectable)
 
                 for task in self._dcc_spec.asset_tasks:
                     work_dir = (
@@ -232,8 +242,11 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                         / self._dcc
                         / task
                     )
+                    count = self._count_workfiles(work_dir)
+                    if count == 0:
+                        continue
                     task_item = QtWidgets.QTreeWidgetItem(
-                        [self._task_label(task, work_dir)]
+                        [self._task_label(task, count)]
                     )
                     task_item.setData(
                         0,
@@ -248,8 +261,7 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                     )
                     asset_item.addChild(task_item)
 
-                if asset_item.childCount():
-                    category_item.addChild(asset_item)
+                category_item.addChild(asset_item)
 
             if category_item.childCount():
                 assets_root.addChild(category_item)
@@ -293,7 +305,6 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                             "shot": shot,
                         },
                     )
-                    shot_item.setFlags(shot_item.flags() & ~Qt.ItemIsSelectable)
 
                     for task in self._dcc_spec.shot_tasks:
                         work_dir = (
@@ -305,8 +316,11 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                             / self._dcc
                             / task
                         )
+                        count = self._count_workfiles(work_dir)
+                        if count == 0:
+                            continue
                         task_item = QtWidgets.QTreeWidgetItem(
-                            [self._task_label(task, work_dir)]
+                            [self._task_label(task, count)]
                         )
                         task_item.setData(
                             0,
@@ -322,8 +336,7 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                         )
                         shot_item.addChild(task_item)
 
-                    if shot_item.childCount():
-                        sequence_item.addChild(shot_item)
+                    sequence_item.addChild(shot_item)
 
                 if sequence_item.childCount():
                     episode_item.addChild(sequence_item)
@@ -343,24 +356,38 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
             return
 
         data = items[0].data(0, Qt.UserRole) or {}
-        if data.get("kind") != "task":
-            self._selection = None
-            self.selection_changed.emit()
-            return
+        kind = data.get("kind")
 
-        if data.get("context") == "asset":
+        if kind == "task":
+            if data.get("context") == "asset":
+                self._selection = WorkfileTreeSelection(
+                    kind="asset",
+                    task=data["task"],
+                    category=data["category"],
+                    asset=data["asset"],
+                )
+            else:
+                self._selection = WorkfileTreeSelection(
+                    kind="shot",
+                    task=data["task"],
+                    episode=data["episode"],
+                    sequence=data["sequence"],
+                    shot=data["shot"],
+                )
+        elif kind == "asset":
             self._selection = WorkfileTreeSelection(
                 kind="asset",
-                task=data["task"],
                 category=data["category"],
                 asset=data["asset"],
             )
-        else:
+        elif kind == "shot":
             self._selection = WorkfileTreeSelection(
                 kind="shot",
-                task=data["task"],
                 episode=data["episode"],
                 sequence=data["sequence"],
                 shot=data["shot"],
             )
+        else:
+            self._selection = None
+
         self.selection_changed.emit()

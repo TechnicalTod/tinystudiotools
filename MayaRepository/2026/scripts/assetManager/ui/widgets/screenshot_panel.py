@@ -7,8 +7,8 @@ from typing import Optional
 
 from ..qt import Qt, QtCore, QtGui, QtWidgets, Signal
 
-_PREVIEW_WIDTH = 220
-_PREVIEW_HEIGHT = 160
+_PREVIEW_WIDTH = 330
+_PREVIEW_HEIGHT = 240
 
 
 class ScreenshotPanel(QtWidgets.QGroupBox):
@@ -17,10 +17,14 @@ class ScreenshotPanel(QtWidgets.QGroupBox):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__("Screenshot", parent)
         self._path: Optional[Path] = None
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Preferred,
+            QtWidgets.QSizePolicy.Maximum,
+        )
 
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(10)
 
         self._preview = QtWidgets.QLabel("No image")
         self._preview.setAlignment(Qt.AlignCenter)
@@ -34,21 +38,22 @@ class ScreenshotPanel(QtWidgets.QGroupBox):
             QtWidgets.QSizePolicy.Fixed,
         )
         layout.addWidget(self._preview, 0, Qt.AlignHCenter)
+        layout.addSpacing(4)
 
         row = QtWidgets.QHBoxLayout()
+        row.setSpacing(12)
         self.capture_btn = QtWidgets.QPushButton("Capture")
-        self.browse_btn = QtWidgets.QPushButton("Browse")
         self.clear_btn = QtWidgets.QPushButton("Clear")
+        row.addStretch(1)
         row.addWidget(self.capture_btn)
-        row.addWidget(self.browse_btn)
         row.addWidget(self.clear_btn)
+        row.addStretch(1)
         layout.addLayout(row)
 
-        self.browse_btn.clicked.connect(self._browse)
         self.clear_btn.clicked.connect(self.clear)
 
     def screenshot_path(self) -> Optional[Path]:
-        """Path attached to the next publish (capture / browse)."""
+        """Path attached to the next publish (viewport capture)."""
         return self._path
 
     def set_image_path(self, path: Optional[Path]) -> None:
@@ -83,13 +88,3 @@ class ScreenshotPanel(QtWidgets.QGroupBox):
 
     def clear(self) -> None:
         self.set_image_path(None)
-
-    def _browse(self) -> None:
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            "Select screenshot",
-            "",
-            "Images (*.png *.jpg *.jpeg *.bmp)",
-        )
-        if path:
-            self.set_image_path(Path(path))

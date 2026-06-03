@@ -19,6 +19,8 @@ COL_VARIANT = 1
 COL_CUR_VERSION = 2
 COL_NEW_VERSION = 3
 
+TABLE_ROW_HEIGHT = 44
+
 DUPLICATE_BG_COLOR = QtGui.QColor("#7D2020")
 PUBLISHED_FG_COLOR = QtGui.QColor(80, 153, 255)
 
@@ -40,24 +42,29 @@ class MainWindow(QtWidgets.QWidget):
     def initUI(self):
         self.setObjectName(MAIN_WINDOW_OBJECT_NAME)
         self.setStyleSheet(load_qss("dark.qss"))
-        self.setWindowTitle("Publish Set Dec Assets")
+        self.setWindowTitle("Publish Set Dec Assets — {}".format(self._current_show))
         self.setFocus()
         self.center()
-        self.setGeometry(100, 100, 1100, 500)
+        self.resize(1100, 500)
 
-        layout = QtWidgets.QGridLayout(self)
-        self.setLayout(layout)
+        outer = QtWidgets.QVBoxLayout(self)
+        outer.setContentsMargins(12, 12, 12, 12)
+        outer.setSpacing(8)
 
-        header_frame = self._build_header()
+        outer.addWidget(self._build_header())
+
+        content = QtWidgets.QHBoxLayout()
+        content.setSpacing(8)
+
+        self._build_show_settings()
         self._build_table()
-        button_layout = self._build_buttons()
-        show_settings_layout = self._build_show_settings()
+        self._build_buttons()
 
-        layout.addWidget(header_frame, 0, 0, 1, 6)
-        layout.addWidget(self.tableWidget, 1, 1, 5, 4)
-        layout.addLayout(show_settings_layout, 1, 0)
-        layout.addLayout(button_layout, 1, 5)
-        layout.addWidget(self.exportButton, 5, 5, alignment=QtCore.Qt.AlignBottom)
+        content.addLayout(self._group_panel, 0)
+        content.addWidget(self.tableWidget, 1)
+        content.addLayout(self._button_panel, 0)
+
+        outer.addLayout(content, 1)
 
         self.getShowList()
         self.show()
@@ -72,13 +79,41 @@ class MainWindow(QtWidgets.QWidget):
         self.tableWidget.setColumnWidth(COL_NEW_VERSION, 100)
         header = self.tableWidget.horizontalHeader()
         header.setSectionResizeMode(COL_NAME, QtWidgets.QHeaderView.Stretch)
+        vheader = self.tableWidget.verticalHeader()
+        vheader.setDefaultSectionSize(TABLE_ROW_HEIGHT)
+        vheader.setMinimumSectionSize(TABLE_ROW_HEIGHT)
+        vheader.setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
         self.tableWidget.setHorizontalHeaderLabels(
             ["Set Dec name", "Variant", "Current Version", "New Version"]
         )
+        self.tableWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tableWidget.cellClicked.connect(self.cellClickedGrabShape)
 
+    def _wrap_table_cell_widget(self, widget):
+        """Center a combo in the cell with padding so rows don't overlap."""
+        container = QtWidgets.QWidget()
+        layout = QtWidgets.QHBoxLayout(container)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(0)
+        layout.addWidget(widget)
+        return container
+
+    def _cell_combo(self, row, column):
+        """Return the QComboBox inside a wrapped table cell, if present."""
+        container = self.tableWidget.cellWidget(row, column)
+        if container is None:
+            return None
+        if isinstance(container, QtWidgets.QComboBox):
+            return container
+        return container.findChild(QtWidgets.QComboBox)
+
+    def _set_table_row_heights(self):
+        for row in range(self.tableWidget.rowCount()):
+            self.tableWidget.setRowHeight(row, TABLE_ROW_HEIGHT)
+
     def _build_buttons(self):
-        button_layout = QtWidgets.QGridLayout()
+        self._button_panel = QtWidgets.QVBoxLayout()
+        self._button_panel.setSpacing(6)
 
         self.addButton = QtWidgets.QPushButton("Add Set Dec")
         self.addButton.clicked.connect(self.add)
@@ -99,25 +134,34 @@ class MainWindow(QtWidgets.QWidget):
         self.exportButton = QtWidgets.QPushButton("Publish")
         self.exportButton.clicked.connect(self.collectListForPublish)
         self.exportButton.setStyleSheet(load_qss("importButton.qss"))
+        self.exportButton.setMinimumHeight(36)
 
-        button_layout.addWidget(self.addButton, 0, 5)
-        button_layout.addWidget(self.removeButton, 1, 5)
-        button_layout.addWidget(self.clearButton, 2, 5)
-        button_layout.addWidget(self.refreshButton, 3, 5)
-        button_layout.addWidget(self.unpublishButton, 4, 5)
-        return button_layout
+        for button in (
+            self.addButton,
+            self.removeButton,
+            self.clearButton,
+            self.refreshButton,
+            self.unpublishButton,
+        ):
+            button.setMinimumWidth(160)
+            self._button_panel.addWidget(button)
+
+        self._button_panel.addStretch(1)
+        self._button_panel.addWidget(self.exportButton)
 
     def _build_show_settings(self):
-        show_settings_layout = QtWidgets.QGridLayout()
+        self._group_panel = QtWidgets.QVBoxLayout()
+        self._group_panel.setSpacing(6)
 
         self.setDecGroupComboBoxLabel = QtWidgets.QLabel("Set Dec Group")
         self.setDecGroupComboBox = QtWidgets.QComboBox()
         self.setDecGroupComboBox.setEditable(True)
+        self.setDecGroupComboBox.setMinimumWidth(180)
         self.setDecGroupComboBox.currentTextChanged.connect(self.resetCurrentList)
 
-        show_settings_layout.addWidget(self.setDecGroupComboBoxLabel, 0, 0)
-        show_settings_layout.addWidget(self.setDecGroupComboBox, 1, 0)
-        return show_settings_layout
+        self._group_panel.addWidget(self.setDecGroupComboBoxLabel)
+        self._group_panel.addWidget(self.setDecGroupComboBox)
+        self._group_panel.addStretch(1)
 
     def _build_header(self):
         frame = QtWidgets.QFrame()
@@ -216,7 +260,9 @@ class MainWindow(QtWidgets.QWidget):
 
             variant_combo_box = QtWidgets.QComboBox()
             variant_combo_box.setEditable(True)
-            self.tableWidget.setCellWidget(row, COL_VARIANT, variant_combo_box)
+            self.tableWidget.setCellWidget(
+                row, COL_VARIANT, self._wrap_table_cell_widget(variant_combo_box)
+            )
             try:
                 variant_list = os.listdir(set_dec_group_folder_name + split_shape_name)
                 variant_combo_box.addItems(variant_list)
@@ -228,7 +274,9 @@ class MainWindow(QtWidgets.QWidget):
                 variant_combo_box.setCurrentIndex(0)
 
             version_combo_box = QtWidgets.QComboBox()
-            self.tableWidget.setCellWidget(row, COL_CUR_VERSION, version_combo_box)
+            self.tableWidget.setCellWidget(
+                row, COL_CUR_VERSION, self._wrap_table_cell_widget(version_combo_box)
+            )
             try:
                 version_list = os.listdir(
                     set_dec_group_folder_name
@@ -244,7 +292,9 @@ class MainWindow(QtWidgets.QWidget):
                 version_combo_box.setCurrentIndex(0)
 
             new_version_combo_box = QtWidgets.QComboBox()
-            self.tableWidget.setCellWidget(row, COL_NEW_VERSION, new_version_combo_box)
+            self.tableWidget.setCellWidget(
+                row, COL_NEW_VERSION, self._wrap_table_cell_widget(new_version_combo_box)
+            )
 
             self.getLatestVersionNumber(version_combo_box, new_version_combo_box)
 
@@ -257,6 +307,7 @@ class MainWindow(QtWidgets.QWidget):
                 nv=new_version_combo_box: self.getLatestVersionNumber(v, nv)
             )
 
+        self._set_table_row_heights()
         self.setDuplicateInputsRed()
         self.setPublishedInputsBlue()
 
@@ -275,9 +326,9 @@ class MainWindow(QtWidgets.QWidget):
         )
 
         _, split_set_dec_object_name = self._row_set_dec(row)
-        set_dec_variant = self.tableWidget.cellWidget(row, COL_VARIANT).currentText()
-        set_dec_current_version = self.tableWidget.cellWidget(row, COL_CUR_VERSION)
-        set_dec_new_version = self.tableWidget.cellWidget(row, COL_NEW_VERSION)
+        set_dec_variant = self._cell_combo(row, COL_VARIANT).currentText()
+        set_dec_current_version = self._cell_combo(row, COL_CUR_VERSION)
+        set_dec_new_version = self._cell_combo(row, COL_NEW_VERSION)
 
         set_dec_current_version.clear()
         try:
@@ -319,7 +370,7 @@ class MainWindow(QtWidgets.QWidget):
         if not ok:
             return
         for row in self._selected_rows():
-            set_dec_variant = self.tableWidget.cellWidget(row, COL_VARIANT)
+            set_dec_variant = self._cell_combo(row, COL_VARIANT)
             set_dec_variant.addItem(new_variant_name)
             set_dec_variant.setCurrentText(new_variant_name)
             self.updateVerNumOnVarChange(row)
@@ -426,10 +477,8 @@ class MainWindow(QtWidgets.QWidget):
                     continue
                 set_dec_object = pm.PyNode(set_dec_name)
                 split_set_dec_object_name = set_dec_object.nodeName().split("|")[-1]
-                set_dec_variant_name = self.tableWidget.cellWidget(row, COL_VARIANT).currentText()
-                set_dec_new_version = self.tableWidget.cellWidget(
-                    row, COL_NEW_VERSION
-                ).currentText()
+                set_dec_variant_name = self._cell_combo(row, COL_VARIANT).currentText()
+                set_dec_new_version = self._cell_combo(row, COL_NEW_VERSION).currentText()
 
                 set_dec_asset_path = version_asset_root(
                     self._current_show,

@@ -93,6 +93,23 @@ python launcher.py --app unreal --version 5.6 --show 1000_TinyStudioTestShow
 
 Use `--fast` for Maya fast-start tweaks (see `launcher.py`).
 
+### Unreal project mapping (Perforce / per-artist paths)
+
+Unreal projects often live in different local folders per artist (Perforce client views). The launcher does **not** rely on a fixed `S:/` path for the `.uproject`.
+
+| Item | Location |
+| ---- | -------- |
+| Per-artist settings | `L:\Artist\{USERNAME}\TinyStudioSettings\unreal_projects.json` |
+| Example schema | `configs\unreal_projects.example.json` |
+
+**First launch for a show:** select the show, click Unreal, browse to your `.uproject`. The mapping is saved for that show.
+
+**Change project later:** right-click the Unreal tile → **Set Unreal project…** (same show must be selected).
+
+**CLI:** `python launcher.py --app unreal --version 5.6 --show YourShow` uses the saved mapping. Run the UI once per show if the file does not exist yet.
+
+Maya and After Effects still use shared show paths on `S:/` as configured in their JSON files.
+
 ---
 
 ## Part B — Build or rebuild the PyInstaller executable

@@ -3,14 +3,15 @@ import maya.mel as mm
 import pymel.core as pm
 import os
 
-def createBlinnPerShape():
+def createSetDecShaderPerShape():
     sel = mc.ls(sl=1)
 
     for node in sel:
         shaderName = "M_{0}".format(node)
-        shd = mc.shadingNode('blinn', name=shaderName, asShader=True)
+        shd = mc.shadingNode('usdPreviewSurface', name=shaderName, asShader=True)
         shdSG = mc.sets(name='{0}_SG'.format(shd), empty=True, renderable=True, noSurfaceShader=True)
         mc.connectAttr('{0}.outColor'.format(shd), '{0}.surfaceShader'.format(shdSG))
+        mc.setAttr('{0}.diffuseColor'.format(shd), 1, 1, 1, type='double3')
         mc.sets(node, e=True, forceElement=shdSG)
 
 def toggleVertexColorDisplay():

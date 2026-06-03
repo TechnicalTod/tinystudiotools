@@ -1,6 +1,9 @@
 Test asset publisher
-test the playblast tools
 
+asset publishing allows you to create new top level assets but the workfile publisher doesnt.
+These asset and folder trees should all populate based on the ftrack assets and shots using the ftrack api.
+
+get technodolly geo 
 
 * Build default Unreal project 
 * get unreal media plate blueprint
@@ -9,5 +12,5 @@ test the playblast tools
 * shot publisher needs thourough test
 * Rig puppet with advanced skeleton 
 * Tunnel to import assets ready for setdec
-* Set dec asset publisher should swap out texture paths before publishing
-* artist folders should be under the show drive L:/Artist/werks/assets/test
+
+* Set dec asset publisher should swap out texture paths before publishingst

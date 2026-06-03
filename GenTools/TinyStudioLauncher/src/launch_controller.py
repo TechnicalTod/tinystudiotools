@@ -106,7 +106,14 @@ class LaunchController:
         logger.debug(f"Loaded config from {config_file}")
         return config
 
-    def prepare_launch_config(self, app_name: str, version: str, show: str) -> LaunchConfig:
+    def prepare_launch_config(
+        self,
+        app_name: str,
+        version: str,
+        show: str,
+        *,
+        uproject_override: Optional[str] = None,
+    ) -> LaunchConfig:
         """
         Prepare launch configuration with all necessary paths and variables.
 
@@ -114,6 +121,7 @@ class LaunchController:
             app_name: Application name
             version: Version string
             show: Show name
+            uproject_override: Artist-local .uproject path (Unreal only)
 
         Returns:
             LaunchConfig object ready for launching
@@ -289,6 +297,13 @@ class LaunchController:
             for key, value in env_vars.items():
                 executable_path = executable_path.replace(f"{{{key}}}", str(value))
 
+        if app_name.lower() == "unreal" and uproject_override:
+            executable_path = str(Path(uproject_override).resolve()).replace("\\", "/")
+            env_vars["UE_PROJECT_DIR"] = str(Path(uproject_override).resolve().parent).replace(
+                "\\", "/"
+            )
+            logger.info("Using artist Unreal project: %s", executable_path)
+
         # Create launch config
         launch_config = LaunchConfig(
             app_name=app_name,
@@ -303,6 +318,32 @@ class LaunchController:
 
         return launch_config
 
+    def _resolve_unreal_editor_exe(self, launch_config: LaunchConfig) -> Path:
+        """Resolve UnrealEditor.exe from UE_ENGINE_DIR (set in app config env_vars)."""
+        engine_dir = launch_config.env_vars.get("UE_ENGINE_DIR", "").strip()
+        if not engine_dir:
+            raise FileNotFoundError(
+                "UE_ENGINE_DIR is not set. Check unreal_*.json env_vars and engine install path."
+            )
+        editor = Path(engine_dir) / "Engine" / "Binaries" / "Win64" / "UnrealEditor.exe"
+        if not editor.is_file():
+            raise FileNotFoundError(f"Unreal Editor not found: {editor}")
+        return editor
+
+    def _build_launch_command(self, launch_config: LaunchConfig) -> List[str]:
+        """
+        Build argv for subprocess.Popen.
+
+        .uproject files are opened via UnrealEditor.exe, not executed directly.
+        """
+        target = Path(launch_config.executable_path)
+        if launch_config.app_name.lower() == "unreal" and target.suffix.lower() == ".uproject":
+            if not target.is_file():
+                raise FileNotFoundError(f"Unreal project not found: {target}")
+            editor = self._resolve_unreal_editor_exe(launch_config)
+            return [str(editor), str(target.resolve())]
+        return [launch_config.executable_path]
+
     def launch_application(self, launch_config: LaunchConfig) -> subprocess.Popen:
         """
         Launch an application with the prepared configuration.
@@ -313,9 +354,7 @@ class LaunchController:
         Returns:
             Popen process object
         """
-        # Verify executable exists
-        if not Path(launch_config.executable_path).exists():
-            raise FileNotFoundError(f"Executable not found: {launch_config.executable_path}")
+        launch_cmd = self._build_launch_command(launch_config)
 
         # Activate virtual environment by prepending to PATH
         env_scripts = Path(launch_config.environment_path) / "Scripts"
@@ -326,14 +365,14 @@ class LaunchController:
         logger.info(
             f"Launching {launch_config.app_name} {launch_config.version} for {launch_config.show}"
         )
-        logger.debug(f"Executable: {launch_config.executable_path}")
+        logger.debug(f"Launch command: {launch_cmd}")
         logger.debug(f"PYTHONPATH: {launch_config.env_vars.get('PYTHONPATH', 'Not set')}")
         logger.debug(f"MAYA_APP_DIR: {launch_config.env_vars.get('MAYA_APP_DIR', 'Not set')}")
 
         # Launch the application with non-blocking I/O
         # Use DEVNULL instead of PIPE to prevent blocking on stdout/stderr
         process = subprocess.Popen(
-            [launch_config.executable_path],
+            launch_cmd,
             env=launch_config.env_vars,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

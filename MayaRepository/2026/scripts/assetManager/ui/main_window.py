@@ -48,7 +48,7 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
 
         self.setWindowTitle(f"Asset Manager — {context.show}")
         self.setStyleSheet(load_qss("dark.qss"))
-        self.resize(980, 620)
+        self.resize(1650, 930)
 
         self._build_ui()
         self._connect_signals()
@@ -57,38 +57,45 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
     def _build_ui(self) -> None:
         central = QtWidgets.QWidget(self)
         outer = QtWidgets.QVBoxLayout(central)
-        outer.setContentsMargins(12, 12, 12, 12)
-        outer.setSpacing(8)
+        outer.setContentsMargins(16, 16, 16, 16)
+        outer.setSpacing(12)
 
         outer.addWidget(self._build_header())
 
         splitter = QtWidgets.QSplitter(Qt.Horizontal)
+        splitter.setHandleWidth(6)
 
-        self._asset_tree = AssetTreeBrowser(self._discovery)
+        self._asset_tree = AssetTreeBrowser(self._discovery, self._schema)
         splitter.addWidget(self._asset_tree)
 
-        right = QtWidgets.QWidget()
-        right_layout = QtWidgets.QVBoxLayout(right)
-        right_layout.setContentsMargins(0, 0, 0, 0)
-        right_layout.setSpacing(8)
-
-        mid = QtWidgets.QHBoxLayout()
-        self._precheck_panel = PrecheckPanel()
-        self._screenshot_panel = ScreenshotPanel()
-        mid.addWidget(self._precheck_panel, 1)
-        mid.addWidget(self._screenshot_panel, 1)
-        right_layout.addLayout(mid)
+        center = QtWidgets.QWidget()
+        center_layout = QtWidgets.QVBoxLayout(center)
+        center_layout.setContentsMargins(8, 0, 8, 0)
+        center_layout.setSpacing(12)
 
         self._table = PublishTable()
-        right_layout.addWidget(self._table, 1)
+        center_layout.addWidget(self._table, 1)
 
         self._form = PublishForm(schema=self._schema, default_variant=self._schema.default_variant)
-        right_layout.addWidget(self._form)
+        center_layout.addWidget(self._form)
 
-        splitter.addWidget(right)
+        splitter.addWidget(center)
+
+        right_splitter = QtWidgets.QSplitter(Qt.Vertical)
+        right_splitter.setHandleWidth(6)
+        self._screenshot_panel = ScreenshotPanel()
+        self._precheck_panel = PrecheckPanel()
+        right_splitter.addWidget(self._screenshot_panel)
+        right_splitter.addWidget(self._precheck_panel)
+        right_splitter.setStretchFactor(0, 0)
+        right_splitter.setStretchFactor(1, 1)
+        right_splitter.setSizes([260, 420])
+        splitter.addWidget(right_splitter)
+
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([240, 720])
+        splitter.setStretchFactor(2, 0)
+        splitter.setSizes([330, 780, 420])
 
         outer.addWidget(splitter, 1)
         self.setCentralWidget(central)
@@ -98,7 +105,8 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
         frame = QtWidgets.QFrame()
         frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         layout = QtWidgets.QHBoxLayout(frame)
-        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(24)
         for text in (
             f"<b>Show:</b> {self._context.show}",
             f"<b>Host:</b> {self._host.label}",
@@ -108,7 +116,7 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             label = QtWidgets.QLabel(text)
             label.setTextInteractionFlags(Qt.TextSelectableByMouse)
             layout.addWidget(label)
-            layout.addStretch(1)
+        layout.addStretch(1)
         return frame
 
     def _connect_signals(self) -> None:
@@ -134,7 +142,22 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
         self._form.set_category(selection.category, assets)
         if selection.asset:
             self._form.set_asset_name(selection.asset)
+        if selection.publish_type:
+            self._form.set_publish_type(selection.publish_type)
         self._refresh_all()
+
+    def _tree_selection(self):
+        return self._asset_tree.current_selection()
+
+    def _browse_target(self) -> Optional[AssetPublishTarget]:
+        """Target for browsing published versions — requires a publish type in the tree."""
+        selection = self._tree_selection()
+        if selection is None or not selection.publish_type:
+            return None
+        return self._current_target(
+            asset_override=selection.asset,
+            publish_type_override=selection.publish_type,
+        )
 
     def _current_target(
         self,
@@ -150,11 +173,14 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
 
         asset_raw = asset_override if asset_override is not None else self._form.asset_name()
         variant_raw = variant_override if variant_override is not None else self._form.variant()
-        publish_type = (
-            publish_type_override
-            if publish_type_override is not None
-            else self._form.publish_type()
-        )
+
+        selection = self._tree_selection()
+        if publish_type_override is not None:
+            publish_type = publish_type_override
+        elif selection is not None and selection.publish_type:
+            publish_type = selection.publish_type
+        else:
+            publish_type = self._form.publish_type()
 
         if not asset_raw.strip():
             return None
@@ -199,27 +225,45 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             )
 
     def _refresh_table(self) -> None:
-        target = self._current_target()
-        if target is None:
+        browse_target = self._browse_target()
+        if browse_target is None:
             self._table.set_entries([])
             self._form.set_load_enabled(False)
             self._form.set_open_enabled(False)
-            self._status.showMessage(
-                "Select a category in the tree, then set asset name, variant, and asset type."
-            )
+            selection = self._tree_selection()
+            if selection is None:
+                self._status.showMessage(
+                    "Select a category in the tree, then set asset name, variant, and asset type."
+                )
+            elif selection.asset and not selection.publish_type:
+                self._status.showMessage(
+                    "Select a publish type in the tree to browse versions, or publish a new type below."
+                )
+            else:
+                self._status.showMessage(
+                    "Select a publish type in the tree, or set asset name, variant, and asset type to publish."
+                )
             return
 
-        entries = self._service.list_versions(target, include_all_variants=True)
+        entries = self._service.list_versions(browse_target, include_all_variants=True)
         self._table.set_entries(entries)
         has_selection = bool(entries)
         self._form.set_load_enabled(has_selection)
         self._form.set_open_enabled(has_selection)
-        folder = self._service.publish_dir(target)
-        next_v = self._service.next_version_for_target(target)
-        type_label = self._schema.get_publish_type(target.publish_type).label
+        folder = self._service.publish_dir(browse_target)
+        next_v = self._service.next_version_for_target(
+            self._current_target(
+                asset_override=browse_target.asset,
+                publish_type_override=browse_target.publish_type,
+                variant_override=browse_target.variant,
+            )
+            or browse_target
+        )
+        type_label = self._schema.get_publish_type(browse_target.publish_type).label
+        variant = self._form.variant() or self._schema.default_variant
         self._status.showMessage(
             f"{len(entries)} {type_label} publish(es) in {folder} — "
-            f"next {target.variant}: v{next_v:03d}"
+            f"next {variant}: v{next_v:03d}"
         )
 
     def _refresh_all(self) -> None:
@@ -252,7 +296,7 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.information(
                 self,
                 "Capture",
-                "Viewport capture failed. Use Browse to pick an image instead.",
+                "Viewport capture failed. Try again or publish without a screenshot.",
             )
 
     def _on_publish(self) -> None:

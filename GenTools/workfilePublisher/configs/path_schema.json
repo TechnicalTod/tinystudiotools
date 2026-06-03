@@ -25,7 +25,7 @@
       "supports_asset": true,
       "supports_shot": true,
       "asset_tasks": ["model", "rig", "shading"],
-      "shot_tasks": ["layout", "anim", "light", "techviz"]
+      "shot_tasks": ["layout", "lighting", "previz", "techviz"]
     },
     "ae": {
       "label": "After Effects",
@@ -33,7 +33,7 @@
       "supports_asset": false,
       "supports_shot": true,
       "asset_tasks": [],
-      "shot_tasks": ["layout", "anim", "light", "techviz"]
+      "shot_tasks": ["layout", "lighting", "previz", "techviz"]
     }
   }
 }

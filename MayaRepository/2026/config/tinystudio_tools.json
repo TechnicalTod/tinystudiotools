@@ -200,7 +200,7 @@
           "label": "Tools"
         },
         {
-          "label": "Load Advanced Skelton Shelf",
+          "label": "Load Advanced Skeleton Shelf",
           "module": "genTools.sceneUtils",
           "function": "loadAdvancedSkeleton"
         }
@@ -272,9 +272,9 @@
           "function": "toggleVertexColorDisplay"
         },
         {
-          "label": "Create Blinn for substance export",
+          "label": "Create shader for SetDec",
           "module": "shadingTools.genShaderUtils",
-          "function": "createBlinnPerShape"
+          "function": "createSetDecShaderPerShape"
         },
         {
           "label": "Copy shader to objects",
@@ -435,7 +435,7 @@
       "label": "Workfiles",
       "module": "workfiles.main_window",
       "function": "main",
-      "icon": "workfiles.png"
+      "icon": "workfiles_manager.png"
     },
     {
       "type": "button",

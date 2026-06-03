@@ -28,9 +28,9 @@ class PublishForm(QtWidgets.QWidget):
         self._category: Optional[str] = None
 
         layout = QtWidgets.QGridLayout(self)
-        layout.setContentsMargins(0, 8, 0, 0)
-        layout.setHorizontalSpacing(8)
-        layout.setVerticalSpacing(6)
+        layout.setContentsMargins(0, 12, 0, 0)
+        layout.setHorizontalSpacing(12)
+        layout.setVerticalSpacing(10)
 
         layout.addWidget(QtWidgets.QLabel("Asset name:"), 0, 0)
         self.asset_combo = QtWidgets.QComboBox()
@@ -60,6 +60,7 @@ class PublishForm(QtWidgets.QWidget):
         self.refresh_button = QtWidgets.QPushButton("Refresh")
 
         button_row = QtWidgets.QHBoxLayout()
+        button_row.setSpacing(12)
         button_row.addStretch(1)
         button_row.addWidget(self.refresh_button)
         button_row.addWidget(self.load_button)
@@ -100,6 +101,14 @@ class PublishForm(QtWidgets.QWidget):
         self.asset_combo.blockSignals(True)
         self.asset_combo.setEditText(name)
         self.asset_combo.blockSignals(False)
+
+    def set_publish_type(self, publish_type: str) -> None:
+        index = self.type_combo.findData(publish_type)
+        if index < 0:
+            return
+        self.type_combo.blockSignals(True)
+        self.type_combo.setCurrentIndex(index)
+        self.type_combo.blockSignals(False)
 
     def category(self) -> Optional[str]:
         return self._category

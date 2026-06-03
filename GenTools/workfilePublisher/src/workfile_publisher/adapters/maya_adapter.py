@@ -45,10 +45,22 @@ class MayaAdapter(HostAdapter):
             return False
 
     # ---- actions --------------------------------------------------------
+    def _set_project(self, project_dir: Path) -> None:
+        import maya.mel as mel
+
+        project_dir.mkdir(parents=True, exist_ok=True)
+        path_str = str(project_dir).replace("\\", "/")
+        try:
+            mel.eval(f'setProject "{path_str}"')
+        except Exception as exc:
+            raise HostAdapterError(
+                f"Maya set project failed for {project_dir}: {exc}"
+            ) from exc
+
     def save_as(self, path: Path) -> None:
         import maya.cmds as cmds
 
-        path.parent.mkdir(parents=True, exist_ok=True)
+        self._set_project(path.parent)
 
         suffix = path.suffix.lower()
         if suffix == ".ma":
@@ -76,6 +88,8 @@ class MayaAdapter(HostAdapter):
 
     def open(self, path: Path) -> None:
         import maya.cmds as cmds
+
+        self._set_project(path.parent)
 
         try:
             cmds.file(str(path), open=True, force=True, ignoreVersion=True)

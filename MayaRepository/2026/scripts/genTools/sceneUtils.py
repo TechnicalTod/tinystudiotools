@@ -30,7 +30,9 @@ def loadAdvancedSkeleton():
         "menu_group": "Rigging"
     }
     """
-    advancedSkeletonInstallPath = str(_REPO_ROOT / "GenTools" / "AdvancedSkeleton" / "install.mel")
+    advancedSkeletonInstallPath = (
+        _REPO_ROOT / "GenTools" / "AdvancedSkeleton" / "install.mel"
+    ).as_posix()
     mm.eval(f'source "{advancedSkeletonInstallPath}"')
 
 

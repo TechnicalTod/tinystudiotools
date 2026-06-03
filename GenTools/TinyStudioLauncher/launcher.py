@@ -9,6 +9,7 @@ import os
 import sys
 import logging
 import argparse
+import getpass
 from pathlib import Path
 
 # Configure logging with UTF-8 encoding
@@ -126,17 +127,48 @@ def launch_direct(app_name, version, show, fast_mode=False):
     # Import necessary modules
     from src.environment_manager import EnvironmentManager
     from src.launch_controller import LaunchController
+    from src import unreal_project_store
 
     # Initialize components
     env_manager = EnvironmentManager(project_dir)
     controller = LaunchController(project_dir / "configs", env_manager)
 
-    if not show or not str(show).strip():
+    show = str(show).strip()
+    if not show:
         logger.error("--show is required for direct launch (e.g. --show 1000_TinyStudioTestShow)")
         return None
 
+    uproject_override = None
+    if app_name.lower() == "unreal":
+        username = getpass.getuser()
+        path = unreal_project_store.get_project_path(username, show)
+        settings_path = unreal_project_store.get_settings_path(username)
+        if path is None:
+            logger.error(
+                "No Unreal project mapped for show '%s'. Open the launcher UI, select the show, "
+                "and launch Unreal once to choose a .uproject, or edit:\n%s",
+                show,
+                settings_path,
+            )
+            return None
+        if not path.is_file():
+            logger.error(
+                "Mapped Unreal project not found for show '%s': %s\n"
+                "Re-map via the launcher UI or update:\n%s",
+                show,
+                path,
+                settings_path,
+            )
+            return None
+        uproject_override = str(path.resolve())
+
     try:
-        config = controller.prepare_launch_config(app_name, version, show)
+        config = controller.prepare_launch_config(
+            app_name,
+            version,
+            show,
+            uproject_override=uproject_override,
+        )
         logger.info(f"Launching {app_name} {version} for show {show}")
 
         # Apply fast mode optimizations if requested

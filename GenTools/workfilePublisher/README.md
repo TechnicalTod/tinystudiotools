@@ -45,6 +45,17 @@ You can also pass `--show ...` and `--base-show-dir ...` instead of setting env 
 
 ---
 
+## Using the publisher
+
+1. Select an **asset** or **shot** in the left-hand tree. Workfile types (e.g. `model`, `layout`) appear under that item only after at least one workfile exists on disk for that type.
+2. To **browse** existing workfiles, select a **workfile type** leaf in the tree — the table lists all variants and versions for that type.
+3. To **publish a new type** (or the first workfile for an asset/shot), select the asset or shot, choose **Workfile type** in the form below the table, set **Variant** (default `main`), and click **Publish**. The new type leaf appears in the tree after refresh.
+4. **Open Selected** loads a table row into the host (Maya sets project to the task work folder before save/open).
+
+Asset and shot contexts use different type lists from `path_schema.json` — the form dropdown updates automatically when you switch between assets and episodes in the tree.
+
+---
+
 ## Path schema
 
 The publisher writes into the pre-created `work/` folder under each asset or shot. Configured in `configs/path_schema.json`:
@@ -76,9 +87,9 @@ Example: `S:/1000_TinyStudioTestShow/episodes/101/101_650/101_650_000/work/ae/co
 | DCC | Context | Tasks |
 |-----|---------|-------|
 | Maya | Asset | `model, rig, shading` |
-| Maya | Shot | `layout, anim, light, techviz` |
+| Maya | Shot | `layout, lighting, previz, techviz` |
 | AE | Asset | (not supported in v1) |
-| AE | Shot | `layout, anim, light, techviz` |
+| AE | Shot | `layout, lighting, previz, techviz` |
 
 ---
 

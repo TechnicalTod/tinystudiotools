@@ -17,7 +17,6 @@ Two convenience constructors:
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Optional
 
 from ..adapters import HostAdapter, HostAdapterError, build_adapter
@@ -29,7 +28,7 @@ from ..core.versioning import VersionReservationError, WorkfileEntry
 from .qt import Qt, QtCore, QtGui, QtWidgets
 from .widgets.publish_form import PublishForm
 from .widgets.workfile_table import WorkfileTable
-from .widgets.workfile_tree_browser import WorkfileTreeBrowser
+from .widgets.workfile_tree_browser import WorkfileTreeBrowser, WorkfileTreeSelection
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
 
         self._build_ui()
         self._connect_signals()
-        self._refresh_table()
+        self._refresh_all()
 
     # ------------------------------------------------------------- access
     @property
@@ -97,7 +96,11 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         self._table = WorkfileTable()
         right_layout.addWidget(self._table, 1)
 
-        self._form = PublishForm(default_variant=self._schema.default_variant)
+        self._form = PublishForm(
+            schema=self._schema,
+            dcc=self._adapter.name,
+            default_variant=self._schema.default_variant,
+        )
         right_layout.addWidget(self._form)
 
         splitter.addWidget(right)
@@ -133,7 +136,8 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         return frame
 
     def _connect_signals(self) -> None:
-        self._workfile_tree.selection_changed.connect(self._refresh_table)
+        self._workfile_tree.selection_changed.connect(self._on_tree_selection)
+        self._form.target_changed.connect(self._refresh_all)
         self._form.publish_requested.connect(self._on_publish)
         self._form.open_requested.connect(self._on_open_selected)
         self._form.refresh_requested.connect(self._on_refresh)
@@ -141,57 +145,141 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         self._table.selection_changed.connect(self._on_table_selection_changed)
 
     # ---------------------------------------------------------- helpers
-    def _target_for_action(self, variant_override: Optional[str] = None) -> Optional[WorkfileTarget]:
-        base = self._workfile_tree.current_target()
-        if base is None:
+    def _tree_selection(self) -> Optional[WorkfileTreeSelection]:
+        return self._workfile_tree.current_selection()
+
+    def _build_target(
+        self,
+        *,
+        variant_override: Optional[str] = None,
+        require_task_leaf: bool = False,
+        warn: bool = False,
+    ) -> Optional[WorkfileTarget]:
+        selection = self._tree_selection()
+        if selection is None:
             return None
-        variant = variant_override or self._form.variant()
+        if require_task_leaf and not selection.task:
+            return None
+
+        if selection.task:
+            task = selection.task
+        else:
+            task = self._form.task()
+
+        if not task:
+            if warn:
+                self._warn("Invalid target", "Select a workfile type.")
+            return None
+
+        variant = variant_override if variant_override is not None else self._form.variant()
         try:
             cleaned = ps.normalize_variant(variant, self._schema)
         except ValueError as exc:
-            self._warn("Invalid variant", str(exc))
+            if warn:
+                self._warn("Invalid variant", str(exc))
             return None
+
+        allowed = self._schema.get_dcc(self._adapter.name).tasks_for(selection.kind)
+        if task not in allowed:
+            if warn:
+                self._warn("Invalid target", f"Unknown workfile type {task!r}.")
+            return None
+
         return WorkfileTarget(
-            kind=base.kind,
-            dcc=base.dcc,
-            task=base.task,
+            kind=selection.kind,
+            dcc=self._adapter.name,
+            task=task,
             variant=cleaned,
-            category=base.category,
-            asset=base.asset,
-            episode=base.episode,
-            sequence=base.sequence,
-            shot=base.shot,
+            category=selection.category,
+            asset=selection.asset,
+            episode=selection.episode,
+            sequence=selection.sequence,
+            shot=selection.shot,
         )
 
-    def _refresh_table(self) -> None:
-        target = self._target_for_action()
-        if target is None:
-            self._table.set_entries([])
-            self._form.set_publish_enabled(False)
-            self._form.set_open_enabled(False)
-            self._status.showMessage(
-                "Select a task in the show tree (e.g. episodes → … → sh010 → layout)."
-            )
+    def _browse_target(self) -> Optional[WorkfileTarget]:
+        """Target for browsing workfiles — requires a task leaf in the tree."""
+        return self._build_target(require_task_leaf=True)
+
+    def _publish_target(
+        self,
+        *,
+        variant_override: Optional[str] = None,
+        warn: bool = False,
+    ) -> Optional[WorkfileTarget]:
+        """Target for publishing — asset/shot from tree, task from tree or form."""
+        return self._build_target(variant_override=variant_override, warn=warn)
+
+    @staticmethod
+    def _restore_path_for_target(target: WorkfileTarget) -> str:
+        if target.kind == "asset":
+            return f"asset/{target.category}/{target.asset}/{target.task}"
+        return f"shot/{target.episode}/{target.sequence}/{target.shot}/{target.task}"
+
+    def _on_tree_selection(self) -> None:
+        selection = self._tree_selection()
+        if selection is None:
+            self._form.set_context(None)
+            self._refresh_all()
             return
 
-        entries = self._service.list_for_target(target, include_all_variants=True)
-        self._table.set_entries(entries)
-        self._form.set_publish_enabled(True)
-        self._form.set_open_enabled(bool(entries))
-        folder = self._service.workfile_dir(target)
-        variant_entries = [e for e in entries if e.variant == target.variant]
-        next_version = (max(e.version for e in variant_entries) + 1) if variant_entries else 1
-        self._status.showMessage(
-            f"{len(entries)} workfile(s) in {folder} — next "
-            f"{target.variant} publish: v{next_version:03d}"
-        )
+        self._form.set_context(selection.kind)
+        if selection.task:
+            self._form.set_task(selection.task)
+        self._refresh_all()
+
+    def _refresh_all(self) -> None:
+        self._refresh_table()
+
+    def _refresh_table(self) -> None:
+        browse_target = self._browse_target()
+        publish_target = self._publish_target()
+
+        if browse_target is None:
+            self._table.set_entries([])
+            self._form.set_open_enabled(False)
+            selection = self._tree_selection()
+            if selection is None:
+                self._status.showMessage(
+                    "Select an asset or shot in the show tree."
+                )
+            elif not selection.task:
+                self._status.showMessage(
+                    "Select a workfile type in the tree to browse versions, "
+                    "or pick a type below to publish."
+                )
+            else:
+                self._status.showMessage(
+                    "Select a workfile type in the tree, or pick a type below to publish."
+                )
+        else:
+            entries = self._service.list_for_target(
+                browse_target, include_all_variants=True
+            )
+            self._table.set_entries(entries)
+            self._form.set_open_enabled(bool(entries))
+            folder = self._service.workfile_dir(browse_target)
+            variant_entries = [
+                e for e in entries if e.variant == browse_target.variant
+            ]
+            next_version = (
+                (max(e.version for e in variant_entries) + 1)
+                if variant_entries
+                else 1
+            )
+            self._status.showMessage(
+                f"{len(entries)} workfile(s) in {folder} — next "
+                f"{browse_target.variant} publish: v{next_version:03d}"
+            )
+
+        self._form.set_publish_enabled(publish_target is not None)
 
     def _on_table_selection_changed(self, entry: Optional[WorkfileEntry]) -> None:
         self._form.set_open_enabled(entry is not None)
 
     # ---------------------------------------------------------- actions
     def _on_publish(self, variant: str) -> None:
-        target = self._target_for_action(variant_override=variant)
+        target = self._publish_target(variant_override=variant, warn=True)
         if target is None:
             return
         try:
@@ -208,7 +296,10 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             return
 
         self._status.showMessage(f"Published {saved}", 8000)
-        self._refresh_table()
+        self._workfile_tree.refresh(
+            restore_path=self._restore_path_for_target(target)
+        )
+        self._on_tree_selection()
 
     def _on_open_selected(self) -> None:
         entry = self._table.current_entry()
@@ -240,7 +331,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
 
     def _on_refresh(self) -> None:
         self._workfile_tree.refresh()
-        self._refresh_table()
+        self._refresh_all()
 
     # ---------------------------------------------------------- close
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802

@@ -7,6 +7,7 @@ import os
 import sys
 import logging
 import subprocess
+import getpass
 from pathlib import Path
 from datetime import datetime
 
@@ -30,6 +31,7 @@ try:
         QMenu,
         QDialog,
         QMessageBox,
+        QFileDialog,
     )
     from PySide6.QtCore import Qt, QSize, Signal, Slot, QThread, QTimer, QSettings
     from PySide6.QtGui import QIcon, QFont, QColor, QTextCursor, QAction
@@ -54,6 +56,7 @@ except ImportError:
         QMenu,
         QDialog,
         QMessageBox,
+        QFileDialog,
         QAction,
     )
     from PySide2.QtCore import Qt, QSize, Signal, Slot, QThread, QTimer, QSettings
@@ -81,6 +84,7 @@ if str(PARENT_DIR) not in sys.path:
 from src.environment_manager import EnvironmentManager
 from src.launch_controller import LaunchController
 from src.show_config import ShowVersionMismatchError
+from src import unreal_project_store
 
 
 def _is_launcher_app_config(config_file: Path) -> bool:
@@ -590,6 +594,12 @@ class TinyLauncherWindow(QMainWindow):
 
                 button.clicked.connect(lambda checked, app=app_name: self.launch_app(app))
 
+                if app_name.lower() == "unreal":
+                    button.setContextMenuPolicy(Qt.CustomContextMenu)
+                    button.customContextMenuRequested.connect(
+                        lambda pos, btn=button: self._show_unreal_project_context_menu(btn, pos)
+                    )
+
                 tile = QWidget()
                 tile.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
                 tile_layout = QVBoxLayout(tile)
@@ -711,12 +721,104 @@ class TinyLauncherWindow(QMainWindow):
         else:
             self.console.append_message("AE ScriptUI panel install step finished.", "SUCCESS")
 
+    def _require_show_selected(self) -> str | None:
+        """Return stripped show name, or None after showing a warning."""
+        show = self.show_combo.currentText().strip()
+        if not show:
+            QMessageBox.warning(self, "Show required", "Select a show before launching.")
+            return None
+        return show
+
+    def _browse_unreal_uproject(self, show: str) -> Path | None:
+        """Prompt for a .uproject and save mapping for the current show."""
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            f"Select Unreal project for {show}",
+            "",
+            "Unreal Project (*.uproject)",
+        )
+        if not path:
+            return None
+
+        if not path.lower().endswith(".uproject"):
+            QMessageBox.warning(
+                self,
+                "Invalid project",
+                "Please select a file ending with .uproject.",
+            )
+            return None
+
+        username = getpass.getuser()
+        try:
+            unreal_project_store.save_project(username, show, path)
+        except OSError as e:
+            settings_path = unreal_project_store.get_settings_path(username)
+            QMessageBox.critical(
+                self,
+                "Cannot save project mapping",
+                f"Could not write settings to:\n{settings_path}\n\n{e}",
+            )
+            return None
+        except ValueError as e:
+            QMessageBox.warning(self, "Invalid project", str(e))
+            return None
+
+        resolved = Path(path).resolve()
+        self.console.append_message(
+            f"Saved Unreal project for {show}: {resolved}",
+            "SUCCESS",
+        )
+        return resolved
+
+    def _resolve_unreal_uproject(self, show: str) -> Path | None:
+        """Return a valid .uproject path, browsing if needed."""
+        username = getpass.getuser()
+        path = unreal_project_store.get_project_path(username, show)
+        if path is not None and path.is_file():
+            return path.resolve()
+
+        if path is not None:
+            self.console.append_message(
+                f"Saved Unreal project not found for {show}: {path}. Browse again.",
+                "WARNING",
+            )
+
+        return self._browse_unreal_uproject(show)
+
+    def _show_unreal_project_context_menu(self, button: AppButton, pos) -> None:
+        """Context menu to change the Unreal project for the current show."""
+        show = self._require_show_selected()
+        if not show:
+            return
+
+        menu = QMenu(self)
+        action = QAction("Set Unreal project…", self)
+        action.triggered.connect(lambda: self._set_unreal_project_for_show(show))
+        menu.addAction(action)
+        menu.exec(button.mapToGlobal(pos))
+
+    def _set_unreal_project_for_show(self, show: str) -> None:
+        """Browse and save Unreal project without launching."""
+        result = self._browse_unreal_uproject(show)
+        if result:
+            self.statusBar().showMessage(f"Unreal project for {show}: {result}")
+
     def launch_app(self, app_name):
         """Launch the selected application"""
         try:
             # Get selected show and version
-            show = self.show_combo.currentText()
+            show = self.show_combo.currentText().strip()
             version = self.versions_combo[app_name].currentText()
+
+            uproject_override = None
+            if app_name.lower() == "unreal":
+                if not show:
+                    QMessageBox.warning(self, "Show required", "Select a show before launching Unreal.")
+                    return
+                resolved = self._resolve_unreal_uproject(show)
+                if resolved is None:
+                    return
+                uproject_override = str(resolved)
 
             # Update button status
             self.app_buttons[app_name].update_status("launching")
@@ -727,7 +829,12 @@ class TinyLauncherWindow(QMainWindow):
                 if app_name.lower() == "ae":
                     self._run_ae_panel_install_script(version)
 
-                config = self.launch_controller.prepare_launch_config(app_name, version, show)
+                config = self.launch_controller.prepare_launch_config(
+                    app_name,
+                    version,
+                    show,
+                    uproject_override=uproject_override,
+                )
                 self.console.append_message(f"Configuration prepared", "INFO")
 
                 # Launch the application
@@ -759,6 +866,8 @@ class TinyLauncherWindow(QMainWindow):
 
         except Exception as e:
             self.console.append_message(f"Error in launch_app: {str(e)}", "ERROR")
+            if app_name in self.app_buttons:
+                self.app_buttons[app_name].update_status("error")
 
     def update_processes(self):
         """Update status of running processes with reduced frequency"""

@@ -21,8 +21,8 @@ class PrecheckPanel(QtWidgets.QGroupBox):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
         super().__init__("Pre-checks (advisory)", parent)
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
+        layout.setContentsMargins(16, 16, 16, 16)
+        layout.setSpacing(12)
 
         header = QtWidgets.QHBoxLayout()
         self._summary = QtWidgets.QLabel("")
@@ -33,8 +33,8 @@ class PrecheckPanel(QtWidgets.QGroupBox):
         layout.addLayout(header)
 
         self._list = QtWidgets.QListWidget()
-        self._list.setMinimumHeight(100)
-        layout.addWidget(self._list)
+        self._list.setMinimumHeight(160)
+        layout.addWidget(self._list, 1)
 
         self.run_button.clicked.connect(self.run_requested)
         self.clear()
