@@ -6,7 +6,12 @@ from pathlib import Path
 import pymel.core as pm
 
 from . import paths
-from .models import CameraPublishItem, PuppetPublishItem, ShotPublishManifest
+from .models import (
+    CameraPublishItem,
+    CustomGeoItem,
+    PuppetPublishItem,
+    ShotPublishManifest,
+)
 
 
 def _delete_node(node) -> None:
@@ -39,6 +44,7 @@ def _bake_nodes(nodes, start_frame: float, end_frame: float) -> None:
 
 def _export_selected_fbx(export_path: Path) -> None:
     pm.mel.FBXResetExport()
+    pm.mel.FBXExportSmoothingGroups(v=True)
     pm.mel.FBXExport(file=export_path.as_posix(), s=True)
 
 
@@ -158,6 +164,57 @@ def publish_puppet(
     return puppet
 
 
+def _hierarchy_nodes(root) -> list:
+    nodes = [root]
+    descendants = pm.listRelatives(root, allDescendents=True) or []
+    nodes.extend(descendants)
+    return nodes
+
+
+def publish_custom_geo_item(
+    item: CustomGeoItem,
+    manifest: ShotPublishManifest,
+) -> CustomGeoItem:
+    duplicated_geo = None
+    export_path = paths.custom_geo_fbx_path(manifest.shot_info, item.name)
+    item.export_path = export_path.as_posix()
+
+    try:
+        duplicated_geo = pm.duplicate(
+            item.name,
+            name=paths.safe_artifact_stem(item.name) + "_customGeo",
+            un=True,
+            ic=True,
+        )[0]
+        if item.animated:
+            _bake_nodes(
+                _hierarchy_nodes(duplicated_geo),
+                manifest.shot_info.timeline_start,
+                manifest.shot_info.timeline_end,
+            )
+        pm.parent(duplicated_geo, world=True)
+        pm.select(duplicated_geo, replace=True)
+        _export_selected_fbx(export_path)
+        item.publish_status = "published"
+        item.error = ""
+    except Exception as exc:
+        item.publish_status = "failed"
+        item.error = str(exc)
+        raise
+    finally:
+        _delete_node(duplicated_geo)
+
+    return item
+
+
+def publish_custom_geo_items(manifest: ShotPublishManifest) -> None:
+    for item in manifest.custom_geo:
+        try:
+            publish_custom_geo_item(item, manifest)
+        except Exception as exc:
+            print("Failed to publish custom geo '{}': {}".format(item.name, exc))
+
+
 def write_manifest(manifest: ShotPublishManifest) -> Path:
     out_path = paths.scene_description_path(manifest.shot_info)
     with open(out_path, "w", encoding="utf-8") as json_file:
@@ -177,6 +234,8 @@ def publish_manifest(manifest: ShotPublishManifest) -> Path:
             publish_puppet(puppet, manifest)
         except Exception as exc:
             print("Failed to publish puppet '{}': {}".format(puppet.name, exc))
+
+    publish_custom_geo_items(manifest)
 
     return write_manifest(manifest)
 

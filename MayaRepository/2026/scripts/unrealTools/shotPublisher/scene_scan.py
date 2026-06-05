@@ -6,7 +6,14 @@ import maya.cmds as mc
 import maya.mel as mm
 import pymel.core as pm
 
-from .models import CameraPublishItem, PuppetPublishItem, ShotInfo, ShotPublishManifest
+from .custom_geo_sets import list_custom_geo_members
+from .models import (
+    CameraPublishItem,
+    CustomGeoItem,
+    PuppetPublishItem,
+    ShotInfo,
+    ShotPublishManifest,
+)
 
 
 DEFAULT_CAMERAS = {"persp", "back", "front", "side", "top"}
@@ -128,6 +135,45 @@ def collect_cameras() -> list[CameraPublishItem]:
     return cameras
 
 
+def _is_animated_transform(node, start_frame: float, end_frame: float) -> bool:
+    attrs = ("translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ")
+    for attr_name in attrs:
+        try:
+            attr = node.attr(attr_name)
+            key_count = pm.keyframe(attr, query=True, keyframeCount=True) or 0
+            if key_count > 0:
+                return True
+            connections = pm.listConnections(attr, type="animCurve") or []
+            if connections:
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def collect_custom_geo() -> list[CustomGeoItem]:
+    members = list_custom_geo_members()
+    if not members:
+        return []
+
+    start_frame = pm.playbackOptions(query=True, min=True)
+    end_frame = pm.playbackOptions(query=True, max=True)
+    items: list[CustomGeoItem] = []
+
+    for member_name in members:
+        if not pm.objExists(member_name):
+            continue
+        node = pm.PyNode(member_name)
+        items.append(
+            CustomGeoItem(
+                name=member_name,
+                animated=_is_animated_transform(node, start_frame, end_frame),
+            )
+        )
+
+    return items
+
+
 def collect_puppets() -> list[PuppetPublishItem]:
     puppets: list[PuppetPublishItem] = []
     puppet_nodes = [node for node in pm.ls(type="transform") if node.hasAttr("rootJointName")]
@@ -153,6 +199,7 @@ def build_manifest() -> ShotPublishManifest:
         shot_info=collect_shot_info(),
         cameras=collect_cameras(),
         puppets=collect_puppets(),
+        custom_geo=collect_custom_geo(),
         extra_info={"notes": "N/A"},
     )
 

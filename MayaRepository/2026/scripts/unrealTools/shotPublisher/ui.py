@@ -104,16 +104,19 @@ class MainWindow(QtWidgets.QWidget):
         self.model.clear()
         self.cameraGroup = self._group_item("snapshotTools.png", "Cameras")
         self.puppetGroup = self._group_item("centerPivot.png", "Puppets")
+        self.customGeoGroup = self._group_item("modelling.png", "Custom Geo")
         self.shotInfoGroup = self._group_item("techvis.png", "Shot Info")
         self.extraInfoGroup = self._group_item("modelling.png", "Extra Info")
 
         self.model.appendRow(self.cameraGroup)
         self.model.appendRow(self.puppetGroup)
+        self.model.appendRow(self.customGeoGroup)
         self.model.appendRow(self.shotInfoGroup)
         self.model.appendRow(self.extraInfoGroup)
 
         self._populate_cameras()
         self._populate_puppets()
+        self._populate_custom_geo()
         self._populate_shot_info()
         self._populate_extra_info()
         self.treeView.expandAll()
@@ -155,6 +158,20 @@ class MainWindow(QtWidgets.QWidget):
             for label, value in puppet.attributes().items():
                 title_item.appendRow(self._child_item(label, value))
 
+    def _populate_custom_geo(self):
+        if not self.manifest.custom_geo:
+            self.customGeoGroup.appendRow(
+                QtGui.QStandardItem(
+                    "N/A — use Add Custom Geo to Set on Unreal Tools shelf"
+                )
+            )
+            return
+        for item in self.manifest.custom_geo:
+            title_item = self._title_item(item.name, ("custom_geo", item.name))
+            self.customGeoGroup.appendRow(title_item)
+            for label, value in item.attributes().items():
+                title_item.appendRow(self._child_item(label, value))
+
     def _populate_shot_info(self):
         for label, value in self.manifest.shot_info.display_rows():
             title_item = self._title_item(label)
@@ -194,6 +211,8 @@ class MainWindow(QtWidgets.QWidget):
             self.manifest.remove_camera(item_name)
         elif item_type == "puppet":
             self.manifest.remove_puppet(item_name)
+        elif item_type == "custom_geo":
+            self.manifest.remove_custom_geo(item_name)
         self.populatePublishTree()
 
     def getExportDir(self):

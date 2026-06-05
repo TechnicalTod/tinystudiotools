@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 import unreal
 
-from . import camera_ops, puppet_ops
+from . import camera_ops, geo_ops, puppet_ops
 from .manifest import ShotManifest, load_manifest
 from .setup_ops import ShotSetupResult, create_shot_setup
 
@@ -65,6 +65,14 @@ def import_shot_from_json(json_path: str) -> ImportResult:
             traceback.print_exc()
     else:
         result.warnings.append("No puppets found in published json")
+
+    if manifest.custom_geo:
+        try:
+            geo_ops.import_custom_geo_items(setup, manifest.custom_geo)
+        except Exception as exc:
+            message = "Custom geo import failed: {}".format(exc)
+            result.errors.append(message)
+            traceback.print_exc()
 
     save_assets([setup.level_asset_path, setup.sequence_asset_path])
     result.success = not result.errors

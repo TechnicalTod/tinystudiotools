@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
-from .constants import ANIMATION_SUBDIR, ASSETS_ROOT, EPISODES_ROOT, MEDIA_SUBDIR
+import re
+
+from .constants import (
+    ANIMATION_SUBDIR,
+    ASSETS_ROOT,
+    CUSTOM_GEO_SUBDIR,
+    EPISODES_ROOT,
+    MEDIA_SUBDIR,
+)
 from .manifest import PuppetItem, ShotInfo
 
 
@@ -22,6 +30,21 @@ def animation_dir(shot_dir: str) -> str:
 
 def media_dir(shot_dir: str) -> str:
     return "{}/{}".format(shot_dir, MEDIA_SUBDIR)
+
+
+def custom_geo_dir(shot_dir: str) -> str:
+    return "{}/{}".format(shot_dir, CUSTOM_GEO_SUBDIR)
+
+
+def safe_artifact_stem(name: str) -> str:
+    name = name.split("|")[-1]
+    name = name.replace(":", "_")
+    return re.sub(r"[^A-Za-z0-9_.-]+", "_", name).strip("_") or "publishItem"
+
+
+def custom_geo_actor_label(member_name: str) -> str:
+    """Match Maya publish duplicate name for sequencer FBX binding."""
+    return "{}_customGeo".format(safe_artifact_stem(member_name))
 
 
 def level_asset_path(shot_dir: str, shot: str, version: str) -> str:

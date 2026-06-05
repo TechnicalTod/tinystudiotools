@@ -17,6 +17,7 @@ except ImportError:
 
 SCENE_DESCRIPTION_FOLDER = "sceneDescription"
 SCENE_DESCRIPTION_STEM = "ShotDescription"
+CUSTOM_GEO_SUBDIR = "customGeo"
 
 
 def create_directory(path: Path) -> None:
@@ -103,4 +104,18 @@ def scene_description_path(shot_info: ShotInfo) -> Path:
 
 def publish_root_string(shot_info: ShotInfo) -> str:
     return publish_root(shot_info).as_posix()
+
+
+def custom_geo_dir(shot_info: ShotInfo) -> Path:
+    root = publish_root(shot_info) / CUSTOM_GEO_SUBDIR
+    create_directory(root)
+    return root
+
+
+def custom_geo_fbx_path(shot_info: ShotInfo, member_name: str) -> Path:
+    file_name = "{}_{}.fbx".format(
+        safe_artifact_stem(member_name),
+        shot_info.version,
+    )
+    return custom_geo_dir(shot_info) / file_name
 

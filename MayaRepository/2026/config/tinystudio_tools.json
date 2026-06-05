@@ -456,17 +456,16 @@
       },
       "menu": [
         {
-          "type": "spacer",
-          "label": "Commands"
+          "type": "blank_item"
         },
         {
           "type": "spacer",
-          "label": "Tools"
+          "label": "Shot Publish"
         },
         {
-          "label": "Publish Setdec Assets",
-          "module": "unrealTools.exportSetDecAssets",
-          "function": "openWindow"
+          "label": "Add Custom Geo to Set",
+          "module": "unrealTools.addCustomGeoToSet",
+          "function": "run"
         },
         {
           "label": "Publish Shot To Unreal",
@@ -474,9 +473,22 @@
           "function": "launch"
         },
         {
+          "type": "spacer",
+          "label": "Layout"
+        },
+        {
           "label": "Publish Layout Scene Description",
           "module": "unrealTools.USDSceneImportExportUIMaya",
           "function": "launch"
+        },
+        {
+          "type": "spacer",
+          "label": "Set Decoration"
+        },
+        {
+          "label": "Publish Setdec Assets",
+          "module": "unrealTools.exportSetDecAssets",
+          "function": "openWindow"
         }
       ]
     },

@@ -1,7 +1,7 @@
 """Parse Maya shot scene description JSON for Unreal import.
 
 Expects the structured manifest written by ``unrealTools.shotPublisher``
-(schemaVersion 1).
+(schemaVersion 1 or 2).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 @dataclass
@@ -59,10 +59,18 @@ class PuppetItem:
 
 
 @dataclass
+class CustomGeoItem:
+    name: str
+    export_path: str = ""
+    animated: bool = False
+
+
+@dataclass
 class ShotManifest:
     shot_info: ShotInfo
     cameras: list[CameraItem] = field(default_factory=list)
     puppets: list[PuppetItem] = field(default_factory=list)
+    custom_geo: list[CustomGeoItem] = field(default_factory=list)
 
 
 def _field(data: dict[str, Any], key: str, default: Any = "") -> Any:
@@ -103,18 +111,30 @@ def _parse_puppet(entry: dict[str, Any]) -> PuppetItem:
     )
 
 
+def _parse_custom_geo_item(entry: dict[str, Any]) -> CustomGeoItem:
+    return CustomGeoItem(
+        name=str(_field(entry, "name", default="")),
+        export_path=str(_field(entry, "exportPath", default="")),
+        animated=bool(_field(entry, "animated", default=False)),
+    )
+
+
 def parse_shot_manifest(data: Any) -> ShotManifest:
-    """Return a normalized manifest from a schemaVersion 1 JSON object."""
+    """Return a normalized manifest from a schemaVersion 1 or 2 JSON object."""
     if not isinstance(data, dict) or "shotInfo" not in data:
         raise ValueError(
             "Unrecognized shot scene description format. "
-            "Expected schemaVersion 1 manifest with shotInfo, cameras, and puppets."
+            "Expected schemaVersion 1 or 2 manifest with shotInfo, cameras, and puppets."
         )
+
+    custom_geo_block = data.get("customGeo") or {}
+    custom_geo_items = custom_geo_block.get("items") or []
 
     return ShotManifest(
         shot_info=_parse_shot_info(data.get("shotInfo") or {}),
         cameras=[_parse_camera(entry) for entry in data.get("cameras") or []],
         puppets=[_parse_puppet(entry) for entry in data.get("puppets") or []],
+        custom_geo=[_parse_custom_geo_item(entry) for entry in custom_geo_items],
     )
 
 
