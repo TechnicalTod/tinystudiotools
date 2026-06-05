@@ -13,6 +13,21 @@ _TICK_HANDLE = None
 _FRAMES = 0
 _WARMUP_FRAMES = 30
 
+_SECTION_IMPORT = "Import"
+_SECTION_LEVEL = "Level"
+_SECTION_EXPORT = "Export"
+_SECTION_SHOT = "ShotTools"
+_SECTION_ASSET = "AssetTools"
+
+
+def _add_previs_sections(menu: unreal.ToolMenu) -> None:
+    menu.set_editor_property("separate_sections", True)
+    menu.add_section(_SECTION_IMPORT, "Import")
+    menu.add_section(_SECTION_LEVEL, "Level")
+    menu.add_section(_SECTION_EXPORT, "Export")
+    menu.add_section(_SECTION_SHOT, "Shot Tools")
+    menu.add_section(_SECTION_ASSET, "Asset Tools")
+
 
 def register_previs_menu() -> None:
     global _REGISTERED
@@ -25,6 +40,11 @@ def register_previs_menu() -> None:
     previs_menu = main_menu.add_sub_menu(
         main_menu.menu_name, "Previs Menu", " ", "CFX PREVIS TOOLS", "CFX Previs Toolset"
     )
+    _add_previs_sections(previs_menu)
+
+    # -------------------------------------------------------------------------
+    # Import
+    # -------------------------------------------------------------------------
 
     @unreal.uclass()
     class importUnrealAssetClass(unreal.ToolMenuEntryScript):
@@ -41,7 +61,7 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Import SetDec Assets",
         label="Import SetDec Assets",
-        section="import",
+        section=_SECTION_IMPORT,
         tool_tip="Import Unreal assets from published location",
     )
     importUnrealAssetMenuButton.register_menu_entry()
@@ -61,7 +81,7 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Import Published Shot",
         label="Import Published Shot",
-        section="import",
+        section=_SECTION_IMPORT,
         tool_tip="Build published shot from Maya",
     )
     ImportShotFromMayaMenuButton.register_menu_entry()
@@ -81,7 +101,7 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Import / Export Published Layout",
         label="Import / Export Published Layout",
-        section="import",
+        section=_SECTION_IMPORT,
         tool_tip="Import and Export USD layouts from user file",
     )
     ImportExportUSDUIMenuButton.register_menu_entry()
@@ -101,10 +121,14 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Import sub levels",
         label="Import sub levels",
-        section="import",
+        section=_SECTION_IMPORT,
         tool_tip="Import PL and SL into current level",
     )
     ImportLevelAndSubLevelsMenuButton.register_menu_entry()
+
+    # -------------------------------------------------------------------------
+    # Level
+    # -------------------------------------------------------------------------
 
     @unreal.uclass()
     class ENVBuilderClass(unreal.ToolMenuEntryScript):
@@ -121,10 +145,14 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="ENV Builder",
         label="ENV Builder",
-        section="import",
+        section=_SECTION_LEVEL,
         tool_tip="Automatically Build ENV Dirs",
     )
     ENVBuilderButton.register_menu_entry()
+
+    # -------------------------------------------------------------------------
+    # Export
+    # -------------------------------------------------------------------------
 
     @unreal.uclass()
     class USD_Asset_Exporter_Class(unreal.ToolMenuEntryScript):
@@ -141,10 +169,14 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Bulk Asset Exporter",
         label="Bulk Asset Exporter",
-        section="import",
+        section=_SECTION_EXPORT,
         tool_tip="Bulk Export Assets to USD for Set Dec Processing",
     )
     USDExporterMenuButton.register_menu_entry()
+
+    # -------------------------------------------------------------------------
+    # Shot Tools
+    # -------------------------------------------------------------------------
 
     @unreal.uclass()
     class USD_ShotVersioner_Class(unreal.ToolMenuEntryScript):
@@ -161,10 +193,14 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Shot Versioner",
         label="Shot Versioner",
-        section="Shot Tools",
+        section=_SECTION_SHOT,
         tool_tip="Version Up Shot",
     )
     ShotVersionerButton.register_menu_entry()
+
+    # -------------------------------------------------------------------------
+    # Asset Tools
+    # -------------------------------------------------------------------------
 
     @unreal.uclass()
     class remapShadersClass(unreal.ToolMenuEntryScript):
@@ -181,7 +217,7 @@ def register_previs_menu() -> None:
         menu=previs_menu.menu_name,
         name="Remap multiple shaders UI",
         label="Remap multiple shaders UI",
-        section="import",
+        section=_SECTION_ASSET,
         tool_tip="Tool to remap multiple shaders",
     )
     remapShadersButton.register_menu_entry()

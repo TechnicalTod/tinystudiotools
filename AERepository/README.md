@@ -50,9 +50,11 @@ Restart After Effects, then open **Window → TinyStudioTools.jsx**.
 The **Workfile Publisher** tool (`tools/WorkfilePublisher.jsx`) matches the Maya workfile publisher UX:
 
 - Reads **show context** from launcher env vars (`SHOW_NAME`, `TINYSTUDIO_BASE_SHOW_DIR`, `USERNAME`) — no in-tool show picker.
-- **Left tree**: shot → task (with workfile counts), plus a workfile table and variant field on the right.
-- **Publish** saves the active project to `…/work/ae/<task>/<shot>_<task>_<variant>_v###.aep`.
-- **Open Selected** / double-click opens an existing workfile from the table.
+- **Assets** and **Episodes** tabs (left), matching the Maya publisher:
+  - **Assets**: category → asset; task types (`model`, `rig`, `shading`, `layout`) appear only after files exist on disk.
+  - **Episodes**: episode → sequence → shot; task types (`layout`, `lighting`, `previz`, `techviz`) appear only after files exist on disk.
+- **Browse**: select a task leaf to list workfiles in the table; **Open Selected** / double-click opens a row.
+- **Publish**: select an asset or shot, pick **Workfile type** from the dropdown, set **Variant** (default `main`), then **Publish** — saves to `…/work/ae/<task>/` with `{asset|shot}_<task>_<variant>_v###.aep`.
 
 Launch AE from **TinyStudioLauncher**, open the panel, choose **Workfile Publisher**, and click **Run**. Enable **Allow Scripts to Write Files and Access Network** in AE preferences.
 

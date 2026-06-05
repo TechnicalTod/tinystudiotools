@@ -25,7 +25,7 @@ The AE publisher does **not** use Python. It plugs into the existing TinyStudio 
 1. The launcher sets `SHOW_NAME`, `TINYSTUDIO_LIB_DIR`, `AE_REPO`, etc on AE's environment.
 2. In AE, open `Window -> TinyStudio Tools.jsx` (install it once with `AERepository/install/install_tinystudio_ae_panel.ps1` if it's not in the menu).
 3. Pick `Workfile Publisher` from the dropdown and click `Run`.
-4. `WorkfilePublisher.jsx` opens a palette aligned with the Maya publisher: show header, left workfile tree (shot → task), workfile table, variant + Publish / Open / Refresh.
+4. `WorkfilePublisher.jsx` (in `AERepository/tools/`) opens a palette aligned with the Maya publisher: show header, Assets / Episodes tabbed trees, workfile table, workfile type dropdown, variant + Publish / Open / Refresh.
 5. The tool scans the target work folder for existing versions, reserves the next `v###` for the chosen variant, and saves with `app.project.save(...)`.
 
 After Effects scripting preferences must allow file/network access: `Edit -> Preferences -> Scripting & Expressions -> Allow Scripts to Write Files and Access Network`.
@@ -47,12 +47,12 @@ You can also pass `--show ...` and `--base-show-dir ...` instead of setting env 
 
 ## Using the publisher
 
-1. Select an **asset** or **shot** in the left-hand tree. Workfile types (e.g. `model`, `layout`) appear under that item only after at least one workfile exists on disk for that type.
+1. Use the **Assets** or **Episodes** tab on the left to pick context, then select an **asset** or **shot** in that tree. Workfile types (e.g. `model`, `layout`) appear under that item only after at least one workfile exists on disk for that type.
 2. To **browse** existing workfiles, select a **workfile type** leaf in the tree — the table lists all variants and versions for that type.
 3. To **publish a new type** (or the first workfile for an asset/shot), select the asset or shot, choose **Workfile type** in the form below the table, set **Variant** (default `main`), and click **Publish**. The new type leaf appears in the tree after refresh.
 4. **Open Selected** loads a table row into the host (Maya sets project to the task work folder before save/open).
 
-Asset and shot contexts use different type lists from `path_schema.json` — the form dropdown updates automatically when you switch between assets and episodes in the tree.
+Asset and shot contexts use different type lists from `path_schema.json` — the form dropdown updates automatically when you switch between the Assets and Episodes tabs.
 
 ---
 
@@ -86,9 +86,9 @@ Example: `S:/1000_TinyStudioTestShow/episodes/101/101_650/101_650_000/work/ae/co
 
 | DCC | Context | Tasks |
 |-----|---------|-------|
-| Maya | Asset | `model, rig, shading` |
+| Maya | Asset | `model, rig, shading, layout` |
 | Maya | Shot | `layout, lighting, previz, techviz` |
-| AE | Asset | (not supported in v1) |
+| AE | Asset | `model, rig, shading, layout` |
 | AE | Shot | `layout, lighting, previz, techviz` |
 
 ---
@@ -159,5 +159,5 @@ Integrations live outside this repo:
 | `SHOW_NAME is not set` dialog | Relaunch the DCC via TinyStudioLauncher; bare AE / Maya don't get the env vars. |
 | `Show folder does not exist` | `S:/<SHOW_NAME>/` must exist on disk. |
 | AE: nothing happens after `Run` | `Edit -> Preferences -> Scripting & Expressions -> Allow Scripts to Write Files and Access Network`, and reopen the TinyStudio panel after manifest edits. |
-| AE: publish fails | Confirm the target `S:/<show>/episodes/.../work/ae/<task>` path is writable. |
+| AE: publish fails | Confirm the target `S:/<show>/assets/.../work/ae/<task>` or `S:/<show>/episodes/.../work/ae/<task>` path is writable. |
 | Maya: shelf button errors `No module named workfile_publisher` | Confirm the launcher added `{TINYSTUDIO_LIB_DIR}TinyStudioTools/GenTools/workfilePublisher/src` to PYTHONPATH (check `configs/maya_2026.json`). |

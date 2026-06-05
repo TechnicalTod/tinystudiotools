@@ -241,7 +241,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             selection = self._tree_selection()
             if selection is None:
                 self._status.showMessage(
-                    "Select an asset or shot in the show tree."
+                    "Select an asset or shot in the Assets or Episodes tab."
                 )
             elif not selection.task:
                 self._status.showMessage(

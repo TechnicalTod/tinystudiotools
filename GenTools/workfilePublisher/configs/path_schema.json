@@ -24,15 +24,15 @@
       "extension": "ma",
       "supports_asset": true,
       "supports_shot": true,
-      "asset_tasks": ["model", "rig", "shading"],
+      "asset_tasks": ["model", "rig", "shading", "layout"],
       "shot_tasks": ["layout", "lighting", "previz", "techviz"]
     },
     "ae": {
       "label": "After Effects",
       "extension": "aep",
-      "supports_asset": false,
+      "supports_asset": true,
       "supports_shot": true,
-      "asset_tasks": [],
+      "asset_tasks": ["model", "rig", "shading", "layout"],
       "shot_tasks": ["layout", "lighting", "previz", "techviz"]
     }
   }
