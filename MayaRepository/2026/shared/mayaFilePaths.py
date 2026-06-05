@@ -27,5 +27,12 @@ mayaPluginDir02 = baseMayaAppPath + "bin/plug-ins/" if baseMayaAppPath else None
 # Downloads folder
 downloadsFolder = "c:/Users/{}/Downloads/".format(windowsUserName) if windowsUserName else None
 
-# Stylesheet filepath
-styleSheetFilepath = baseScriptsPath + "/shared/pyQtStyleSheets/" if baseScriptsPath else None
+# Stylesheet filepath (canonical: GenTools/pyQtStyleSheets)
+styleSheetFilepath = None
+try:
+    from genTools.studio_python_path import ensure_gen_tools_shared
+
+    ensure_gen_tools_shared()
+    from studioFilePaths import styleSheetFilepath
+except ImportError:
+    pass

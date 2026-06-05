@@ -3,6 +3,7 @@ import os
 import sys
 from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
+from genTools.uiUtils import center_widget, load_qss
 import unrealFilePaths
 
 
@@ -13,8 +14,7 @@ class MainWindow(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
-        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(500, 100)
         self.setWindowTitle("Shot Builder")
         self.setFocus()
@@ -145,10 +145,7 @@ class MainWindow(QtWidgets.QWidget):
         print(f"Folder structure and assets created under: {dir_path}")
 
     def center(self):
-        qr = self.frameGeometry()
-        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        center_widget(self)
 
 
 def openWindow():

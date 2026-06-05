@@ -5,5 +5,5 @@ def warningPopup(message):
     selectionWarningDialog = QtWidgets.QMessageBox()
     selectionWarningDialog.setText(message)
     selectionWarningDialog.setWindowTitle("Warning")
-    selectionWarningDialog.exec_()
+    selectionWarningDialog.exec()
     print(message)

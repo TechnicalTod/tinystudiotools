@@ -1,7 +1,8 @@
-# Unreal Engine Python Requirements
-# Migrated from UnrealRepository/tools
-
-PySide2==5.15.2.1
+# Unreal Engine Python Requirements (TinyStudioLauncher UV env → UE_PYTHONPATH)
+# Match UE embedded Python 3.11. Essentials + Addons required (meta package alone is stubs-only).
+PySide6==6.7.2
+PySide6_Essentials==6.7.2
+PySide6_Addons==6.7.2
+shiboken6==6.7.2
 numpy==2.1.1
-shiboken2==5.15.2.1
 transforms3d==0.4.2

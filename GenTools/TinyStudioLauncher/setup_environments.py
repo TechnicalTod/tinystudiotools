@@ -29,8 +29,8 @@ def main():
     # Define environments to create
     environments = [
         ("maya-2026", "3.10", "Maya 2026"),
-        ("unreal-5.6", "3.10", "Unreal Engine 5.6"),
-        ("unreal-5.7", "3.10", "Unreal Engine 5.7"),
+        ("unreal-5.6", "3.11", "Unreal Engine 5.6"),
+        ("unreal-5.7", "3.11", "Unreal Engine 5.7"),
         ("ae-2024", "3.10", "After Effects 2024"),
     ]
 

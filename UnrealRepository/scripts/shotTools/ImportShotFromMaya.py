@@ -5,6 +5,7 @@ import sys
 import subprocess
 from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
+from genTools.uiUtils import center_widget, load_qss
 import unrealFilePaths
 import genTools.genUnrealImportUtils as genUnrealImportUtils
 
@@ -17,8 +18,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(600, 50)
         self.setWindowTitle("Import published Shot")
         self.setFocus()
@@ -61,10 +61,7 @@ class MainWindow(QtWidgets.QWidget):
 
     # definition that sets UI to be created in center (used in window prefs)
     def center(self):
-        qr = self.frameGeometry()
-        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        center_widget(self)
 
     def importShot(self):
         jsonPath = self.jsonFilePath.text()

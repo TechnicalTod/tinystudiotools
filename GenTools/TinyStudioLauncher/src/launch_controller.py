@@ -38,6 +38,28 @@ class LaunchConfig:
     env_vars: Dict[str, str]
     python_paths: List[str]
     script_paths: List[str]
+    unreal_startup_script: Optional[str] = None
+
+
+def _resolve_template(template: str, env_vars: Dict[str, str]) -> str:
+    """Replace {VAR} placeholders in config path templates."""
+    value = template
+    for key, val in env_vars.items():
+        value = value.replace(f"{{{key}}}", str(val))
+    return value.replace("\\", "/")
+
+
+def _unreal_usd_python_paths(engine_dir: str) -> List[str]:
+    """Return Epic's bundled USD Python paths (pxr lives here, not in pip)."""
+    if not engine_dir.strip():
+        return []
+    engine = Path(engine_dir.strip())
+    candidates = [
+        engine
+        / "Engine/Plugins/Runtime/USDCore/Content/Python/Lib/Win64/X64/site-packages",
+        engine / "Engine/Plugins/Importers/USDImporter/Content/Python",
+    ]
+    return [str(path).replace("\\", "/") for path in candidates if path.is_dir()]
 
 
 class LaunchController:
@@ -304,6 +326,32 @@ class LaunchController:
             )
             logger.info("Using artist Unreal project: %s", executable_path)
 
+        unreal_startup_script: Optional[str] = None
+        if app_name.lower() == "unreal":
+            # UE5 uses UE_PYTHONPATH (isolated interpreter).
+            ue_python_paths = [
+                p for p in python_paths if "site-packages" not in Path(p).parts
+            ]
+            site_packages = Path(env_info["path"]) / "Lib" / "site-packages"
+            if site_packages.exists():
+                ue_python_paths.append(str(site_packages))
+            for usd_path in _unreal_usd_python_paths(env_vars.get("UE_ENGINE_DIR", "")):
+                ue_python_paths.append(usd_path)
+                logger.debug("Added Unreal USD Python path: %s", usd_path)
+            gen_tools_shared = (
+                Path(base_paths["SCRIPT_DIR"]) / "GenTools" / "shared"
+            )
+            if gen_tools_shared.is_dir():
+                shared_path = str(gen_tools_shared).replace("\\", "/")
+                if shared_path not in ue_python_paths:
+                    ue_python_paths.append(shared_path)
+                    logger.debug("Added GenTools shared path: %s", shared_path)
+            env_vars["UE_PYTHONPATH"] = os.pathsep.join(ue_python_paths)
+
+            startup_template = config.get("python_startup_script")
+            if startup_template:
+                unreal_startup_script = _resolve_template(startup_template, env_vars)
+
         # Create launch config
         launch_config = LaunchConfig(
             app_name=app_name,
@@ -314,6 +362,7 @@ class LaunchController:
             env_vars=env_vars,
             python_paths=python_paths,
             script_paths=config.get("script_paths", []),
+            unreal_startup_script=unreal_startup_script,
         )
 
         return launch_config
@@ -341,7 +390,16 @@ class LaunchController:
             if not target.is_file():
                 raise FileNotFoundError(f"Unreal project not found: {target}")
             editor = self._resolve_unreal_editor_exe(launch_config)
-            return [str(editor), str(target.resolve())]
+            cmd = [str(editor), str(target.resolve())]
+            startup_script = launch_config.unreal_startup_script
+            if startup_script:
+                if Path(startup_script).is_file():
+                    # ExecCmds runs after editor init without the blocking
+                    # "Executing Python Script..." modal from -ExecutePythonScript.
+                    cmd.append(f'-ExecCmds=py {startup_script}')
+                else:
+                    logger.warning("Unreal startup script not found: %s", startup_script)
+            return cmd
         return [launch_config.executable_path]
 
     def launch_application(self, launch_config: LaunchConfig) -> subprocess.Popen:

@@ -9,7 +9,8 @@
     "{MAYA_REPO}/scripts/melScripts",
     "{MAYA_REPO}/scripts/Publisher",
     "{MAYA_REPO}/scripts/Publisher/src",
-    "{TINYSTUDIO_LIB_DIR}TinyStudioTools/GenTools/workfilePublisher/src"
+    "{TINYSTUDIO_LIB_DIR}TinyStudioTools/GenTools/workfilePublisher/src",
+    "{SCRIPT_DIR}GenTools/shared"
   ],
   "env_vars": {
     "MAYA_APP_DIR": "C:\\Users\\{USERNAME}\\Documents\\maya",

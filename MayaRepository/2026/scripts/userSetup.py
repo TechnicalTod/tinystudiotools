@@ -11,6 +11,14 @@ def onStartUp():
     print("Starting TinyStudio initialization...")
 
     try:
+        from genTools.studio_python_path import ensure_gen_tools_shared
+
+        if ensure_gen_tools_shared():
+            print("GenTools/shared added to sys.path")
+    except Exception as e:
+        print(f"GenTools/shared bootstrap skipped: {e}")
+
+    try:
         import buildTinyStudioShelf
 
         buildTinyStudioShelf.buildTinyStudioShelf()

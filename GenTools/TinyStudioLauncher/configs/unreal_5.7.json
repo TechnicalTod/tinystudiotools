@@ -1,16 +1,21 @@
 {
   "name": "Unreal Engine 5.7",
   "repository": "UnrealRepository",
-  "python_version": "3.10",
+  "python_version": "3.11",
   "executable_type": "project",
   "project_pattern": "{TINYSTUDIO_BASE_SHOW_DIR}{SHOW_NAME}/unreal/{version}/Project.uproject",
   "icon": "unreal.png",
-  "additional_paths": ["{UNREAL_REPO}/scripts", "{UNREAL_REPO}/tools"],
+  "additional_paths": [
+    "{UNREAL_REPO}/scripts",
+    "{UNREAL_REPO}/shared",
+    "{SCRIPT_DIR}GenTools/shared"
+  ],
   "env_vars": {
     "UE_PROJECT_DIR": "{TINYSTUDIO_BASE_SHOW_DIR}{SHOW_NAME}/unreal/{version}",
     "UE_ENGINE_DIR": "C:/Program Files/Epic Games/UE_5.7",
     "UE_PYTHON_DIR": "{UNREAL_REPO}/python"
   },
-  "script_paths": ["scripts", "tools"],
+  "script_paths": ["scripts", "shared"],
+  "python_startup_script": "{UNREAL_REPO}/scripts/startupScripts/customMenus.py",
   "supported_shows": "all"
 }

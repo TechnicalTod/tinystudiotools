@@ -2,14 +2,21 @@ import os
 import re
 import glob
 import sys
+import getpass
 import unreal
 import subprocess
 from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import genTools.genUnrealUtils as genUnrealUtils
 import genTools.genUnrealImportUtils as genUnrealImportUtils
-import unrealFilePaths
+from genTools.uiUtils import center_widget, load_qss
 import assetTools.getUSDTexturePaths as getUSDTexturePaths
+from assetTools.setdec_paths import (
+    is_setdec_asset_folder,
+    list_setdec_groups,
+    setdec_group_folder,
+    setdec_production_folder,
+)
 
 parameterList = {
     "USDPreviewMaterial": {
@@ -58,21 +65,49 @@ class MainWindow(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+        self._current_show = self._resolve_current_show()
+        self._current_user = self._resolve_current_user()
+        self._base_show_dir = self._resolve_base_show_dir()
+        self._setdec_root = setdec_production_folder(self._current_show)
         self.initUI()
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
-        self.setWindowTitle("Import Unreal Assets")
+        self.setStyleSheet(load_qss("dark.qss"))
+        self.setWindowTitle("Import SetDec Assets — {}".format(self._current_show))
         self.setFocus()
         self.center()
         self.show()
 
-        self.setGeometry(100, 100, 1200, 400)
+        self.setGeometry(100, 100, 1400, 600)
 
-        layout = QtWidgets.QGridLayout(self)
-        self.setLayout(layout)
+        outer = QtWidgets.QVBoxLayout(self)
+        outer.setContentsMargins(12, 12, 12, 12)
+        outer.setSpacing(8)
+        self.setLayout(outer)
+
+        outer.addWidget(self._build_header())
+
+        setdec_label = QtWidgets.QLabel(
+            "<b>Set Dec root:</b> <code>{}</code>".format(self._setdec_root)
+        )
+        setdec_label.setWordWrap(True)
+        setdec_label.setTextInteractionFlags(
+            QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        outer.addWidget(setdec_label)
+
+        content = QtWidgets.QHBoxLayout()
+        content.setSpacing(8)
+        outer.addLayout(content, 1)
+
+        browser_panel = self._build_setdec_browser()
+        content.addWidget(browser_panel, 0)
+
+        table_panel = QtWidgets.QWidget()
+        layout = QtWidgets.QGridLayout(table_panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        content.addWidget(table_panel, 1)
 
         # create table widget
         self.tableWidget = QtWidgets.QTableWidget(self)
@@ -91,7 +126,7 @@ class MainWindow(QtWidgets.QWidget):
         )
 
         # create buttons
-        self.addButton = QtWidgets.QPushButton("Add")
+        self.addButton = QtWidgets.QPushButton("Add Selected")
         self.addButton.clicked.connect(self.add)
 
         self.removeButton = QtWidgets.QPushButton("Remove")
@@ -129,10 +164,142 @@ class MainWindow(QtWidgets.QWidget):
 
     # sets UI to be created in center (used in window prefs)
     def center(self):
-        qr = self.frameGeometry()
-        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        center_widget(self)
+
+    @staticmethod
+    def _resolve_current_show():
+        current_show = os.environ.get("SHOW_NAME", "").strip()
+        if not current_show:
+            raise RuntimeError(
+                "SHOW_NAME is not set. Launch Unreal through TinyStudioLauncher, "
+                "then reopen Import SetDec Assets."
+            )
+        return current_show
+
+    @staticmethod
+    def _resolve_current_user():
+        return os.environ.get("USERNAME", "").strip() or getpass.getuser()
+
+    @staticmethod
+    def _resolve_base_show_dir():
+        return os.environ.get("TINYSTUDIO_BASE_SHOW_DIR", "").strip() or "N/A"
+
+    def _build_header(self):
+        frame = QtWidgets.QFrame()
+        frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
+        layout = QtWidgets.QHBoxLayout(frame)
+        layout.setContentsMargins(10, 8, 10, 8)
+
+        title = QtWidgets.QLabel("<b>Show:</b> {}".format(self._current_show))
+        user = QtWidgets.QLabel("<b>User:</b> {}".format(self._current_user))
+        drive = QtWidgets.QLabel("<b>Drive:</b> {}".format(self._base_show_dir))
+
+        for widget in (title, user, drive):
+            widget.setTextInteractionFlags(
+                QtCore.Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+
+        layout.addWidget(title)
+        layout.addStretch(1)
+        layout.addWidget(user)
+        layout.addStretch(1)
+        layout.addWidget(drive)
+        return frame
+
+    def _build_setdec_browser(self):
+        panel = QtWidgets.QWidget()
+        panel.setMinimumWidth(320)
+        panel.setMaximumWidth(460)
+        layout = QtWidgets.QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        group_label = QtWidgets.QLabel("Set Dec Group")
+        self.group_combo = QtWidgets.QComboBox()
+        self.group_combo.currentIndexChanged.connect(self._on_group_changed)
+
+        self.fs_model = QtWidgets.QFileSystemModel(self)
+        self.fs_model.setFilter(
+            QtCore.QDir.Filter.AllDirs | QtCore.QDir.Filter.NoDotAndDotDot
+        )
+        self.fs_model.setRootPath(self._setdec_root)
+
+        self.tree = QtWidgets.QTreeView()
+        self.tree.setModel(self.fs_model)
+        self.tree.setHeaderHidden(True)
+        for column in (1, 2, 3):
+            self.tree.hideColumn(column)
+        self.tree.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection
+        )
+        self.tree.setAnimated(True)
+        self.tree.setIndentation(18)
+
+        self.browser_status = QtWidgets.QLabel()
+        self.browser_status.setWordWrap(True)
+
+        layout.addWidget(group_label)
+        layout.addWidget(self.group_combo)
+        layout.addWidget(QtWidgets.QLabel("Asset Folders"))
+        layout.addWidget(self.tree, 1)
+        layout.addWidget(self.browser_status)
+
+        self._refresh_groups()
+        return panel
+
+    def _refresh_groups(self):
+        self.group_combo.blockSignals(True)
+        self.group_combo.clear()
+
+        if not os.path.isdir(self._setdec_root):
+            self.group_combo.addItem("(setdec folder not found)")
+            self.group_combo.setEnabled(False)
+            self.tree.setEnabled(False)
+            self.browser_status.setText(
+                "Expected folder does not exist: {}".format(self._setdec_root)
+            )
+        else:
+            groups = list_setdec_groups(self._current_show)
+            if groups:
+                self.group_combo.addItems(groups)
+                self.group_combo.setEnabled(True)
+                self.tree.setEnabled(True)
+                self.browser_status.setText(
+                    "Select asset folders, then click Add Selected."
+                )
+            else:
+                self.group_combo.addItem("(no groups in setdec)")
+                self.group_combo.setEnabled(False)
+                self.tree.setEnabled(False)
+                self.browser_status.setText(
+                    "No Set Dec groups under {}.".format(self._setdec_root)
+                )
+
+        self.group_combo.blockSignals(False)
+        self._on_group_changed()
+
+    def _on_group_changed(self):
+        if not self.group_combo.isEnabled():
+            return
+
+        group = self.group_combo.currentText()
+        group_path = setdec_group_folder(self._current_show, group)
+        if not os.path.isdir(group_path):
+            return
+
+        index = self.fs_model.index(group_path)
+        self.tree.setRootIndex(index)
+        self.tree.expand(index)
+
+    def _paths_from_tree_selection(self):
+        paths = []
+        for index in self.tree.selectedIndexes():
+            if index.column() != 0:
+                continue
+            path = self.fs_model.filePath(index).replace("\\", "/")
+            if is_setdec_asset_folder(self._setdec_root, path) and path not in paths:
+                paths.append(path)
+        return paths
 
     # Function to add rows to table
     def add(self, pathList=None):
@@ -141,7 +308,12 @@ class MainWindow(QtWidgets.QWidget):
         if pathList:
             paths = pathList
         else:
-            paths = self.showFileDialog()
+            paths = self._paths_from_tree_selection()
+            if not paths:
+                genUnrealUtils.warningPopup(
+                    "Select one or more asset folders in the Set Dec browser first."
+                )
+                return
 
         # get initial row count
         init_row_number = self.tableWidget.rowCount()
@@ -164,11 +336,7 @@ class MainWindow(QtWidgets.QWidget):
             variantComboBox.addItems(variantList)
             variantComboBox.setCurrentIndex(0)
             if len(variantList) > 1:
-                with open(
-                    "{}/qComboBoxMultiItemYellow.qss".format(unrealFilePaths.styleSheetFilepath),
-                    "r",
-                ) as fh:
-                    variantComboBox.setStyleSheet(fh.read())
+                variantComboBox.setStyleSheet(load_qss("qComboBoxMultiItemYellow.qss"))
 
             # create combo box for version column
             versionComboBox = QtWidgets.QComboBox()
@@ -212,29 +380,6 @@ class MainWindow(QtWidgets.QWidget):
     # Function to completely clear table
     def clear(self):
         self.tableWidget.setRowCount(0)
-
-    # Show file dialog (currently kinda hacky as it has to use non native dialog)
-    # This is done so we can select multiple folders. could be a lot better
-    def showFileDialog(self):
-        file_dialog = QtWidgets.QFileDialog()
-        file_dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
-        file_dialog.setOption(QtWidgets.QFileDialog.DontUseNativeDialog, True)
-
-        # to make it possible to select multiple directories:
-        file_view = file_dialog.findChild(QtWidgets.QListView, "listView")
-        if file_view:
-            file_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-        f_tree_view = file_dialog.findChild(QtWidgets.QTreeView)
-        if f_tree_view:
-            f_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-
-        if file_dialog.exec_():
-            paths = file_dialog.selectedFiles()
-
-            # Dirty fix to stop the parent directory being selected when choosing set dec assets in file dialog
-            current_dir = QtCore.QDir(file_dialog.directory().absolutePath())
-            paths = [path for path in paths if path != current_dir.absolutePath()]
-            return paths
 
     # Function to refresh table
     def resetCurrentList(self):

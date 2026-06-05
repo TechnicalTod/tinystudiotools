@@ -315,7 +315,8 @@ class ConfigurationManager:
         else:  # Standalone mode
             self._config.maya_mode = False
             # Use shared dark stylesheet for standalone mode
-            fallback_stylesheet = Path(__file__).resolve().parents[5] / "shared" / "pyQtStyleSheets" / "dark.qss"
+            tools_root = Path(__file__).resolve().parents[7]
+            fallback_stylesheet = tools_root / "GenTools" / "pyQtStyleSheets" / "dark.qss"
             if fallback_stylesheet.exists():
                 self._config.stylesheet_path = str(fallback_stylesheet)
                 self.logger.info(

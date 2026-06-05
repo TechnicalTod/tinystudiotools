@@ -5,6 +5,7 @@ import os
 import sys
 import unreal
 from importlib import reload
+from genTools.uiUtils import center_widget, load_qss
 import unrealFilePaths
 
 
@@ -15,8 +16,7 @@ class MainWindow(QtWidgets.QWidget):
 
     def initUI(self):
         # window prefs
-        with open("{}/dark.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
-            self.setStyleSheet(fh.read())
+        self.setStyleSheet(load_qss("dark.qss"))
         self.setWindowTitle("Remap multiple shaders")
         self.setFocus()
         self.center()
@@ -29,10 +29,7 @@ class MainWindow(QtWidgets.QWidget):
 
     # sets UI to be created in center (used in window prefs)
     def center(self):
-        qr = self.frameGeometry()
-        cp = QtGui.QGuiApplication.primaryScreen().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        center_widget(self)
 
     def createWidgets(self):
         self.treeView = QtWidgets.QTreeView()
@@ -63,10 +60,8 @@ class MainWindow(QtWidgets.QWidget):
         self.browseButton.customContextMenuRequested.connect(self.showShaderContextMenu)
 
         # adjust the import button style sheet
-        with open("{}/importButton.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
-            self.remapShadersButton.setStyleSheet(fh.read())
-        with open("{}/openButton.qss".format(unrealFilePaths.styleSheetFilepath), "r") as fh:
-            self.browseButton.setStyleSheet(fh.read())
+        self.remapShadersButton.setStyleSheet(load_qss("importButton.qss"))
+        self.browseButton.setStyleSheet(load_qss("openButton.qss"))
 
     # connect and populate the layout
     def connectLayout(self):
@@ -130,7 +125,7 @@ class MainWindow(QtWidgets.QWidget):
             menu = QtWidgets.QMenu(self)
             findAction = menu.addAction("Find in Content Browser")
             findAction.triggered.connect(self.findInContentBrowser)
-            menu.exec_(self.treeView.viewport().mapToGlobal(position))
+            menu.exec(self.treeView.viewport().mapToGlobal(position))
 
     def findInContentBrowser(self):
         indexes = self.treeView.selectedIndexes()
@@ -146,7 +141,7 @@ class MainWindow(QtWidgets.QWidget):
         contextMenu = QtWidgets.QMenu(self)
         copyAction = contextMenu.addAction("Find in Content Browser")
         copyAction.triggered.connect(self.findShaderInContentBrowser)
-        contextMenu.exec_(QtGui.QCursor.pos())
+        contextMenu.exec(QtGui.QCursor.pos())
 
     def findShaderInContentBrowser(self):
         indexes = self.treeView.selectedIndexes()
