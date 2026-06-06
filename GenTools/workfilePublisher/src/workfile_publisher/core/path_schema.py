@@ -28,6 +28,8 @@ SCHEMA_FILENAME = "path_schema.json"
 # Variant names must be filesystem-safe slugs. Spaces are normalised to
 # underscores; anything outside this allow-list is rejected.
 _VARIANT_ALLOWED = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+# Asset and shot folder names allow mixed case (``Prop02``, ``Hero_Chair``).
+_NAME_ALLOWED = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
 class SchemaError(RuntimeError):
@@ -128,6 +130,36 @@ def default_schema_path() -> Path:
     # core/path_schema.py -> core/ -> workfile_publisher/ -> src/ -> repo root.
     repo_root = here.parents[3]
     return repo_root / "configs" / SCHEMA_FILENAME
+
+
+def normalize_asset_name(value: Optional[str]) -> str:
+    """Normalise a show-drive asset folder name.
+
+    Spaces become underscores; the result must be alphanumeric with optional
+    underscores and dashes (``Prop02``, ``Hero_Chair``).
+    """
+    if value is None or not value.strip():
+        raise ValueError("Asset name is required.")
+    cleaned = value.strip().replace(" ", "_")
+    if not _NAME_ALLOWED.match(cleaned):
+        raise ValueError(
+            f"Invalid asset name {value!r}. "
+            "Use letters, digits, underscores, and dashes; must start with a letter or digit."
+        )
+    return cleaned
+
+
+def normalize_shot_name(value: Optional[str]) -> str:
+    """Normalise a show-drive shot folder name (same rules as asset names)."""
+    if value is None or not value.strip():
+        raise ValueError("Shot name is required.")
+    cleaned = value.strip().replace(" ", "_")
+    if not _NAME_ALLOWED.match(cleaned):
+        raise ValueError(
+            f"Invalid shot name {value!r}. "
+            "Use letters, digits, underscores, and dashes; must start with a letter or digit."
+        )
+    return cleaned
 
 
 def normalize_variant(value: Optional[str], schema: PathSchema) -> str:

@@ -12,7 +12,7 @@
 
 var _publisherWindow = null;
 
-var ASSET_TASKS = ["model", "rig", "shading", "layout"];
+var ASSET_TASKS = ["model", "rig", "shading", "layout", "techviz"];
 var SHOT_TASKS = ["layout", "lighting", "previz", "techviz"];
 
 function tasksForKind(kind) {
@@ -103,6 +103,23 @@ function cleanVariant(value) {
   if (!/^[a-z0-9][a-z0-9_-]*$/.test(text)) {
     throw new Error(
       "Variant must start with a letter or number and use only lowercase letters, numbers, underscore, or dash."
+    );
+  }
+  return text;
+}
+
+function cleanTopLevelName(value, label) {
+  var text = String(value || "")
+    .replace(/^\s+/, "")
+    .replace(/\s+$/, "")
+    .replace(/\s+/g, "_");
+  if (!text.length) {
+    throw new Error(label + " name is required.");
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(text)) {
+    throw new Error(
+      label +
+        " name must start with a letter or number and use only letters, numbers, underscore, or dash."
     );
   }
   return text;
@@ -311,6 +328,66 @@ function buildShotFile(ctx, episode, sequence, shot, task, variant, version) {
   return new File(folder.fsName + "/" + name);
 }
 
+function reserveWorkfilePath(win, c, variant) {
+  var folder = win.workFolderFor(c);
+  if (!ensureFolder(folder)) {
+    throw new Error("Could not create workfile folder:\n" + folder.fsName);
+  }
+
+  var prefix = win.workfilePrefixFor(c);
+  var version = nextVersionForVariant(folder, prefix, c.task, variant);
+  for (var attempt = 0; attempt < 64; attempt++) {
+    var target;
+    if (c.kind === "asset") {
+      target = buildAssetFile(
+        win.ctx,
+        c.category,
+        c.asset,
+        c.task,
+        variant,
+        version
+      );
+    } else {
+      target = buildShotFile(
+        win.ctx,
+        c.episode,
+        c.sequence,
+        c.shot,
+        c.task,
+        variant,
+        version
+      );
+    }
+
+    if (!target.exists) {
+      if (target.open("w")) {
+        target.close();
+        return target;
+      }
+    }
+    version++;
+  }
+
+  throw new Error(
+    "Could not reserve a version slot under " +
+      folder.fsName +
+      "; another artist may be publishing rapidly."
+  );
+}
+
+function releaseReservedPath(file) {
+  if (!file || !file.exists) {
+    return;
+  }
+  try {
+    if (file.length === 0) {
+      file.remove();
+    }
+  } catch (removeErr) {
+    /* best-effort cleanup */
+  }
+}
+
 function ensureFolder(folder) {
   if (!folder) {
     return false;
@@ -348,6 +425,36 @@ function populateTaskDropdown(win, kind) {
   }
 }
 
+function setTopLevelNameContext(win, kind) {
+  if (!win.nameLabel || !win.nameEdit) {
+    return;
+  }
+
+  if (kind === "asset") {
+    win.nameLabel.text = "Asset name:";
+    win.nameEdit.enabled = true;
+    win.nameEdit.helpTip =
+      "Type a new asset name or use the selected asset from the tree.";
+    if (win._selection && win._selection.asset) {
+      win.nameEdit.text = win._selection.asset;
+    }
+    return;
+  }
+
+  if (kind === "shot") {
+    win.nameLabel.text = "Shot name:";
+    win.nameEdit.text = "";
+    win.nameEdit.enabled = false;
+    win.nameEdit.helpTip = "Set by production.";
+    return;
+  }
+
+  win.nameLabel.text = "Asset name:";
+  win.nameEdit.text = "";
+  win.nameEdit.enabled = false;
+  win.nameEdit.helpTip = "";
+}
+
 function setTaskDropdownSelection(win, task, kind) {
   var tasks = tasksForKind(kind);
   for (var i = 0; i < tasks.length; i++) {
@@ -368,6 +475,13 @@ function resolveTreeContext(win, node) {
   }
 
   if (node._ctx && node._ctx.kind === "shot") {
+    return node._ctx;
+  }
+
+  if (
+    node._ctx &&
+    (node._ctx.kind === "category" || node._ctx.kind === "sequence")
+  ) {
     return node._ctx;
   }
 
@@ -434,6 +548,23 @@ function normalizeSelection(ctx) {
       task: ctx.task || null
     };
   }
+  if (ctx.kind === "category") {
+    return {
+      kind: "asset",
+      category: ctx.category,
+      asset: null,
+      task: null
+    };
+  }
+  if (ctx.kind === "sequence") {
+    return {
+      kind: "shot",
+      episode: ctx.episode,
+      sequence: ctx.sequence,
+      shot: null,
+      task: null
+    };
+  }
   if (ctx.kind === "shot") {
     return {
       kind: "shot",
@@ -470,6 +601,7 @@ function applyTreeSelection(win) {
   win._selection = normalizeSelection(raw);
   if (win._selection) {
     populateTaskDropdown(win, win._selection.kind);
+    setTopLevelNameContext(win, win._selection.kind);
     if (win._selection.task) {
       if (win._selection.kind === "asset") {
         win._activeSelectId = assetTaskSelectId(
@@ -494,6 +626,7 @@ function applyTreeSelection(win) {
   } else {
     win._activeSelectId = null;
     populateTaskDropdown(win, null);
+    setTopLevelNameContext(win, null);
     win.setTaskDropdownEnabled(false);
   }
   win.refreshTable();
@@ -519,7 +652,10 @@ function treeSelectionPath(ctx) {
         "asset/" + ctx.category + "/" + ctx.asset + "/" + ctx.task
       );
     }
-    return "asset/" + ctx.category + "/" + ctx.asset;
+    if (ctx.asset) {
+      return "asset/" + ctx.category + "/" + ctx.asset;
+    }
+    return "asset/" + ctx.category;
   }
   if (ctx.kind === "shot") {
     if (ctx.task) {
@@ -533,6 +669,9 @@ function treeSelectionPath(ctx) {
         "/" +
         ctx.task
       );
+    }
+    if (!ctx.shot) {
+      return "shot/" + ctx.episode + "/" + ctx.sequence;
     }
     return (
       "shot/" + ctx.episode + "/" + ctx.sequence + "/" + ctx.shot
@@ -635,6 +774,11 @@ function populateAssetTree(win) {
   for (var c = 0; c < categories.length; c++) {
     var category = categories[c];
     var categoryNode = addFolderNode(win.assetTree, category, "category");
+    categoryNode._ctx = {
+      kind: "category",
+      category: category
+    };
+    expandTreeNode(categoryNode);
     var catFolder = new Folder(win.ctx.showRoot + "/assets/" + category);
     var assets = listSubdirs(catFolder);
     for (var a = 0; a < assets.length; a++) {
@@ -678,11 +822,18 @@ function populateShotTree(win) {
   for (var e = 0; e < episodes.length; e++) {
     var episode = episodes[e];
     var episodeNode = addFolderNode(win.shotTree, episode, "episode");
+    expandTreeNode(episodeNode);
     var seqFolder = new Folder(win.ctx.showRoot + "/episodes/" + episode);
     var sequences = listSubdirs(seqFolder);
     for (var s = 0; s < sequences.length; s++) {
       var sequence = sequences[s];
       var sequenceNode = addFolderNode(episodeNode, sequence, "sequence");
+      sequenceNode._ctx = {
+        kind: "sequence",
+        episode: episode,
+        sequence: sequence
+      };
+      expandTreeNode(sequenceNode);
       var shotFolder = new Folder(seqFolder.fsName + "/" + sequence);
       var shots = listSubdirs(shotFolder);
       for (var h = 0; h < shots.length; h++) {
@@ -744,11 +895,11 @@ function expandTreeNode(node) {
 
 function restoreAssetSelection(win, path) {
   var parts = String(path).split("/");
-  if (parts[0] !== "asset" || parts.length < 3 || parts.length > 4) {
+  if (parts[0] !== "asset" || parts.length < 2 || parts.length > 4) {
     return;
   }
   var category = parts[1];
-  var asset = parts[2];
+  var asset = parts.length >= 3 ? parts[2] : null;
   var task = parts.length === 4 ? parts[3] : null;
   var tree = win.assetTree;
 
@@ -756,12 +907,20 @@ function restoreAssetSelection(win, path) {
   if (!categoryNode) {
     return;
   }
+  expandTreeNode(categoryNode);
+  if (!asset) {
+    tree.selection = categoryNode;
+    win._selection = normalizeSelection(categoryNode._ctx);
+    populateTaskDropdown(win, "asset");
+    setTopLevelNameContext(win, "asset");
+    win.setTaskDropdownEnabled(true);
+    return;
+  }
   var assetNode = findAssetNode(categoryNode, asset);
   if (!assetNode) {
     return;
   }
 
-  expandTreeNode(categoryNode);
   expandTreeNode(assetNode);
 
   if (task) {
@@ -786,6 +945,7 @@ function restoreAssetSelection(win, path) {
       win._selection = assetCtx;
     }
     populateTaskDropdown(win, "asset");
+    setTopLevelNameContext(win, "asset");
     setTaskDropdownSelection(win, task, "asset");
     win.setTaskDropdownEnabled(true);
     return;
@@ -794,17 +954,18 @@ function restoreAssetSelection(win, path) {
   tree.selection = assetNode;
   win._selection = normalizeSelection(assetNode._ctx);
   populateTaskDropdown(win, "asset");
+  setTopLevelNameContext(win, "asset");
   win.setTaskDropdownEnabled(true);
 }
 
 function restoreShotSelection(win, path) {
   var parts = String(path).split("/");
-  if (parts[0] !== "shot" || parts.length < 4 || parts.length > 5) {
+  if (parts[0] !== "shot" || parts.length < 3 || parts.length > 5) {
     return;
   }
   var episode = parts[1];
   var sequence = parts[2];
-  var shot = parts[3];
+  var shot = parts.length >= 4 ? parts[3] : null;
   var task = parts.length === 5 ? parts[4] : null;
   var tree = win.shotTree;
 
@@ -816,13 +977,21 @@ function restoreShotSelection(win, path) {
   if (!sequenceNode) {
     return;
   }
+  expandTreeNode(episodeNode);
+  expandTreeNode(sequenceNode);
+  if (!shot) {
+    tree.selection = sequenceNode;
+    win._selection = normalizeSelection(sequenceNode._ctx);
+    populateTaskDropdown(win, "shot");
+    setTopLevelNameContext(win, "shot");
+    win.setTaskDropdownEnabled(true);
+    return;
+  }
   var shotNode = findShotNode(sequenceNode, shot);
   if (!shotNode) {
     return;
   }
 
-  expandTreeNode(episodeNode);
-  expandTreeNode(sequenceNode);
   expandTreeNode(shotNode);
 
   if (task) {
@@ -848,6 +1017,7 @@ function restoreShotSelection(win, path) {
       win._selection = shotCtx;
     }
     populateTaskDropdown(win, "shot");
+    setTopLevelNameContext(win, "shot");
     setTaskDropdownSelection(win, task, "shot");
     win.setTaskDropdownEnabled(true);
     return;
@@ -856,6 +1026,7 @@ function restoreShotSelection(win, path) {
   tree.selection = shotNode;
   win._selection = normalizeSelection(shotNode._ctx);
   populateTaskDropdown(win, "shot");
+  setTopLevelNameContext(win, "shot");
   win.setTaskDropdownEnabled(true);
 }
 
@@ -889,6 +1060,13 @@ function projectIsModified() {
   } catch (e2) {
     return false;
   }
+}
+
+function confirmPublishPath(file) {
+  return confirm(
+    "Publish this workfile?\n\nThe workfile will be saved here:\n\n" +
+      file.fsName
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1000,15 +1178,25 @@ function buildPublisherWindow() {
   formRow.orientation = "row";
   formRow.alignChildren = ["left", "center"];
   formRow.spacing = 8;
-  formRow.add("statictext", undefined, "Workfile type:");
-  win.taskDropdown = formRow.add("dropdownlist", undefined, []);
-  win.taskDropdown.preferredSize = [140, 24];
-  populateTaskDropdown(win, null);
-  win.taskDropdown.enabled = false;
+  win.nameLabel = formRow.add("statictext", undefined, "Asset name:");
+  win.nameEdit = formRow.add("edittext", undefined, "");
+  win.nameEdit.characters = 24;
+  win.nameEdit.preferredSize = [180, 24];
+  win.nameEdit.enabled = false;
   formRow.add("statictext", undefined, "Variant:");
   win.variantEdit = formRow.add("edittext", undefined, "main");
   win.variantEdit.characters = 16;
   win.variantEdit.preferredSize = [120, 24];
+
+  var typeRow = actions.add("group");
+  typeRow.orientation = "row";
+  typeRow.alignChildren = ["left", "center"];
+  typeRow.spacing = 8;
+  typeRow.add("statictext", undefined, "Workfile type:");
+  win.taskDropdown = typeRow.add("dropdownlist", undefined, []);
+  win.taskDropdown.preferredSize = [260, 24];
+  populateTaskDropdown(win, null);
+  win.taskDropdown.enabled = false;
 
   var buttonRow = actions.add("group");
   buttonRow.orientation = "row";
@@ -1089,12 +1277,21 @@ function attachPublisherHandlers(win) {
       return null;
     }
     if (win._selection.kind === "asset") {
+      var assetName;
+      try {
+        assetName = win._selection.asset || cleanTopLevelName(win.nameEdit.text, "Asset");
+      } catch (assetErr) {
+        return null;
+      }
       return {
         kind: "asset",
         category: win._selection.category,
-        asset: win._selection.asset,
+        asset: assetName,
         task: task
       };
+    }
+    if (!win._selection.shot) {
+      return null;
     }
     return {
       kind: "shot",
@@ -1201,14 +1398,32 @@ function attachPublisherHandlers(win) {
 
   win.reloadTree = function (keepSelection, restorePathOverride) {
     var path = restorePathOverride || null;
+    var pendingAssetName = null;
     if (!path && keepSelection) {
       path = treeSelectionPath(win._selection);
+      if (
+        win._selection &&
+        win._selection.kind === "asset" &&
+        !win._selection.asset &&
+        win.nameEdit &&
+        win.nameEdit.enabled
+      ) {
+        pendingAssetName = win.nameEdit.text;
+      }
     }
     win._updating = true;
     try {
       populateWorkfileTrees(win);
       if (path) {
         restoreTreeSelection(win, path);
+      }
+      if (
+        pendingAssetName &&
+        win._selection &&
+        win._selection.kind === "asset" &&
+        !win._selection.asset
+      ) {
+        win.nameEdit.text = pendingAssetName;
       }
     } finally {
       win._updating = false;
@@ -1223,8 +1438,25 @@ function attachPublisherHandlers(win) {
     if (!publish) {
       win.clearTable();
       win.publishBtn.enabled = false;
-      win.setTaskDropdownEnabled(false);
-      win.setStatus("Select an asset or shot in the tree.");
+      win.setTaskDropdownEnabled(
+        !!win._selection &&
+          (win._selection.kind === "asset" || win._selection.kind === "shot")
+      );
+      if (!win._selection) {
+        win.setStatus(
+          "Select a category in Assets or a production-created shot in Episodes."
+        );
+      } else if (win._selection.kind === "asset" && !win._selection.asset) {
+        win.setStatus(
+          "Set asset name, workfile type, and variant to publish."
+        );
+      } else if (win._selection.kind === "shot" && !win._selection.shot) {
+        win.setStatus(
+          "Select a production-created shot in the tree before publishing."
+        );
+      } else {
+        win.setStatus("Select a workfile type before publishing.");
+      }
       return;
     }
 
@@ -1245,9 +1477,15 @@ function attachPublisherHandlers(win) {
     if (!browse) {
       win.clearTable();
       if (win._selection && !win._selection.task) {
-        win.setStatus(
-          "Select a workfile type in the tree to browse versions, or pick a type below to publish."
-        );
+        if (win._selection.kind === "asset" && !win._selection.asset) {
+          win.setStatus(
+            "Set asset name, workfile type, and variant to publish, or select a workfile type in the tree to browse versions."
+          );
+        } else {
+          win.setStatus(
+            "Select a workfile type in the tree to browse versions, or pick a type below to publish."
+          );
+        }
       } else {
         win.setStatus(
           "Select a workfile type in the tree, or pick a type below to publish."
@@ -1296,7 +1534,21 @@ function attachPublisherHandlers(win) {
   win.onPublish = function () {
     var c = win.publishContext();
     if (!c) {
-      alert("Select an asset or shot and workfile type before publishing.");
+      if (!win._selection) {
+        alert("Select an asset category or production-created shot before publishing.");
+      } else if (win._selection.kind === "asset" && !win._selection.asset) {
+        try {
+          cleanTopLevelName(win.nameEdit.text, "Asset");
+        } catch (assetErr) {
+          alert(String(assetErr));
+          return;
+        }
+        alert("Select a workfile type before publishing.");
+      } else if (win._selection.kind === "shot" && !win._selection.shot) {
+        alert("Select a production-created shot before publishing.");
+      } else {
+        alert("Select a workfile type before publishing.");
+      }
       return;
     }
 
@@ -1313,39 +1565,24 @@ function attachPublisherHandlers(win) {
       return;
     }
 
-    var folder = win.workFolderFor(c);
-    if (!ensureFolder(folder)) {
-      alert("Could not create workfile folder:\n" + folder.fsName);
+    var target;
+    try {
+      target = reserveWorkfilePath(win, c, variant);
+    } catch (reserveErr) {
+      alert("Could not reserve publish path:\n" + reserveErr.toString());
       return;
     }
 
-    var prefix = win.workfilePrefixFor(c);
-    var version = nextVersionForVariant(folder, prefix, c.task, variant);
-    var target;
-    if (c.kind === "asset") {
-      target = buildAssetFile(
-        win.ctx,
-        c.category,
-        c.asset,
-        c.task,
-        variant,
-        version
-      );
-    } else {
-      target = buildShotFile(
-        win.ctx,
-        c.episode,
-        c.sequence,
-        c.shot,
-        c.task,
-        variant,
-        version
-      );
+    if (!confirmPublishPath(target)) {
+      releaseReservedPath(target);
+      win.setStatus("Publish cancelled.");
+      return;
     }
 
     try {
       app.project.save(target);
     } catch (saveErr) {
+      releaseReservedPath(target);
       alert("Publish failed:\n" + saveErr.toString());
       return;
     }
@@ -1467,6 +1704,10 @@ function attachPublisherHandlers(win) {
   };
 
   win.variantEdit.onChange = function () {
+    win.refreshTable();
+  };
+
+  win.nameEdit.onChange = function () {
     win.refreshTable();
   };
 

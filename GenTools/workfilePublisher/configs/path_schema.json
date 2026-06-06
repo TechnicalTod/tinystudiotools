@@ -24,7 +24,7 @@
       "extension": "ma",
       "supports_asset": true,
       "supports_shot": true,
-      "asset_tasks": ["model", "rig", "shading", "layout"],
+      "asset_tasks": ["model", "rig", "shading", "layout", "techviz"],
       "shot_tasks": ["layout", "lighting", "previz", "techviz"]
     },
     "ae": {
@@ -32,7 +32,7 @@
       "extension": "aep",
       "supports_asset": true,
       "supports_shot": true,
-      "asset_tasks": ["model", "rig", "shading", "layout"],
+      "asset_tasks": ["model", "rig", "shading", "layout", "techviz"],
       "shot_tasks": ["layout", "lighting", "previz", "techviz"]
     }
   }

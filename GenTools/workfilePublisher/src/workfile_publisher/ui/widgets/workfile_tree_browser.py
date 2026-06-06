@@ -129,16 +129,20 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
         if sel.kind == "asset":
             if sel.task:
                 return f"asset/{sel.category}/{sel.asset}/{sel.task}"
-            return f"asset/{sel.category}/{sel.asset}"
+            if sel.asset:
+                return f"asset/{sel.category}/{sel.asset}"
+            return f"asset/{sel.category}"
         if sel.task:
             return f"shot/{sel.episode}/{sel.sequence}/{sel.shot}/{sel.task}"
-        return f"shot/{sel.episode}/{sel.sequence}/{sel.shot}"
+        if sel.shot:
+            return f"shot/{sel.episode}/{sel.sequence}/{sel.shot}"
+        return f"shot/{sel.episode}/{sel.sequence}"
 
     def _restore_path(self, path: Optional[str]) -> None:
         if not path:
             return
         parts = path.split("/")
-        if len(parts) < 3:
+        if len(parts) < 2:
             return
         kind = parts[0]
         tree = self._tree_for_kind(kind)
@@ -148,6 +152,13 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
         self._switch_to_kind(kind)
         self._active_kind = kind
 
+        if kind == "asset" and len(parts) == 2:
+            _kind, category = parts
+            category_item = self._find_child_by_text(tree.invisibleRootItem(), category)
+            if category_item is None:
+                return
+            tree.setCurrentItem(category_item)
+            return
         if kind == "asset" and len(parts) == 3:
             _kind, category, asset = parts
             category_item = self._find_child_by_text(tree.invisibleRootItem(), category)
@@ -167,6 +178,16 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
             if asset_item is None:
                 return
             self._select_task_child(tree, asset_item, task)
+            return
+        if kind == "shot" and len(parts) == 3:
+            _kind, episode, sequence = parts
+            episode_item = self._find_child_by_text(tree.invisibleRootItem(), episode)
+            if episode_item is None:
+                return
+            sequence_item = self._find_child_by_text(episode_item, sequence)
+            if sequence_item is None:
+                return
+            tree.setCurrentItem(sequence_item)
             return
         if kind == "shot" and len(parts) == 4:
             _kind, episode, sequence, shot = parts
@@ -267,12 +288,13 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
 
     def _populate_assets(self, tree: QtWidgets.QTreeWidget) -> None:
         for category in self._discovery.asset_categories():
-            category_item = self._folder_item(category, "category")
+            category_item = QtWidgets.QTreeWidgetItem([category])
             category_item.setData(
                 0,
                 Qt.UserRole,
                 {"kind": "category", "category": category},
             )
+            category_item.setExpanded(True)
 
             for asset in self._discovery.assets(category):
                 asset_item = QtWidgets.QTreeWidgetItem([asset])
@@ -316,8 +338,7 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
 
                 category_item.addChild(asset_item)
 
-            if category_item.childCount():
-                tree.addTopLevelItem(category_item)
+            tree.addTopLevelItem(category_item)
 
     def _populate_shots(self, tree: QtWidgets.QTreeWidget) -> None:
         for episode in self._discovery.episodes():
@@ -327,9 +348,10 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                 Qt.UserRole,
                 {"kind": "episode", "episode": episode},
             )
+            episode_item.setExpanded(True)
 
             for sequence in self._discovery.sequences(episode):
-                sequence_item = self._folder_item(sequence, "sequence")
+                sequence_item = QtWidgets.QTreeWidgetItem([sequence])
                 sequence_item.setData(
                     0,
                     Qt.UserRole,
@@ -385,8 +407,8 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
 
                     sequence_item.addChild(shot_item)
 
-                if sequence_item.childCount():
-                    episode_item.addChild(sequence_item)
+                sequence_item.setExpanded(True)
+                episode_item.addChild(sequence_item)
 
             if episode_item.childCount():
                 tree.addTopLevelItem(episode_item)
@@ -442,11 +464,22 @@ class WorkfileTreeBrowser(QtWidgets.QWidget):
                     sequence=data["sequence"],
                     shot=data["shot"],
                 )
+        elif kind == "category":
+            self._selection = WorkfileTreeSelection(
+                kind="asset",
+                category=data["category"],
+            )
         elif kind == "asset":
             self._selection = WorkfileTreeSelection(
                 kind="asset",
                 category=data["category"],
                 asset=data["asset"],
+            )
+        elif kind == "sequence":
+            self._selection = WorkfileTreeSelection(
+                kind="shot",
+                episode=data["episode"],
+                sequence=data["sequence"],
             )
         elif kind == "shot":
             self._selection = WorkfileTreeSelection(

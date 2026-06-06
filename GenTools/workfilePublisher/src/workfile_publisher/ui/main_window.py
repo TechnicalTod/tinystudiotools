@@ -17,6 +17,7 @@ Two convenience constructors:
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 from ..adapters import HostAdapter, HostAdapterError, build_adapter
@@ -173,7 +174,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
 
         variant = variant_override if variant_override is not None else self._form.variant()
         try:
-            cleaned = ps.normalize_variant(variant, self._schema)
+            cleaned_variant = ps.normalize_variant(variant, self._schema)
         except ValueError as exc:
             if warn:
                 self._warn("Invalid variant", str(exc))
@@ -185,16 +186,53 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
                 self._warn("Invalid target", f"Unknown workfile type {task!r}.")
             return None
 
+        category = selection.category
+        asset = selection.asset
+        episode = selection.episode
+        sequence = selection.sequence
+        shot = selection.shot
+
+        if selection.kind == "asset":
+            if not category:
+                return None
+            asset_raw = asset if asset else self._form.top_level_name()
+            if not asset_raw.strip():
+                if warn:
+                    self._warn("Invalid target", "Asset name is required.")
+                return None
+            try:
+                asset = ps.normalize_asset_name(asset_raw)
+            except ValueError as exc:
+                if warn:
+                    self._warn("Invalid target", str(exc))
+                return None
+        elif selection.kind == "shot":
+            if not (episode and sequence and shot):
+                if warn:
+                    self._warn(
+                        "Invalid target",
+                        "Select a production-created shot before publishing.",
+                    )
+                return None
+            try:
+                shot = ps.normalize_shot_name(shot)
+            except ValueError as exc:
+                if warn:
+                    self._warn("Invalid target", str(exc))
+                return None
+        else:
+            return None
+
         return WorkfileTarget(
             kind=selection.kind,
             dcc=self._adapter.name,
             task=task,
-            variant=cleaned,
-            category=selection.category,
-            asset=selection.asset,
-            episode=selection.episode,
-            sequence=selection.sequence,
-            shot=selection.shot,
+            variant=cleaned_variant,
+            category=category,
+            asset=asset,
+            episode=episode,
+            sequence=sequence,
+            shot=shot,
         )
 
     def _browse_target(self) -> Optional[WorkfileTarget]:
@@ -220,10 +258,23 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         selection = self._tree_selection()
         if selection is None:
             self._form.set_context(None)
+            self._form.set_name_context(None, [])
             self._refresh_all()
             return
 
         self._form.set_context(selection.kind)
+        if selection.kind == "asset" and selection.category:
+            self._form.set_name_context(
+                "asset", self._discovery.assets(selection.category)
+            )
+            if selection.asset:
+                self._form.set_top_level_name(selection.asset)
+        elif (
+            selection.kind == "shot"
+            and selection.episode
+            and selection.sequence
+        ):
+            self._form.set_name_context("shot", [])
         if selection.task:
             self._form.set_task(selection.task)
         self._refresh_all()
@@ -241,13 +292,24 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             selection = self._tree_selection()
             if selection is None:
                 self._status.showMessage(
-                    "Select an asset or shot in the Assets or Episodes tab."
+                    "Select a category in Assets or a sequence in Episodes, "
+                    "then set name, workfile type, and variant."
                 )
             elif not selection.task:
-                self._status.showMessage(
-                    "Select a workfile type in the tree to browse versions, "
-                    "or pick a type below to publish."
-                )
+                if selection.kind == "asset" and not selection.asset:
+                    self._status.showMessage(
+                        "Set asset name, workfile type, and variant to publish, "
+                        "or select a workfile type in the tree to browse versions."
+                    )
+                elif selection.kind == "shot" and not selection.shot:
+                    self._status.showMessage(
+                        "Select a production-created shot in the tree before publishing."
+                    )
+                else:
+                    self._status.showMessage(
+                        "Select a workfile type in the tree to browse versions, "
+                        "or pick a type below to publish."
+                    )
             else:
                 self._status.showMessage(
                     "Select a workfile type in the tree, or pick a type below to publish."
@@ -278,12 +340,28 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         self._form.set_open_enabled(entry is not None)
 
     # ---------------------------------------------------------- actions
+    def _confirm_publish_path(self, path: Path) -> bool:
+        box = QtWidgets.QMessageBox(self)
+        box.setIcon(QtWidgets.QMessageBox.Question)
+        box.setWindowTitle("Confirm publish path")
+        box.setText("Publish this workfile?")
+        box.setInformativeText(f"The workfile will be saved here:\n\n{path}")
+        box.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        box.setDefaultButton(QtWidgets.QMessageBox.Yes)
+        try:
+            box.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        except AttributeError:
+            pass
+
+        exec_fn = getattr(box, "exec", None) or getattr(box, "exec_")
+        return exec_fn() == QtWidgets.QMessageBox.Yes
+
     def _on_publish(self, variant: str) -> None:
         target = self._publish_target(variant_override=variant, warn=True)
         if target is None:
             return
         try:
-            saved = self._service.publish(self._adapter, target)
+            reserved = self._service.reserve_publish_path(target)
         except HostAdapterError as exc:
             self._warn("Publish failed", str(exc))
             return
@@ -295,10 +373,39 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             self._warn("Publish failed", str(exc))
             return
 
+        if not self._confirm_publish_path(reserved):
+            self._service.release_reserved_path(reserved)
+            self._status.showMessage("Publish cancelled.", 4000)
+            return
+
+        try:
+            saved = self._service.publish_reserved(self._adapter, reserved)
+        except HostAdapterError as exc:
+            self._warn("Publish failed", str(exc))
+            return
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.exception("Unexpected publish failure")
+            self._warn("Publish failed", str(exc))
+            return
+
         self._status.showMessage(f"Published {saved}", 8000)
         self._workfile_tree.refresh(
             restore_path=self._restore_path_for_target(target)
         )
+        selection = self._tree_selection()
+        if selection and selection.kind == "asset" and selection.category:
+            self._form.set_name_context(
+                "asset", self._discovery.assets(selection.category)
+            )
+        elif (
+            selection
+            and selection.kind == "shot"
+            and selection.episode
+            and selection.sequence
+        ):
+            self._form.set_name_context("shot", [])
+        if target.kind == "asset" and target.asset:
+            self._form.set_top_level_name(target.asset)
         self._on_tree_selection()
 
     def _on_open_selected(self) -> None:
@@ -330,7 +437,22 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         self._status.showMessage(f"Opened {entry.path}", 8000)
 
     def _on_refresh(self) -> None:
+        selection = self._tree_selection()
+        top_level_name = self._form.top_level_name()
         self._workfile_tree.refresh()
+        if selection and selection.kind == "asset" and selection.category:
+            self._form.set_name_context(
+                "asset", self._discovery.assets(selection.category)
+            )
+        elif (
+            selection
+            and selection.kind == "shot"
+            and selection.episode
+            and selection.sequence
+        ):
+            self._form.set_name_context("shot", [])
+        if top_level_name and selection and selection.kind == "asset":
+            self._form.set_top_level_name(top_level_name)
         self._refresh_all()
 
     # ---------------------------------------------------------- close

@@ -113,6 +113,44 @@ class PublishService:
         )
 
     # -- write / read actions ---------------------------------------------
+    def reserve_publish_path(self, target: WorkfileTarget) -> Path:
+        """Reserve and return the exact path for the next publish."""
+        dcc_spec = self.schema.get_dcc(target.dcc)
+        if not dcc_spec.supports(target.kind):
+            raise ValueError(
+                f"DCC {target.dcc!r} does not support {target.kind!r} workfiles."
+            )
+
+        return reserve_next_version(
+            self.workfile_dir(target),
+            prefix=target.prefix(),
+            task=target.task,
+            variant=target.variant,
+            ext=dcc_spec.extension,
+            padding=self.schema.version_padding,
+        )
+
+    @staticmethod
+    def release_reserved_path(path: Path) -> None:
+        """Remove an unused zero-byte reservation."""
+        try:
+            if path.exists() and path.stat().st_size == 0:
+                path.unlink()
+        except OSError:
+            pass
+
+    def publish_reserved(self, host_adapter, reserved: Path) -> Path:
+        """Ask the adapter to save into an already reserved path."""
+        try:
+            host_adapter.save_as(reserved)
+        except Exception:
+            # The placeholder we created is now useless if the save failed.
+            # Best-effort clean-up so we don't burn version numbers.
+            self.release_reserved_path(reserved)
+            raise
+
+        return reserved
+
     def publish(self, host_adapter, target: WorkfileTarget) -> Path:
         """Reserve the next version and ask the adapter to save into it.
 
@@ -124,38 +162,8 @@ class PublishService:
         Returns:
             The final path on disk after the adapter has written it.
         """
-        dcc_spec = self.schema.get_dcc(target.dcc)
-        if not dcc_spec.supports(target.kind):
-            raise ValueError(
-                f"DCC {target.dcc!r} does not support {target.kind!r} workfiles."
-            )
-
-        folder = self.workfile_dir(target)
-        try:
-            reserved = reserve_next_version(
-                folder,
-                prefix=target.prefix(),
-                task=target.task,
-                variant=target.variant,
-                ext=dcc_spec.extension,
-                padding=self.schema.version_padding,
-            )
-        except VersionReservationError:
-            raise
-
-        try:
-            host_adapter.save_as(reserved)
-        except Exception:
-            # The placeholder we created is now useless if the save failed.
-            # Best-effort clean-up so we don't burn version numbers.
-            try:
-                if reserved.exists() and reserved.stat().st_size == 0:
-                    reserved.unlink()
-            except OSError:
-                pass
-            raise
-
-        return reserved
+        reserved = self.reserve_publish_path(target)
+        return self.publish_reserved(host_adapter, reserved)
 
     def open_workfile(self, host_adapter, path: Path) -> None:
         """Ask the host adapter to open an existing workfile."""
