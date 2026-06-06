@@ -1,13 +1,15 @@
 Test asset publisher
 
-asset publishing allows you to create new top level assets but the workfile publisher doesnt.
-These asset and folder trees should all populate based on the ftrack assets and shots using the ftrack api.
+asset model publishing should publish in a way that mimics set dec
 
-get technodolly geo 
+workflile and asset manager These asset and folder trees should all populate based on the ftrack assets and shots using the ftrack api.
+
+get technodolly geo to reskin the techno
 
 * get unreal media plate blueprint
 * Get UE master materials
 * Finish testing unreal tools
+
 * Rig puppet with advanced skeleton 
 * Tunnel to import assets ready for setdec
 
