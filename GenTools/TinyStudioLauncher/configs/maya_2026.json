@@ -10,6 +10,8 @@
     "{MAYA_REPO}/scripts/Publisher",
     "{MAYA_REPO}/scripts/Publisher/src",
     "{TINYSTUDIO_LIB_DIR}TinyStudioTools/GenTools/workfilePublisher/src",
+    "{TINYSTUDIO_LIB_DIR}TinyStudioTools/GenTools/SetDecSceneDescriptionIO/src",
+    "{SCRIPT_DIR}GenTools/SetDecSceneDescriptionIO/src",
     "{SCRIPT_DIR}GenTools/shared"
   ],
   "env_vars": {

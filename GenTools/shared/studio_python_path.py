@@ -11,6 +11,9 @@ import os
 import sys
 
 _BOOTSTRAPPED = False
+_SETDEC_BOOTSTRAPPED = False
+
+_SETDEC_SRC = "SetDecSceneDescriptionIO/src"
 
 
 def _insert(path: str) -> bool:
@@ -51,4 +54,40 @@ def ensure_gen_tools_shared(repo_env: str | None = None) -> bool:
             return True
 
     _BOOTSTRAPPED = True
+    return False
+
+
+def _gen_tools_src_candidates(package_src: str, repo_env: str | None = None) -> list[str]:
+    """Ordered ``sys.path`` entries for a GenTools package under ``src/``."""
+    candidates: list[str] = []
+
+    script_dir = (os.getenv("SCRIPT_DIR") or "").replace("\\", "/").rstrip("/")
+    if script_dir:
+        candidates.append(f"{script_dir}/GenTools/{package_src}")
+
+    lib_dir = (os.getenv("TINYSTUDIO_LIB_DIR") or "").replace("\\", "/").rstrip("/")
+    if lib_dir:
+        candidates.append(f"{lib_dir}/TinyStudioTools/GenTools/{package_src}")
+
+    if repo_env:
+        repo = (os.getenv(repo_env) or "").replace("\\", "/").rstrip("/")
+        if repo:
+            tools_root = os.path.dirname(os.path.dirname(repo))
+            candidates.append(f"{tools_root}/GenTools/{package_src}")
+
+    return candidates
+
+
+def ensure_setdec_scene_description_io(repo_env: str | None = None) -> bool:
+    """Insert ``setdec_scene_description_io`` on ``sys.path``. Returns True if added."""
+    global _SETDEC_BOOTSTRAPPED
+    if _SETDEC_BOOTSTRAPPED:
+        return True
+
+    for path in _gen_tools_src_candidates(_SETDEC_SRC, repo_env):
+        if _insert(path):
+            _SETDEC_BOOTSTRAPPED = True
+            return True
+
+    _SETDEC_BOOTSTRAPPED = True
     return False

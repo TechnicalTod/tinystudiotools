@@ -8,6 +8,8 @@
   "additional_paths": [
     "{UNREAL_REPO}/scripts",
     "{UNREAL_REPO}/shared",
+    "{TINYSTUDIO_LIB_DIR}TinyStudioTools/GenTools/SetDecSceneDescriptionIO/src",
+    "{SCRIPT_DIR}GenTools/SetDecSceneDescriptionIO/src",
     "{SCRIPT_DIR}GenTools/shared"
   ],
   "env_vars": {

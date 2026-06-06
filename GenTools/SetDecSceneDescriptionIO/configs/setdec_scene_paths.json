@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "base_dir_env": "TINYSTUDIO_BASE_SHOW_DIR",
+  "category": "assets/env",
+  "publish_segment": "publish/unreal/sceneDescription",
+  "filename": "{env}_{variant}_{version}.usda",
+  "default_variant": "base",
+  "version_padding": 3
+}

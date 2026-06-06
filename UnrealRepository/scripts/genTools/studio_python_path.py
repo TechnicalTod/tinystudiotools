@@ -6,6 +6,9 @@ import os
 import sys
 
 _BOOTSTRAPPED = False
+_SETDEC_BOOTSTRAPPED = False
+
+_SETDEC_SRC = "SetDecSceneDescriptionIO/src"
 
 
 def _insert(path: str) -> bool:
@@ -44,4 +47,42 @@ def ensure_gen_tools_shared() -> bool:
             return True
 
     _BOOTSTRAPPED = True
+    return False
+
+
+def _setdec_src_candidates() -> list[str]:
+    candidates: list[str] = []
+
+    script_dir = (os.getenv("SCRIPT_DIR") or "").replace("\\", "/").rstrip("/")
+    if script_dir:
+        candidates.append(f"{script_dir}/GenTools/{_SETDEC_SRC}")
+
+    lib_dir = (os.getenv("TINYSTUDIO_LIB_DIR") or "").replace("\\", "/").rstrip("/")
+    if lib_dir:
+        candidates.append(f"{lib_dir}/TinyStudioTools/GenTools/{_SETDEC_SRC}")
+
+    unreal_repo = (os.getenv("UNREAL_REPO") or "").replace("\\", "/").rstrip("/")
+    if unreal_repo:
+        tools_root = os.path.dirname(os.path.dirname(unreal_repo))
+        candidates.append(f"{tools_root}/GenTools/{_SETDEC_SRC}")
+
+    this_dir = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(this_dir)))
+    candidates.append(f"{repo_root}/GenTools/{_SETDEC_SRC}")
+
+    return candidates
+
+
+def ensure_setdec_scene_description_io() -> bool:
+    """Insert ``setdec_scene_description_io`` on ``sys.path``. Returns True if added."""
+    global _SETDEC_BOOTSTRAPPED
+    if _SETDEC_BOOTSTRAPPED:
+        return True
+
+    for path in _setdec_src_candidates():
+        if _insert(path):
+            _SETDEC_BOOTSTRAPPED = True
+            return True
+
+    _SETDEC_BOOTSTRAPPED = True
     return False

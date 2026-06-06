@@ -478,7 +478,7 @@
         },
         {
           "label": "Publish Layout Scene Description",
-          "module": "unrealTools.USDSceneImportExportUIMaya",
+          "module": "unrealTools.SetDecSceneDescriptionUIMaya",
           "function": "launch"
         },
         {

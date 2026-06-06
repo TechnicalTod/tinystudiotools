@@ -62,8 +62,9 @@ def complete_path(file_path, variant, version, asset_name, ext):
     else:
         path_ext = '.' + ext
     if ext == 'ue':
-        file_path = transform_path(file_path,'SETDEC', '/Game/01_Assets/')
-        file_path = file_path.replace("\\", "/")
+        file_path = _to_ue_publish_root(file_path)
+        if not file_path.endswith('/'):
+            file_path += '/'
         final_path = file_path + asset_name + '/' + variant + '/' + version + '/' + asset_name + '_' + version
     else:
         file_path = file_path.replace("\\", "/")
@@ -71,6 +72,20 @@ def complete_path(file_path, variant, version, asset_name, ext):
     
 
     return final_path.strip()
+
+def _to_ue_publish_root(file_path):
+    path = file_path.replace("\\", "/")
+    lowered = path.lower()
+    marker = "/setdec/"
+    index = lowered.find(marker)
+    if index != -1:
+        suffix = path[index + len(marker):].lstrip("/")
+        return "/Game/01_Assets/SETDEC/" + suffix
+    legacy_index = path.find("SETDEC")
+    if legacy_index != -1:
+        return "/Game/01_Assets/" + path[legacy_index:]
+    return path
+
 
 def transform_path(original_path, pivot, new_base):
     # Find the index of the pivot in the original path

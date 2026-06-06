@@ -1,6 +1,4 @@
 import os
-import re
-import glob
 import sys
 import getpass
 import unreal
@@ -10,55 +8,13 @@ from importlib import reload
 import genTools.genUnrealUtils as genUnrealUtils
 import genTools.genUnrealImportUtils as genUnrealImportUtils
 from genTools.uiUtils import center_widget, load_qss
-import assetTools.getUSDTexturePaths as getUSDTexturePaths
+from assetTools.setdec_import_ops import import_setdec_static_mesh_pipeline
 from assetTools.setdec_paths import (
     is_setdec_asset_folder,
     list_setdec_groups,
     setdec_group_folder,
     setdec_production_folder,
 )
-
-parameterList = {
-    "USDPreviewMaterial": {
-        "diffuse": {
-            "suffix": "Diffuse",
-            "mayaParameter": "diffuseColor",
-            "fileNodeParameter": "outColor",
-        },
-        "emissive": {
-            "suffix": "Emissive",
-            "mayaParameter": "emissiveColor",
-            "fileNodeParameter": "outColor",
-        },
-        "ao": {"suffix": "AO", "mayaParameter": "occlusion", "fileNodeParameter": "outAlpha"},
-        "opacity": {
-            "suffix": "Opacity.",
-            "mayaParameter": "opacity",
-            "fileNodeParameter": "outAlpha",
-        },
-        "metallic": {
-            "suffix": "Metallic",
-            "mayaParameter": "metallic",
-            "fileNodeParameter": "outAlpha",
-        },
-        "roughness": {
-            "suffix": "Roughness",
-            "mayaParameter": "roughness",
-            "fileNodeParameter": "outAlpha",
-        },
-        "normal": {"suffix": "Normal", "mayaParameter": "normal", "fileNodeParameter": "outColor"},
-        "subsurface": {
-            "suffix": "Translucency",
-            "mayaParameter": "clearcoat",
-            "fileNodeParameter": "outAlpha",
-        },
-        "displacement": {
-            "suffix": "Displacement",
-            "mayaParameter": "displacement",
-            "fileNodeParameter": "outAlpha",
-        },
-    }
-}
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -436,14 +392,11 @@ class MainWindow(QtWidgets.QWidget):
 
             # Run import functions
             if assetType == "Static Mesh":
-                importedMesh, unrealMeshImportPath = self.importStaticMesh(
-                    assetPath, variantName, versionNumber
-                )
-                importedTextures = self.importTextures(
-                    assetPath, variantName, versionNumber, unrealMeshImportPath, assetType
-                )
-                self.assignMaterialInstanceToMesh(
-                    importedMesh, unrealMeshImportPath, importedTextures, assetType
+                import_setdec_static_mesh_pipeline(
+                    assetPath,
+                    variantName,
+                    versionNumber,
+                    warn=genUnrealUtils.warningPopup,
                 )
 
             if assetType == "Skeletal Mesh":
@@ -457,43 +410,6 @@ class MainWindow(QtWidgets.QWidget):
                     importedMesh, unrealMeshImportPath, importedTextures, assetType
                 )
 
-    # Static mesh importer
-    def importStaticMesh(self, assetPath, variantName, versionNumber):
-        # Get published fbx path
-        publishedFBXPath = "{}/{}/{}/fbx/".format(assetPath, variantName, versionNumber)
-        # split out asset name from directory path
-        assetName = assetPath.split("/")[-1]
-        # split out set dec env name from directory path
-        setDecEnvName = assetPath.split("/")[-2]
-        # build unreal asset import directory
-        unrealMeshImportPath = "/Game/01_Assets/SETDEC"
-        unrealMeshImportPath = "{}/{}/{}/{}/{}".format(
-            unrealMeshImportPath, setDecEnvName, assetName, variantName, versionNumber
-        )
-        # Get list of FBX files in publish dir and do sanity checks
-        fbxList = []
-        for fbx in os.listdir(publishedFBXPath):
-            if fbx.endswith(".fbx"):
-                fbxList.append(fbx)
-        if len(fbxList) > 1:
-            genUnrealUtils.warningPopup(
-                "Found too many FBX files in {} publish directory".format(assetName)
-            )
-        if len(fbxList) == 0:
-            genUnrealUtils.warningPopup(
-                "No FBX files found in {} publish directory".format(assetName)
-            )
-        else:
-            FBXAssetPath = publishedFBXPath + fbxList[0]
-        # build import task and run it
-        importMeshTask = genUnrealImportUtils.buildImportTask(
-            FBXAssetPath, unrealMeshImportPath, genUnrealImportUtils.buildStaticMeshImportOptions()
-        )
-        importedMesh = genUnrealImportUtils.executeImportTasks([importMeshTask])
-
-        return importedMesh, unrealMeshImportPath
-
-    # Static mesh importer
     def importSkeletalMesh(self, assetPath, variantName, versionNumber):
         # Get published fbx path
         publishedFBXPath = "{}/{}/{}/unrealExport/".format(assetPath, variantName, versionNumber)
@@ -535,32 +451,6 @@ class MainWindow(QtWidgets.QWidget):
     ):
         TexList = []
 
-        # For now with static meshes we grab all textures from the USD file
-        # ideally this will be the solution for all imports but puppets are currently maya only
-        if assetType == "Static Mesh":
-            publishedUSDPath = "{}/{}/{}/usd/".format(assetPath, variantName, versionNumber)
-            usdFile = os.listdir(publishedUSDPath)[0]
-            USDShaderDict = getUSDTexturePaths.get_paths(publishedUSDPath + usdFile)
-
-            for shaderName in USDShaderDict:
-                textureDict = USDShaderDict.get(shaderName)
-                for parameter in parameterList.get("USDPreviewMaterial"):
-                    mayaParameterName = (
-                        parameterList.get("USDPreviewMaterial").get(parameter).get("mayaParameter")
-                    )
-                    texture = textureDict.get(mayaParameterName)
-                    if texture:
-                        print(texture)
-                        if texture.endswith(".<UDIM>.png"):
-                            globPath = self.udimToGlobalString(texture)
-                            print(globPath)
-                            for tex in glob.glob(globPath):
-                                print(tex)
-                                TexList.append(tex)
-                        else:
-                            TexList.append(texture)
-
-        # Here we will default to hard coding the skeletal mesh textures from the pub dir
         if assetType == "Skeletal Mesh":
             publishedTexPath = "{}/{}/{}/tex/".format(assetPath, variantName, versionNumber)
             for texture in os.listdir(publishedTexPath):
@@ -722,41 +612,6 @@ class MainWindow(QtWidgets.QWidget):
         setDecCurrentVersion.setCurrentIndex(len(versionList) - 1)
 
         print("Variant changed to {}/{} finding latest versions".format(assetName, setDecVariant))
-
-    def udimToGlobalString(self, path):
-        if path is None:
-            return path
-
-        # If any of the patterns, convert the pattern
-        patterns = {
-            "<udim>": "<udim>",
-            "<tile>": "<tile>",
-            "<uvtile>": "<uvtile>",
-            "#": "#",
-            "u<u>_v<v>": "<u>|<v>",
-            "<frame0": "<frame0\d+>",
-            "<f>": "<f>",
-        }
-
-        lower = path.lower()
-        has_pattern = False
-        for pattern, regex_pattern in patterns.items():
-            if pattern in lower:
-                path = re.sub(regex_pattern, "*", path, flags=re.IGNORECASE)
-                has_pattern = True
-
-        if has_pattern:
-            return path
-
-        base = os.path.basename(path)
-        matches = list(re.finditer(r"\d+", base))
-        if matches:
-            match = matches[-1]
-            new_base = "{0}*{1}".format(base[: match.start()], base[match.end() :])
-            head = os.path.dirname(path)
-            return os.path.join(head, new_base)
-        else:
-            return path
 
 
 # load UI

@@ -90,10 +90,10 @@ def register_previs_menu() -> None:
     class ImportExportUSDUIClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import levelTools.USDSceneImportExportUIUnreal as USDSceneImportExportUIUnreal
+            import levelTools.SetDecSceneDescriptionUIUnreal as SetDecSceneDescriptionUIUnreal
 
-            reload(USDSceneImportExportUIUnreal)
-            USDSceneImportExportUIUnreal.openWindow()
+            reload(SetDecSceneDescriptionUIUnreal)
+            SetDecSceneDescriptionUIUnreal.launch()
 
     ImportExportUSDUIMenuButton = ImportExportUSDUIClass()
     ImportExportUSDUIMenuButton.init_entry(
