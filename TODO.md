@@ -3,7 +3,6 @@
 ## Asset & workfile publishing
 
 - [ ] Workfile and asset manager — asset and folder trees should populate from ftrack assets and shots (ftrack API)
-- [x] [Move Maya workfile publisher out of GenTools](Docs/workfile-publisher-move.md)
 
 ## Maya & rigging
 

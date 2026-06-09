@@ -1,12 +1,15 @@
+import sys
+
+import unreal
 from PySide6 import QtGui, QtWidgets, QtCore
 from PySide6.QtWidgets import QStyledItemDelegate, QStyleOptionButton, QStyle
 from PySide6.QtCore import Qt, QRect, QEvent
 import os
-import sys
-import unreal
-from importlib import reload
-from genTools.uiUtils import center_widget, load_qss
+
+from genTools.uiUtils import center_widget, load_qss, show_unreal_tool_window
 import unrealFilePaths
+
+WINDOW_OBJECT_NAME = "Unreal Remap Shaders"
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -15,6 +18,7 @@ class MainWindow(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
+        self.setObjectName(WINDOW_OBJECT_NAME)
         # window prefs
         self.setStyleSheet(load_qss("dark.qss"))
         self.setWindowTitle("Remap multiple shaders")
@@ -235,17 +239,5 @@ class MainWindow(QtWidgets.QWidget):
             print(f"Directory '{path}' already exists.")
 
 
-# load UI
 def openWindow():
-    if QtWidgets.QApplication.instance():
-        # Id any current instances of tool and destroy
-        for win in QtWidgets.QApplication.allWindows():
-            print(win.objectName())
-            if "Import Unreal Assets" in win.objectName():
-                win.destroy()
-    else:
-        QtWidgets.QApplication(sys.argv)
-    # load UI into QApp instance
-    MainWindow.window = MainWindow()
-    MainWindow.window.show()
-    unreal.parent_external_window_to_slate(MainWindow.window.winId())
+    show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)

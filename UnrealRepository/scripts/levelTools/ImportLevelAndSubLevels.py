@@ -1,18 +1,9 @@
-import json
-import os
 import unreal
-import sys
-import subprocess
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6 import QtWidgets
 
-from importlib import reload
-from genTools.uiUtils import center_widget, load_qss
-import unrealFilePaths
+from genTools.uiUtils import center_widget, load_qss, show_unreal_tool_window
 
-reload(unrealFilePaths)
-import genTools.genUnrealImportUtils as genUnrealImportUtils
-
-reload(genUnrealImportUtils)
+WINDOW_OBJECT_NAME = "Unreal Import Levels"
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -22,6 +13,7 @@ class MainWindow(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
+        self.setObjectName(WINDOW_OBJECT_NAME)
         # window prefs
         self.setStyleSheet(load_qss("dark.qss"))
         self.resize(1100, 50)
@@ -132,17 +124,5 @@ class MainWindow(QtWidgets.QWidget):
             # unreal.EditorLevelLibrary.save_current_level()
 
 
-# open UI
 def openWindow():
-    if QtWidgets.QApplication.instance():
-        # Id any current instances of tool and destroy
-        for win in QtWidgets.QApplication.allWindows():
-            print(win.objectName())
-            if "Import Unreal Assets" in win.objectName():
-                win.destroy()
-    else:
-        QtWidgets.QApplication(sys.argv)
-    # load UI into QApp instance
-    MainWindow.window = MainWindow()
-    MainWindow.window.show()
-    unreal.parent_external_window_to_slate(MainWindow.window.winId())
+    show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)

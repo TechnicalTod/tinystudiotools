@@ -1,10 +1,16 @@
 import unreal
-import os
-import sys
-from PySide6 import QtGui, QtWidgets, QtCore
-from importlib import reload
-from genTools.uiUtils import center_widget, load_qss
-import unrealFilePaths
+from PySide6 import QtWidgets
+
+from genTools.uiUtils import (
+    center_widget,
+    list_content_subdirs,
+    load_qss,
+    show_unreal_tool_window,
+)
+
+GAME_EPISODES_BASE = "/Game/02_Episodes"
+CONTENT_EPISODES_SEGMENT = "02_Episodes"
+WINDOW_OBJECT_NAME = "Unreal Shot Builder"
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -14,6 +20,7 @@ class MainWindow(QtWidgets.QWidget):
         self.initUI()
 
     def initUI(self):
+        self.setObjectName(WINDOW_OBJECT_NAME)
         self.setStyleSheet(load_qss("dark.qss"))
         self.resize(500, 100)
         self.setWindowTitle("Shot Builder")
@@ -23,79 +30,70 @@ class MainWindow(QtWidgets.QWidget):
 
         self.grid = QtWidgets.QGridLayout()
         self.grid.setSpacing(10)
-        self.grid = QtWidgets.QGridLayout()
-
-        # Adjust column stretch factors
         self.grid.setColumnStretch(0, 1)
         self.grid.setColumnStretch(1, 3)
 
-        self.project_name = unreal.SystemLibrary.get_game_name()
-
-        # Label and Dropdown for 'Shot Name'
         self.shotNameLabel = QtWidgets.QLabel("Shot Name:")
         self.shotNameDropdown = QtWidgets.QComboBox()
-        self.updateComboBox(self.shotNameDropdown, self.getUnrealDir("02_Episodes"))
-        self.shotNameDropdown.currentIndexChanged.connect(lambda: self.updateShotNumberDropdown())
         self.shotNameDropdown.setEditable(True)
-        self.shotNameDropdown.editTextChanged.connect(lambda: self.updateShotNumberDropdown())
+        self.updateComboBox(self.shotNameDropdown, CONTENT_EPISODES_SEGMENT)
+        self.shotNameDropdown.currentIndexChanged.connect(self.updateShotNumberDropdown)
+        self.shotNameDropdown.editTextChanged.connect(self.updateShotNumberDropdown)
 
-        # Label and Dropdown for 'Shot Number'
         self.shotNumberLabel = QtWidgets.QLabel("Shot Number:")
         self.shotNumberDropdown = QtWidgets.QComboBox()
-        self.updateShotNumberDropdown()
-        self.shotNumberDropdown.currentIndexChanged.connect(
-            lambda: self.updateShotVersionDropdown()
-        )
         self.shotNumberDropdown.setEditable(True)
-        self.shotNumberDropdown.editTextChanged.connect(lambda: self.updateShotVersionDropdown())
+        self.updateShotNumberDropdown()
+        self.shotNumberDropdown.currentIndexChanged.connect(self.updateShotVersionDropdown)
+        self.shotNumberDropdown.editTextChanged.connect(self.updateShotVersionDropdown)
 
-        # Label and Dropdown for 'Shot Version'
         self.shotVersionLabel = QtWidgets.QLabel("Shot Version:")
         self.shotVersionDropdown = QtWidgets.QComboBox()
-        self.updateShotVersionDropdown()
         self.shotVersionDropdown.setEditable(True)
+        self.updateShotVersionDropdown()
 
-        # Button 'Create Shot Folders'
         self.createShotFoldersButton = QtWidgets.QPushButton("Create Shot Folders")
         self.createShotFoldersButton.clicked.connect(self.createShotFolders)
 
-        # Adding widgets to the layout
         self.grid.addWidget(self.shotNameLabel, 0, 0)
         self.grid.addWidget(self.shotNameDropdown, 0, 1)
         self.grid.addWidget(self.shotNumberLabel, 1, 0)
         self.grid.addWidget(self.shotNumberDropdown, 1, 1)
         self.grid.addWidget(self.shotVersionLabel, 2, 0)
         self.grid.addWidget(self.shotVersionDropdown, 2, 1)
-        self.grid.addWidget(self.createShotFoldersButton, 3, 0, 1, 2)  # Span 2 columns
+        self.grid.addWidget(self.createShotFoldersButton, 3, 0, 1, 2)
 
         self.setLayout(self.grid)
 
-    def getUnrealDir(self, specific_path):
-        content_directory = unreal.Paths.project_content_dir()
-        return os.path.join(content_directory, specific_path.replace("/", os.sep))
-
-    def updateComboBox(self, comboBox, path):
+    def updateComboBox(self, comboBox, *content_segments):
+        comboBox.blockSignals(True)
         comboBox.clear()
-        if os.path.exists(path):
-            existing_files = os.listdir(path)
-            comboBox.addItems(sorted(existing_files))
+        comboBox.addItems(list_content_subdirs(*content_segments))
+        comboBox.blockSignals(False)
 
     def updateShotNumberDropdown(self):
-        selected_shot_name = self.shotNameDropdown.currentText()
-        self.updateComboBox(
-            self.shotNumberDropdown, self.getUnrealDir(f"02_Episodes/{selected_shot_name}")
-        )
+        shot_name = self.shotNameDropdown.currentText()
+        if not shot_name:
+            self.shotNumberDropdown.clear()
+            return
+
+        self.updateComboBox(self.shotNumberDropdown, CONTENT_EPISODES_SEGMENT, shot_name)
 
     def updateShotVersionDropdown(self):
-        selected_shot_name = self.shotNameDropdown.currentText()
-        selected_shot_number = self.shotNumberDropdown.currentText()
+        shot_name = self.shotNameDropdown.currentText()
+        shot_number = self.shotNumberDropdown.currentText()
+        if not all([shot_name, shot_number]):
+            self.shotVersionDropdown.clear()
+            return
+
         self.updateComboBox(
             self.shotVersionDropdown,
-            self.getUnrealDir(f"02_Episodes/{selected_shot_name}/{selected_shot_number}"),
+            CONTENT_EPISODES_SEGMENT,
+            shot_name,
+            shot_number,
         )
 
     def createShotFolders(self):
-        # Ensure selections are not empty
         selected_shot_name = self.shotNameDropdown.currentText()
         selected_shot_number = self.shotNumberDropdown.currentText()
         selected_version = self.shotVersionDropdown.currentText()
@@ -104,34 +102,29 @@ class MainWindow(QtWidgets.QWidget):
             print("Please make sure all selections are made.")
             return
 
-        # Constructing the directory and asset paths in Unreal's format
-        base_path = "/Game/02_Episodes"
-        dir_path = f"{base_path}/{selected_shot_name}/{selected_shot_number}/{selected_version}"
+        dir_path = (
+            f"{GAME_EPISODES_BASE}/{selected_shot_name}/"
+            f"{selected_shot_number}/{selected_version}"
+        )
 
-        # Create the directory if it doesn't exist
         if not unreal.EditorAssetLibrary.does_directory_exist(dir_path):
             unreal.EditorAssetLibrary.make_directory(dir_path)
 
-        # Create the "Animation" folder within the same directory
         animation_folder_path = f"{dir_path}/Animation"
         if not unreal.EditorAssetLibrary.does_directory_exist(animation_folder_path):
             unreal.EditorAssetLibrary.make_directory(animation_folder_path)
 
-        # Construct asset names
         level_name = f"PL_{selected_shot_name}_{selected_shot_number}_{selected_version}"
         sequence_name = f"LS_{selected_shot_name}_{selected_shot_number}_{selected_version}"
 
-        # Create a new level
         level_asset_path = f"{dir_path}/{level_name}"
         if not unreal.EditorAssetLibrary.does_asset_exist(level_asset_path + ".umap"):
-            levelLibrary = unreal.EditorLevelLibrary()
-            success = levelLibrary.new_level(level_asset_path)
-            if success:
+            level_library = unreal.EditorLevelLibrary()
+            if level_library.new_level(level_asset_path):
                 print(f"New level created: {level_asset_path}.umap")
             else:
                 print("Failed to create new level.")
 
-        # Creating a level sequence asset
         sequence_asset_path = f"{dir_path}/{sequence_name}"
         if not unreal.EditorAssetLibrary.does_asset_exist(sequence_asset_path + ".uasset"):
             asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
@@ -149,17 +142,4 @@ class MainWindow(QtWidgets.QWidget):
 
 
 def openWindow():
-    if QtWidgets.QApplication.instance():
-        for win in QtWidgets.QApplication.allWindows():
-            print(win.objectName())
-            if "Unreal Shot Builder" in win.objectName():
-                win.destroy()
-    else:
-        QtWidgets.QApplication(sys.argv)
-    # load UI into QApp instance
-    MainWindow.window = MainWindow()
-    MainWindow.window.show()
-    unreal.parent_external_window_to_slate(MainWindow.window.winId())
-
-
-# openWindow()
+    show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)
