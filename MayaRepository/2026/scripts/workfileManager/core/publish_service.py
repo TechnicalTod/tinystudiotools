@@ -1,9 +1,8 @@
 """High-level publish/open orchestration.
 
-The service stitches together :mod:`path_schema`, :mod:`versioning` and an
-arbitrary :class:`~workfile_publisher.adapters.base.HostAdapter`. It is the
-only module the UI talks to for save/open actions; this keeps the UI free of
-DCC- and disk-layout details.
+The service stitches together :mod:`path_schema`, :mod:`versioning` and
+:class:`~workfileManager.host.MayaHost`. It is the only module the UI talks to for
+save/open actions; this keeps the UI free of DCC- and disk-layout details.
 """
 
 from __future__ import annotations
@@ -151,22 +150,13 @@ class PublishService:
 
         return reserved
 
-    def publish(self, host_adapter, target: WorkfileTarget) -> Path:
-        """Reserve the next version and ask the adapter to save into it.
-
-        Args:
-            host_adapter: Anything implementing
-                :class:`workfile_publisher.adapters.base.HostAdapter`.
-            target: Where this workfile belongs.
-
-        Returns:
-            The final path on disk after the adapter has written it.
-        """
+    def publish(self, host, target: WorkfileTarget) -> Path:
+        """Reserve the next version and ask Maya to save into it."""
         reserved = self.reserve_publish_path(target)
-        return self.publish_reserved(host_adapter, reserved)
+        return self.publish_reserved(host, reserved)
 
-    def open_workfile(self, host_adapter, path: Path) -> None:
-        """Ask the host adapter to open an existing workfile."""
+    def open_workfile(self, host, path: Path) -> None:
+        """Ask Maya to open an existing workfile."""
         if not path.exists():
             raise FileNotFoundError(f"Workfile does not exist: {path}")
-        host_adapter.open(path)
+        host.open(path)

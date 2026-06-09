@@ -1,6 +1,6 @@
 """SetDec scene-description IO window (shared by Maya and Unreal).
 
-Layout mirrors Workfile Publisher / Asset Manager:
+Layout mirrors Workfile Manager / Asset Manager:
 
 * Read-only header (show, host, user, drive)
 * Left tree: environments → variants

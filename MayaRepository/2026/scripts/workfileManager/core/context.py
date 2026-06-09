@@ -142,7 +142,7 @@ def resolve_context(
         raise ContextError(
             "SHOW_NAME is not set. Launch the DCC through TinyStudioLauncher "
             "so the show is baked into the environment, then reopen the "
-            "Workfile Publisher."
+            "Workfile Manager."
         )
 
     if not base:

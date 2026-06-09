@@ -432,10 +432,10 @@
     },
     {
       "type": "button",
-      "label": "Workfiles",
-      "module": "workfiles.main_window",
+      "label": "Workfile Manager",
+      "module": "workfileManager.ui.main_window",
       "function": "main",
-      "icon": "workfiles_manager.png"
+      "icon": "workfileManager_manager.png"
     },
     {
       "type": "button",

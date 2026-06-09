@@ -1,8 +1,7 @@
-"""Maya host adapter.
+"""Maya scene API used by the workfile manager.
 
-Imports of ``maya.cmds`` happen lazily so this module is importable even when
-the publisher is launched standalone (the AE / dev path never instantiates a
-:class:`MayaAdapter`).
+All ``maya.cmds`` / ``maya.mel`` imports live here so core and UI modules
+stay importable outside Maya where useful.
 """
 
 from __future__ import annotations
@@ -10,10 +9,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-from .base import HostAdapter, HostAdapterError
+
+class MayaHostError(RuntimeError):
+    """Raised when Maya refuses or fails to perform an operation."""
 
 
-class MayaAdapter(HostAdapter):
+class MayaHost:
     """Talk to the Maya scene via ``maya.cmds.file``."""
 
     name = "maya"
@@ -23,11 +24,10 @@ class MayaAdapter(HostAdapter):
         try:
             import maya.cmds  # noqa: F401
         except Exception as exc:  # pragma: no cover - only runs inside Maya
-            raise HostAdapterError(
-                "MayaAdapter requires running inside Autodesk Maya."
+            raise MayaHostError(
+                "MayaHost requires running inside Autodesk Maya."
             ) from exc
 
-    # ---- queries --------------------------------------------------------
     def current_scene_path(self) -> Optional[Path]:
         import maya.cmds as cmds
 
@@ -44,7 +44,6 @@ class MayaAdapter(HostAdapter):
         except Exception:
             return False
 
-    # ---- actions --------------------------------------------------------
     def _set_project(self, project_dir: Path) -> None:
         import maya.mel as mel
 
@@ -53,7 +52,7 @@ class MayaAdapter(HostAdapter):
         try:
             mel.eval(f'setProject "{path_str}"')
         except Exception as exc:
-            raise HostAdapterError(
+            raise MayaHostError(
                 f"Maya set project failed for {project_dir}: {exc}"
             ) from exc
 
@@ -68,12 +67,10 @@ class MayaAdapter(HostAdapter):
         elif suffix == ".mb":
             maya_type = "mayaBinary"
         else:
-            raise HostAdapterError(
-                f"MayaAdapter cannot save extension {suffix!r}; expected .ma or .mb."
+            raise MayaHostError(
+                f"MayaHost cannot save extension {suffix!r}; expected .ma or .mb."
             )
 
-        # If the publisher pre-reserved an empty placeholder, drop it so Maya
-        # doesn't refuse the rename / overwrite.
         if path.exists() and path.stat().st_size == 0:
             try:
                 path.unlink()
@@ -84,7 +81,7 @@ class MayaAdapter(HostAdapter):
             cmds.file(rename=str(path))
             cmds.file(save=True, type=maya_type)
         except Exception as exc:
-            raise HostAdapterError(f"Maya save_as failed: {exc}") from exc
+            raise MayaHostError(f"Maya save_as failed: {exc}") from exc
 
     def open(self, path: Path) -> None:
         import maya.cmds as cmds
@@ -94,4 +91,4 @@ class MayaAdapter(HostAdapter):
         try:
             cmds.file(str(path), open=True, force=True, ignoreVersion=True)
         except Exception as exc:
-            raise HostAdapterError(f"Maya open failed: {exc}") from exc
+            raise MayaHostError(f"Maya open failed: {exc}") from exc

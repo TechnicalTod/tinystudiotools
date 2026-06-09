@@ -125,11 +125,10 @@ def load_schema(config_path: Path) -> PathSchema:
 
 
 def default_schema_path() -> Path:
-    """Resolve the bundled schema path next to the publisher source tree."""
+    """Resolve the bundled schema path next to the workfileManager package."""
     here = Path(__file__).resolve()
-    # core/path_schema.py -> core/ -> workfile_publisher/ -> src/ -> repo root.
-    repo_root = here.parents[3]
-    return repo_root / "configs" / SCHEMA_FILENAME
+    # core/path_schema.py -> core/ -> workfileManager/ -> configs/
+    return here.parents[1] / "configs" / SCHEMA_FILENAME
 
 
 def normalize_asset_name(value: Optional[str]) -> str:

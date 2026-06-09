@@ -1,18 +1,4 @@
-"""Workfile Publisher main window.
-
-The window is the only widget the host launcher cares about. It owns:
-
-* The resolved :class:`StudioContext` (read-only header).
-* A :class:`PublishService` (versioning + path build).
-* A :class:`HostAdapter` (DCC-specific verbs).
-* Workfile tree browser, workfile table, and publish form (split layout).
-
-Two convenience constructors:
-
-* :func:`show_in_maya` - parents the window to Maya's main window and keeps
-  a strong reference so Maya's GC doesn't collect it.
-* :func:`show_standalone` - boots its own ``QApplication`` for local dev.
-"""
+"""Workfile Manager main window (Maya only)."""
 
 from __future__ import annotations
 
@@ -20,12 +6,14 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from ..adapters import HostAdapter, HostAdapterError, build_adapter
+from genTools.uiUtils import load_qss
+
 from ..core import path_schema as ps
 from ..core.context import StudioContext, resolve_context
 from ..core.discovery import ShowDiscovery
 from ..core.publish_service import PublishService, WorkfileTarget
 from ..core.versioning import VersionReservationError, WorkfileEntry
+from ..host import MayaHost, MayaHostError
 from .qt import Qt, QtCore, QtGui, QtWidgets
 from .widgets.publish_form import PublishForm
 from .widgets.workfile_table import WorkfileTable
@@ -34,46 +22,35 @@ from .widgets.workfile_tree_browser import WorkfileTreeBrowser, WorkfileTreeSele
 logger = logging.getLogger(__name__)
 
 
-class WorkfilePublisherWindow(QtWidgets.QMainWindow):
-    """Main publisher window."""
+class WorkfileManagerWindow(QtWidgets.QMainWindow):
+    """Main workfile manager window."""
 
     def __init__(
         self,
         context: StudioContext,
         schema: ps.PathSchema,
-        adapter: HostAdapter,
+        host: MayaHost,
         parent: Optional[QtWidgets.QWidget] = None,
     ) -> None:
         super().__init__(parent)
         self._context = context
         self._schema = schema
-        self._adapter = adapter
+        self._host = host
         self._discovery = ShowDiscovery(context)
         self._service = PublishService(context, schema)
 
-        self.setWindowTitle(f"Workfile Publisher — {context.show}")
-        self.setStyleSheet(self._load_maya_stylesheet())
+        self.setWindowTitle(f"Workfile Manager — {context.show}")
+        self.setStyleSheet(load_qss("dark.qss"))
         self.resize(980, 620)
 
         self._build_ui()
         self._connect_signals()
         self._refresh_all()
 
-    # ------------------------------------------------------------- access
     @property
-    def adapter(self) -> HostAdapter:
-        return self._adapter
+    def host(self) -> MayaHost:
+        return self._host
 
-    @staticmethod
-    def _load_maya_stylesheet() -> str:
-        try:
-            from genTools.uiUtils import load_qss
-
-            return load_qss("dark.qss")
-        except Exception:
-            return ""
-
-    # -------------------------------------------------------------- build
     def _build_ui(self) -> None:
         central = QtWidgets.QWidget(self)
         layout = QtWidgets.QVBoxLayout(central)
@@ -85,7 +62,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         splitter = QtWidgets.QSplitter(Qt.Horizontal)
 
         self._workfile_tree = WorkfileTreeBrowser(
-            self._discovery, self._schema, dcc=self._adapter.name
+            self._discovery, self._schema, dcc=self._host.name
         )
         splitter.addWidget(self._workfile_tree)
 
@@ -99,7 +76,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
 
         self._form = PublishForm(
             schema=self._schema,
-            dcc=self._adapter.name,
+            dcc=self._host.name,
             default_variant=self._schema.default_variant,
         )
         right_layout.addWidget(self._form)
@@ -122,7 +99,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         layout = QtWidgets.QHBoxLayout(frame)
         layout.setContentsMargins(10, 8, 10, 8)
         title = QtWidgets.QLabel(f"<b>Show:</b> {self._context.show}")
-        host = QtWidgets.QLabel(f"<b>Host:</b> {self._adapter.label}")
+        host = QtWidgets.QLabel(f"<b>Host:</b> {self._host.label}")
         user = QtWidgets.QLabel(f"<b>User:</b> {self._context.username}")
         drive = QtWidgets.QLabel(f"<b>Drive:</b> {self._context.base_show_dir}")
         for w in (title, host, user, drive):
@@ -145,7 +122,6 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         self._table.open_requested.connect(self._open_entry)
         self._table.selection_changed.connect(self._on_table_selection_changed)
 
-    # ---------------------------------------------------------- helpers
     def _tree_selection(self) -> Optional[WorkfileTreeSelection]:
         return self._workfile_tree.current_selection()
 
@@ -180,7 +156,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
                 self._warn("Invalid variant", str(exc))
             return None
 
-        allowed = self._schema.get_dcc(self._adapter.name).tasks_for(selection.kind)
+        allowed = self._schema.get_dcc(self._host.name).tasks_for(selection.kind)
         if task not in allowed:
             if warn:
                 self._warn("Invalid target", f"Unknown workfile type {task!r}.")
@@ -211,7 +187,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
                 if warn:
                     self._warn(
                         "Invalid target",
-                        "Select a production-created shot before publishing.",
+                        "Select a production-created shot in the tree before saving."
                     )
                 return None
             try:
@@ -225,7 +201,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
 
         return WorkfileTarget(
             kind=selection.kind,
-            dcc=self._adapter.name,
+            dcc=self._host.name,
             task=task,
             variant=cleaned_variant,
             category=category,
@@ -236,7 +212,6 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         )
 
     def _browse_target(self) -> Optional[WorkfileTarget]:
-        """Target for browsing workfiles — requires a task leaf in the tree."""
         return self._build_target(require_task_leaf=True)
 
     def _publish_target(
@@ -245,7 +220,6 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         variant_override: Optional[str] = None,
         warn: bool = False,
     ) -> Optional[WorkfileTarget]:
-        """Target for publishing — asset/shot from tree, task from tree or form."""
         return self._build_target(variant_override=variant_override, warn=warn)
 
     @staticmethod
@@ -298,21 +272,21 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             elif not selection.task:
                 if selection.kind == "asset" and not selection.asset:
                     self._status.showMessage(
-                        "Set asset name, workfile type, and variant to publish, "
+                        "Set asset name, workfile type, and variant to save, "
                         "or select a workfile type in the tree to browse versions."
                     )
                 elif selection.kind == "shot" and not selection.shot:
                     self._status.showMessage(
-                        "Select a production-created shot in the tree before publishing."
+                        "Select a production-created shot in the tree before saving."
                     )
                 else:
                     self._status.showMessage(
                         "Select a workfile type in the tree to browse versions, "
-                        "or pick a type below to publish."
+                        "or pick a type below to save."
                     )
             else:
                 self._status.showMessage(
-                    "Select a workfile type in the tree, or pick a type below to publish."
+                    "Select a workfile type in the tree, or pick a type below to save."
                 )
         else:
             entries = self._service.list_for_target(
@@ -331,7 +305,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             )
             self._status.showMessage(
                 f"{len(entries)} workfile(s) in {folder} — next "
-                f"{browse_target.variant} publish: v{next_version:03d}"
+                f"{browse_target.variant} save: v{next_version:03d}"
             )
 
         self._form.set_publish_enabled(publish_target is not None)
@@ -339,12 +313,11 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
     def _on_table_selection_changed(self, entry: Optional[WorkfileEntry]) -> None:
         self._form.set_open_enabled(entry is not None)
 
-    # ---------------------------------------------------------- actions
     def _confirm_publish_path(self, path: Path) -> bool:
         box = QtWidgets.QMessageBox(self)
         box.setIcon(QtWidgets.QMessageBox.Question)
-        box.setWindowTitle("Confirm publish path")
-        box.setText("Publish this workfile?")
+        box.setWindowTitle("Confirm save path")
+        box.setText("Save this workfile?")
         box.setInformativeText(f"The workfile will be saved here:\n\n{path}")
         box.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         box.setDefaultButton(QtWidgets.QMessageBox.Yes)
@@ -362,33 +335,33 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             return
         try:
             reserved = self._service.reserve_publish_path(target)
-        except HostAdapterError as exc:
-            self._warn("Publish failed", str(exc))
+        except MayaHostError as exc:
+            self._warn("Save failed", str(exc))
             return
         except VersionReservationError as exc:
             self._warn("Could not reserve version", str(exc))
             return
         except Exception as exc:  # pragma: no cover - defensive
-            logger.exception("Unexpected publish failure")
-            self._warn("Publish failed", str(exc))
+            logger.exception("Unexpected save failure")
+            self._warn("Save failed", str(exc))
             return
 
         if not self._confirm_publish_path(reserved):
             self._service.release_reserved_path(reserved)
-            self._status.showMessage("Publish cancelled.", 4000)
+            self._status.showMessage("Save cancelled.", 4000)
             return
 
         try:
-            saved = self._service.publish_reserved(self._adapter, reserved)
-        except HostAdapterError as exc:
-            self._warn("Publish failed", str(exc))
+            saved = self._service.publish_reserved(self._host, reserved)
+        except MayaHostError as exc:
+            self._warn("Save failed", str(exc))
             return
         except Exception as exc:  # pragma: no cover - defensive
-            logger.exception("Unexpected publish failure")
-            self._warn("Publish failed", str(exc))
+            logger.exception("Unexpected save failure")
+            self._warn("Save failed", str(exc))
             return
 
-        self._status.showMessage(f"Published {saved}", 8000)
+        self._status.showMessage(f"Saved {saved}", 8000)
         self._workfile_tree.refresh(
             restore_path=self._restore_path_for_target(target)
         )
@@ -415,7 +388,7 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
         self._open_entry(entry)
 
     def _open_entry(self, entry: WorkfileEntry) -> None:
-        if self._adapter.is_modified():
+        if self._host.is_modified():
             confirm = QtWidgets.QMessageBox.question(
                 self,
                 "Unsaved changes",
@@ -426,8 +399,8 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             if confirm != QtWidgets.QMessageBox.Yes:
                 return
         try:
-            self._service.open_workfile(self._adapter, entry.path)
-        except HostAdapterError as exc:
+            self._service.open_workfile(self._host, entry.path)
+        except MayaHostError as exc:
             self._warn("Open failed", str(exc))
             return
         except Exception as exc:  # pragma: no cover - defensive
@@ -455,23 +428,8 @@ class WorkfilePublisherWindow(QtWidgets.QMainWindow):
             self._form.set_top_level_name(top_level_name)
         self._refresh_all()
 
-    # ---------------------------------------------------------- close
-    def closeEvent(self, event: QtGui.QCloseEvent) -> None:  # noqa: N802
-        stop = getattr(self._adapter, "stop", None)
-        if callable(stop):
-            try:
-                stop()
-            except Exception:  # pragma: no cover - defensive
-                logger.exception("adapter.stop() raised")
-        super().closeEvent(event)
-
-    # ---------------------------------------------------------- dialogs
     def _warn(self, title: str, message: str) -> None:
         QtWidgets.QMessageBox.warning(self, title, message)
-
-
-# ---------------------------------------------------------------------------
-# Convenience constructors
 
 
 def _load_default_schema() -> ps.PathSchema:
@@ -479,7 +437,6 @@ def _load_default_schema() -> ps.PathSchema:
 
 
 def _maya_main_window():  # pragma: no cover - only runs in Maya
-    """Return Maya's main window as a QWidget for parenting."""
     try:
         import maya.OpenMayaUI as omui
         from shiboken6 import wrapInstance  # type: ignore[import-not-found]
@@ -502,75 +459,18 @@ def _maya_main_window():  # pragma: no cover - only runs in Maya
         return None
 
 
-_MAYA_WINDOW_REF: Optional[WorkfilePublisherWindow] = None
+_MAYA_WINDOW_REF: Optional[WorkfileManagerWindow] = None
 
 
-def show_in_maya() -> WorkfilePublisherWindow:  # pragma: no cover - exercised inside Maya
-    """Open the publisher parented to Maya's main window."""
+def main() -> WorkfileManagerWindow:  # pragma: no cover - exercised inside Maya
+    """Shelf entry point: open (or re-open) the Workfile Manager window."""
     global _MAYA_WINDOW_REF
     context = resolve_context()
     schema = _load_default_schema()
-    adapter = build_adapter("maya")
+    host = MayaHost()
     parent = _maya_main_window()
-    window = WorkfilePublisherWindow(context, schema, adapter, parent=parent)
+    window = WorkfileManagerWindow(context, schema, host, parent=parent)
     window.setAttribute(Qt.WA_DeleteOnClose, True)
     window.show()
     _MAYA_WINDOW_REF = window
     return window
-
-
-def show_standalone(
-    host: str,
-    *,
-    cli_show: Optional[str] = None,
-    cli_base_show_dir: Optional[str] = None,
-) -> int:
-    """Run the publisher with its own QApplication.
-
-    Used for local UI development.
-
-    Returns:
-        The Qt event loop exit code.
-    """
-    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
-    try:
-        context = resolve_context(
-            cli_show=cli_show,
-            cli_base_show_dir=cli_base_show_dir,
-            allow_cli_override=host == "standalone",
-        )
-    except Exception as exc:
-        QtWidgets.QMessageBox.critical(
-            None,
-            "Workfile Publisher",
-            f"Cannot start the publisher:\n\n{exc}",
-        )
-        return 1
-
-    try:
-        schema = _load_default_schema()
-    except Exception as exc:
-        QtWidgets.QMessageBox.critical(
-            None, "Workfile Publisher", f"Bad path schema:\n\n{exc}"
-        )
-        return 1
-
-    try:
-        adapter = build_adapter(host)
-    except Exception as exc:
-        QtWidgets.QMessageBox.critical(
-            None, "Workfile Publisher", f"Cannot build host adapter:\n\n{exc}"
-        )
-        return 1
-
-    # Start AE heartbeat if applicable.
-    start = getattr(adapter, "start", None)
-    if callable(start):
-        try:
-            start()
-        except Exception as exc:  # pragma: no cover - defensive
-            logger.exception("adapter.start() failed: %s", exc)
-
-    window = WorkfilePublisherWindow(context, schema, adapter)
-    window.show()
-    return app.exec()

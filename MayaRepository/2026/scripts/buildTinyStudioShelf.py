@@ -36,7 +36,7 @@ SHELF_ICONS = {
     "Take Snapshot": "snapshotTools.png",
     "Maya Publisher": "publisher.png",
     "Unreal Tools": "unrealTools.png",
-    "Workfiles": "workfiles.png",
+    "Workfile Manager": "workfileManager.png",
 }
 
 DEFAULT_ICON = "defaultTool.png"

@@ -13,7 +13,7 @@ def _task_label(task: str) -> str:
 
 
 class PublishForm(QtWidgets.QWidget):
-    """Top-level name, workfile type, variant editor, and Publish / Open / Refresh."""
+    """Top-level name, workfile type, variant editor, and Save / Open / Refresh."""
 
     publish_requested = Signal(str)  # variant
     open_requested = Signal()
@@ -60,7 +60,7 @@ class PublishForm(QtWidgets.QWidget):
         self.task_combo.setEnabled(False)
         layout.addWidget(self.task_combo, 1, 1, 1, 3)
 
-        self.publish_button = QtWidgets.QPushButton("Publish")
+        self.publish_button = QtWidgets.QPushButton("Save")
         self.publish_button.setDefault(True)
         self.open_button = QtWidgets.QPushButton("Open Selected")
         self.refresh_button = QtWidgets.QPushButton("Refresh")
