@@ -20,6 +20,20 @@ _SECTION_SHOT = "ShotTools"
 _SECTION_ASSET = "AssetTools"
 
 
+def _reload_and_show(module_name: str, entry: str = "show") -> None:
+    """Reload shared UI helpers and a tool module, then open its window."""
+    import importlib
+
+    import studioUiUtils
+    import genTools.uiUtils as uiUtils
+
+    reload(studioUiUtils)
+    reload(uiUtils)
+    module = importlib.import_module(module_name)
+    reload(module)
+    getattr(module, entry)()
+
+
 def _add_previs_sections(menu: unreal.ToolMenu) -> None:
     menu.set_editor_property("separate_sections", True)
     menu.add_section(_SECTION_IMPORT, "Import")
@@ -50,10 +64,7 @@ def register_previs_menu() -> None:
     class importUnrealAssetClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import assetTools.importUnrealAsset as importUnrealAsset
-
-            reload(importUnrealAsset)
-            importUnrealAsset.openWindow()
+            _reload_and_show("assetTools.importUnrealAsset")
 
     importUnrealAssetMenuButton = importUnrealAssetClass()
     importUnrealAssetMenuButton.init_entry(
@@ -70,10 +81,7 @@ def register_previs_menu() -> None:
     class ImportShotFromMayaClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import shotTools.ImportShotFromMaya as ImportShotFromMaya
-
-            reload(ImportShotFromMaya)
-            ImportShotFromMaya.openWindow()
+            _reload_and_show("shotTools.ImportShotFromMaya")
 
     ImportShotFromMayaMenuButton = ImportShotFromMayaClass()
     ImportShotFromMayaMenuButton.init_entry(
@@ -90,10 +98,7 @@ def register_previs_menu() -> None:
     class ImportExportUSDUIClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import levelTools.SetDecSceneDescriptionUIUnreal as SetDecSceneDescriptionUIUnreal
-
-            reload(SetDecSceneDescriptionUIUnreal)
-            SetDecSceneDescriptionUIUnreal.launch()
+            _reload_and_show("levelTools.SetDecSceneDescriptionUIUnreal")
 
     ImportExportUSDUIMenuButton = ImportExportUSDUIClass()
     ImportExportUSDUIMenuButton.init_entry(
@@ -110,10 +115,7 @@ def register_previs_menu() -> None:
     class ImportLevelAndSubLevelsClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import levelTools.ImportLevelAndSubLevels as ImportLevelAndSubLevels
-
-            reload(ImportLevelAndSubLevels)
-            ImportLevelAndSubLevels.openWindow()
+            _reload_and_show("levelTools.ImportLevelAndSubLevels")
 
     ImportLevelAndSubLevelsMenuButton = ImportLevelAndSubLevelsClass()
     ImportLevelAndSubLevelsMenuButton.init_entry(
@@ -134,10 +136,7 @@ def register_previs_menu() -> None:
     class ENVBuilderClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import levelTools.EnvBuilder as EnvBuilder
-
-            reload(EnvBuilder)
-            EnvBuilder.openWindow()
+            _reload_and_show("levelTools.EnvBuilder")
 
     ENVBuilderButton = ENVBuilderClass()
     ENVBuilderButton.init_entry(
@@ -158,10 +157,7 @@ def register_previs_menu() -> None:
     class USD_Asset_Exporter_Class(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import assetTools.USDAssetExporter as USDAssetExporter
-
-            reload(USDAssetExporter)
-            USDAssetExporter.openWindow()
+            _reload_and_show("assetTools.USDAssetExporter")
 
     USDExporterMenuButton = USD_Asset_Exporter_Class()
     USDExporterMenuButton.init_entry(
@@ -206,10 +202,7 @@ def register_previs_menu() -> None:
     class remapShadersClass(unreal.ToolMenuEntryScript):
         @unreal.ufunction(override=True)
         def execute(self, context):
-            import assetTools.remapShaders as remapShaders
-
-            reload(remapShaders)
-            remapShaders.openWindow()
+            _reload_and_show("assetTools.remapShaders")
 
     remapShadersButton = remapShadersClass()
     remapShadersButton.init_entry(

@@ -4,7 +4,7 @@ import pymel.core as pm
 import maya.cmds as mc
 import subprocess
 from genTools.genUtils import warningPopup
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, show_singleton_qt_window
 from PySide6 import QtGui, QtWidgets, QtCore
 from importlib import reload
 import shutil
@@ -90,7 +90,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Convert Megascans Assets to Set Dec")
         self.setFocus()
         self.center()
-        self.show()
 
         # button widget
         self.convertStandarAssetButton = QtWidgets.QPushButton("Convert Standard Asset(s)", self)
@@ -386,9 +385,8 @@ class MainWindow(QtWidgets.QWidget):
 # definition to open UI
 
 
-def launch():
-    global win
-    win = MainWindow()
-    win.raise_()
-    win.activateWindow()
-    win.show()
+def show():
+    return show_singleton_qt_window("convert_megascans", MainWindow, host="maya")
+
+
+launch = show

@@ -19,7 +19,7 @@ from ..core.variant import normalize_variant
 from ..core.versioning import PublishEntry, VersionReservationError
 from ..exporters.base import ExportError
 from ..host import MayaHost
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, maya_main_window, show_singleton_qt_window
 from .qt import Qt, QtWidgets
 from .widgets.asset_tree_browser import AssetTreeBrowser
 from .widgets.precheck_panel import PrecheckPanel
@@ -472,30 +472,22 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.warning(self, title, message)
 
 
-_MAYA_WINDOW_REF: Optional[AssetManagerWindow] = None
+def show() -> AssetManagerWindow:
+    """Shelf entry point: open (or focus) the Asset Manager window."""
+    parent = maya_main_window()
+
+    def factory() -> AssetManagerWindow:
+        context = resolve_context()
+        schema = load_schema()
+        host = MayaHost()
+        return AssetManagerWindow(context, schema, host, parent=parent)
+
+    return show_singleton_qt_window(
+        "asset_manager",
+        factory,
+        host="maya",
+        parent=parent,
+    )
 
 
-def _maya_main_window() -> Optional[QtWidgets.QWidget]:  # pragma: no cover
-    try:
-        import maya.OpenMayaUI as omui
-        from shiboken6 import wrapInstance  # type: ignore[import-not-found]
-    except ImportError:
-        return None
-    ptr = omui.MQtUtil.mainWindow()
-    if not ptr:
-        return None
-    return wrapInstance(int(ptr), QtWidgets.QWidget)
-
-
-def main() -> AssetManagerWindow:
-    """Shelf entry point: open (or re-open) the Asset Manager window."""
-    global _MAYA_WINDOW_REF
-    context = resolve_context()
-    schema = load_schema()
-    host = MayaHost()
-    parent = _maya_main_window()
-    window = AssetManagerWindow(context, schema, host, parent=parent)
-    window.setAttribute(Qt.WA_DeleteOnClose, True)
-    window.show()
-    _MAYA_WINDOW_REF = window
-    return window
+main = show

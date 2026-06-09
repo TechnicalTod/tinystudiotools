@@ -24,7 +24,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Remap multiple shaders")
         self.setFocus()
         self.center()
-        self.show()
         self.setGeometry(100, 100, 500, 500)
 
         # window layout setup
@@ -239,5 +238,8 @@ class MainWindow(QtWidgets.QWidget):
             print(f"Directory '{path}' already exists.")
 
 
-def openWindow():
+def show():
     show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)
+
+
+openWindow = show

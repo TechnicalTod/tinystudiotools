@@ -13,7 +13,7 @@ from ..core.path_parser import ShotContext, validate_scene_for_render
 from ..core.render_service import RenderSettings, RenderValidationError, render
 from ..core.schema import PlayblastSchema, load_schema
 from ..host import MayaHost
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, maya_main_window, show_singleton_qt_window
 from .qt import Qt, QtWidgets
 from .widgets.camera_list import CameraListWidget
 from .widgets.header_bar import HeaderBar
@@ -213,36 +213,26 @@ class PlayblastManagerWindow(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.information(self, "Open Folder", str(path))
 
 
-_MAYA_WINDOW_REF: Optional[PlayblastManagerWindow] = None
+def show() -> PlayblastManagerWindow:
+    """Shelf entry point: open (or focus) the Playblast Manager window."""
+    parent = maya_main_window()
+
+    def factory() -> PlayblastManagerWindow:
+        try:
+            context = resolve_context()
+        except ContextError as exc:
+            QtWidgets.QMessageBox.critical(None, "Playblast Manager", str(exc))
+            raise
+        schema = load_schema()
+        host = MayaHost()
+        return PlayblastManagerWindow(context, schema, host, parent=parent)
+
+    return show_singleton_qt_window(
+        "playblast_manager",
+        factory,
+        host="maya",
+        parent=parent,
+    )
 
 
-def _maya_main_window() -> Optional[QtWidgets.QWidget]:  # pragma: no cover
-    try:
-        import maya.OpenMayaUI as omui
-        from shiboken6 import wrapInstance  # type: ignore[import-not-found]
-    except ImportError:
-        return None
-    ptr = omui.MQtUtil.mainWindow()
-    if not ptr:
-        return None
-    return wrapInstance(int(ptr), QtWidgets.QWidget)
-
-
-def main() -> PlayblastManagerWindow:
-    """Shelf entry point: open (or re-open) the Playblast Manager window."""
-    global _MAYA_WINDOW_REF
-
-    try:
-        context = resolve_context()
-    except ContextError as exc:
-        QtWidgets.QMessageBox.critical(None, "Playblast Manager", str(exc))
-        raise
-
-    schema = load_schema()
-    host = MayaHost()
-    parent = _maya_main_window()
-    window = PlayblastManagerWindow(context, schema, host, parent=parent)
-    window.setAttribute(Qt.WA_DeleteOnClose, True)
-    window.show()
-    _MAYA_WINDOW_REF = window
-    return window
+main = show

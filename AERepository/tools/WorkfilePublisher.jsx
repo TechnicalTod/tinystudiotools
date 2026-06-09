@@ -25,9 +25,17 @@ function tasksForKind(kind) {
   return [];
 }
 
-function tinystudioRun() {
+function show() {
   try {
     if (_publisherWindow !== null) {
+      try {
+        if (_publisherWindow.visible) {
+          _publisherWindow.active = true;
+          return;
+        }
+      } catch (visibleErr) {
+        /* ignore */
+      }
       try {
         _publisherWindow.close();
       } catch (closeErr) {
@@ -44,6 +52,10 @@ function tinystudioRun() {
   } catch (err) {
     alert("Workfile Publisher failed:\n" + err.toString());
   }
+}
+
+function tinystudioRun() {
+  show();
 }
 
 // ---------------------------------------------------------------------------

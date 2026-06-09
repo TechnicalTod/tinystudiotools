@@ -16,63 +16,8 @@ sys.path.insert(0, str(src_dir))
 
 try:
     # Import from refactored architecture (no 'src.' prefix since src is in path)
-    from application import TunnelUIApplication
+    from application import TunnelUIApplication, openWindow, show
 
-    def openWindow():
-        """
-        Main entry point for Maya shelf integration.
-
-        This function maintains the exact same signature as the original
-        while using the new refactored architecture underneath.
-        """
-        try:
-            print("🚀 Initializing TunnelUI Application...")
-            app = TunnelUIApplication()
-            print("✅ Application initialized successfully")
-
-            # Run in appropriate mode based on environment
-            if app.environment.is_maya:
-                print("🎯 Running in Maya mode")
-                return app.run_maya_mode()
-            else:
-                print("🎯 Running in standalone mode")
-                return app.run_standalone()
-
-        except ImportError as ie:
-            error_msg = f"Import error during initialization: {ie}"
-            print(f"❌ {error_msg}")
-            try:
-                from PySide6.QtWidgets import QMessageBox
-
-                QMessageBox.critical(
-                    None,
-                    "TunnelUI Import Error",
-                    f"Missing dependency:\n{ie}\n\nPlease ensure PySide6 is available in Maya.",
-                )
-            except Exception:
-                print(f"CRITICAL: {error_msg}")
-            return None
-
-        except Exception as e:
-            error_msg = f"Failed to initialize TunnelUI: {e}"
-            print(f"❌ {error_msg}")
-            import traceback
-
-            traceback.print_exc()
-
-            try:
-                from PySide6.QtWidgets import QMessageBox
-
-                QMessageBox.critical(
-                    None,
-                    "TunnelUI Error",
-                    f"Initialization failed:\n{e}\n\nCheck the Script Editor for details.",
-                )
-            except Exception:
-                print(f"CRITICAL ERROR: {error_msg}")
-            return None
-
-    # For standalone testing and development
     if __name__ == "__main__":
         print("Starting TunnelUI Asset Browser (Refactored)")
         try:
@@ -86,7 +31,7 @@ try:
 except ImportError as e:
     print(f"Refactored version failed to import ({e}), falling back to original implementation")
 
-    def openWindow():
+    def show():
         """
         Fallback entry point when refactored version fails to import.
         """
@@ -106,6 +51,8 @@ except ImportError as e:
         except Exception:
             print("CRITICAL: TunnelUI could not be loaded and fallback also failed")
         return None
+
+    openWindow = show
 
     if __name__ == "__main__":
         print("Cannot run standalone - import failed")

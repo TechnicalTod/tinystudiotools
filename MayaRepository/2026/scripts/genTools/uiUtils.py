@@ -15,9 +15,15 @@ from genTools.studio_python_path import ensure_gen_tools_shared
 
 ensure_gen_tools_shared()
 
-from studioUiUtils import load_qss
+from studioUiUtils import load_qss, maya_main_window, show_singleton_qt_window
 
-__all__ = ["load_qss", "openUVEditor", "copyCurrentScenePath"]
+__all__ = [
+    "load_qss",
+    "maya_main_window",
+    "openUVEditor",
+    "copyCurrentScenePath",
+    "show_singleton_qt_window",
+]
 
 
 def openUVEditor():

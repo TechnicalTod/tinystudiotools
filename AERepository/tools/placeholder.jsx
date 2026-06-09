@@ -1,6 +1,10 @@
 /**
- * TinyStudio AE tool — must expose tinystudioRun() for the panel loader.
+ * TinyStudio AE tool — must expose show() for the panel loader.
  */
-function tinystudioRun() {
+function show() {
   alert("TinyStudio Tools (AE)\n\nPlaceholder tool ran successfully.");
+}
+
+function tinystudioRun() {
+  show();
 }

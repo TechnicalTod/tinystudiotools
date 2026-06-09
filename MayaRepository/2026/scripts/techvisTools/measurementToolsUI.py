@@ -4,7 +4,7 @@ from PySide6 import QtGui, QtWidgets, QtCore
 import maya.cmds as cmds
 import maya.OpenMayaUI as OMUI
 import shiboken6
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, maya_main_window, show_singleton_qt_window
 
 import techvisTools.measurementTools as mt
 
@@ -28,7 +28,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Measurement Tool")
         self.setFocus()
         self.center()
-        self.show()
 
         self.grid = QtWidgets.QGridLayout()
         # self.grid.setSpacing(10)
@@ -236,14 +235,14 @@ class MainWindow(QtWidgets.QWidget):
         mt.place_locator(gap_size, font_size, cylinder_width, cone_length, cone_width)
 
 
-def openWindow():
-    if QtWidgets.QApplication.instance():
-        for win in QtWidgets.QApplication.allWindows():
-            print(win.objectName())
-            if "Measurement Tool" in win.objectName():
-                win.destroy()
-    else:
-        QtWidgets.QApplication(sys.argv)
-    # load UI into QApp instance
-    MainWindow.window = MainWindow()
-    MainWindow.window.show()
+def show():
+    parent = maya_main_window()
+    return show_singleton_qt_window(
+        "measurement_tools",
+        lambda: MainWindow(parent=parent),
+        host="maya",
+        parent=parent,
+    )
+
+
+openWindow = show

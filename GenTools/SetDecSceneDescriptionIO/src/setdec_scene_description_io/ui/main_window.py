@@ -290,29 +290,65 @@ def _load_stylesheet() -> str:
         return ""
 
 
-def _maya_main_window():  # pragma: no cover - only runs in Maya
-    try:
-        import maya.OpenMayaUI as omui
-        from shiboken6 import wrapInstance  # type: ignore[import-not-found]
-
-        ptr = omui.MQtUtil.mainWindow()
-        return wrapInstance(int(ptr), QtWidgets.QWidget) if ptr else None
-    except Exception:
-        pass
-    try:
-        import maya.OpenMayaUI as omui
-        from shiboken2 import wrapInstance  # type: ignore[import-not-found]
-
-        ptr = omui.MQtUtil.mainWindow()
-        return wrapInstance(int(ptr), QtWidgets.QWidget) if ptr else None
-    except Exception:
-        return None
+SETDEC_WINDOW_KEY = "setdec_scene_description"
 
 
-# ---------------------------------------------------------------------------
-# Convenience constructors
+def show(
+    host: str = "standalone",
+    *,
+    cli_show: Optional[str] = None,
+    cli_base_show_dir: Optional[str] = None,
+    allow_cli_override: bool = False,
+) -> SceneDescriptionWindow:
+    """Open (or focus) the SetDec scene-description window for the given host."""
+    from genTools.studio_python_path import ensure_gen_tools_shared
 
-_WINDOW_REF: Optional[SceneDescriptionWindow] = None
+    ensure_gen_tools_shared()
+    from studioUiUtils import maya_main_window, show_singleton_qt_window
+
+    if host == "maya":
+        parent = maya_main_window()
+        qt_host = "maya"
+    elif host == "unreal":
+        parent = None
+        qt_host = "unreal"
+    else:
+        parent = None
+        qt_host = "standalone"
+
+    def factory() -> SceneDescriptionWindow:
+        try:
+            return _make_window(
+                host if host in ("maya", "unreal") else "standalone",
+                cli_show=cli_show,
+                cli_base_show_dir=cli_base_show_dir,
+                allow_cli_override=allow_cli_override,
+                parent=parent if host == "maya" else None,
+            )
+        except ContextError as exc:
+            QtWidgets.QMessageBox.critical(
+                parent if host == "maya" else None,
+                "SetDec Scene Description",
+                str(exc),
+            )
+            raise
+
+    return show_singleton_qt_window(
+        SETDEC_WINDOW_KEY,
+        factory,
+        host=qt_host,
+        parent=parent,
+    )
+
+
+def show_in_maya() -> SceneDescriptionWindow:  # pragma: no cover
+    """Backward-compatible Maya entry point."""
+    return show(host="maya")
+
+
+def show_in_unreal() -> SceneDescriptionWindow:  # pragma: no cover
+    """Backward-compatible Unreal entry point."""
+    return show(host="unreal")
 
 
 def _make_window(
@@ -331,42 +367,6 @@ def _make_window(
     schema = load_scene_schema()
     adapter = build_adapter(host)
     return SceneDescriptionWindow(context, schema, adapter, parent=parent)
-
-
-def show_in_maya() -> SceneDescriptionWindow:  # pragma: no cover
-    """Open the window parented to Maya's main window."""
-    global _WINDOW_REF
-    try:
-        window = _make_window("maya", parent=_maya_main_window())
-    except ContextError as exc:
-        QtWidgets.QMessageBox.critical(
-            _maya_main_window(),
-            "SetDec Scene Description",
-            str(exc),
-        )
-        raise
-    window.setAttribute(Qt.WA_DeleteOnClose, True)
-    window.show()
-    _WINDOW_REF = window
-    return window
-
-
-def show_in_unreal() -> SceneDescriptionWindow:  # pragma: no cover
-    """Open the window parented to Unreal's Slate window."""
-    global _WINDOW_REF
-    import unreal
-
-    if not QtWidgets.QApplication.instance():
-        QtWidgets.QApplication(sys.argv)
-    try:
-        window = _make_window("unreal")
-    except ContextError as exc:
-        QtWidgets.QMessageBox.critical(None, "SetDec Scene Description", str(exc))
-        raise
-    window.show()
-    unreal.parent_external_window_to_slate(window.winId())
-    _WINDOW_REF = window
-    return window
 
 
 def show_standalone(

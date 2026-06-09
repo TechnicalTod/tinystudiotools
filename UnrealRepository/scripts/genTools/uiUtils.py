@@ -10,13 +10,17 @@ from genTools.studio_python_path import ensure_gen_tools_shared
 
 ensure_gen_tools_shared()
 
-from studioUiUtils import center_widget, load_qss
+from studioUiUtils import center_widget, load_qss, show_singleton_qt_window
+
+_UNREAL_TOOL_WINDOWS: dict[str, object] = {}
 
 __all__ = [
     "center_widget",
     "content_path",
     "list_content_subdirs",
     "load_qss",
+    "show",
+    "show_singleton_qt_window",
     "show_unreal_tool_window",
 ]
 
@@ -38,25 +42,20 @@ def list_content_subdirs(*segments):
     )
 
 
-def show_unreal_tool_window(window_cls, object_name):
-    """Create or replace a tool window parented to the Unreal editor."""
-    app = QtWidgets.QApplication.instance()
-    if app:
-        existing = getattr(window_cls, "_tool_window", None)
-        if existing is not None:
-            existing.close()
-            existing.deleteLater()
-            window_cls._tool_window = None
-
-        for win in QtWidgets.QApplication.allWindows():
-            if win.objectName() == object_name:
-                win.close()
-                win.deleteLater()
-    else:
-        QtWidgets.QApplication(sys.argv)
-
-    window = window_cls()
-    window.show()
-    unreal.parent_external_window_to_slate(window.winId())
-    window_cls._tool_window = window
+def show(window_cls, object_name, *, parent=None):
+    """Show a Unreal tool window once; raise/focus an existing instance."""
+    window = show_singleton_qt_window(
+        object_name,
+        lambda: window_cls(parent=parent) if parent is not None else window_cls(),
+        host="unreal",
+        parent=parent,
+    )
+    if window is not None:
+        _UNREAL_TOOL_WINDOWS[object_name] = window
+        window_cls._tool_window = window
     return window
+
+
+def show_unreal_tool_window(window_cls, object_name, *, parent=None):
+    """Backward-compatible alias for show()."""
+    return show(window_cls, object_name, parent=parent)

@@ -63,7 +63,7 @@ Launch AE from **TinyStudioLauncher**, open the panel, choose **Workfile Publish
 1. **Create** `tools/MyTool.jsx` with a global entry point:
 
    ```javascript
-   function tinystudioRun() {
+   function show() {
      // your logic
    }
    ```
@@ -101,7 +101,7 @@ See `GenTools/TinyStudioLauncher/docs/adding-applications.md` for the full After
 | “AE_REPO is not set” | Launch from TinyStudioLauncher or set `AE_REPO` in the system/user environment before starting AE. |
 | “Invalid manifest JSON” | Valid JSON, `tools` array present; avoid BOM; restart AE after editing the panel script. |
 | Panel missing from **Window** | Re-run the install step; confirm `%AppData%\Adobe\After Effects\<x.x>\Scripts\ScriptUI Panels\TinyStudioTools.jsx` exists. |
-| “Tool did not define tinystudioRun()” | Ensure the tool `.jsx` defines `function tinystudioRun() { … }` at top level after `$.evalFile`. |
+| “Tool did not define show()” | Ensure the tool `.jsx` defines `function show() { … }` at top level after `$.evalFile` (`tinystudioRun()` still works during transition). |
 
 ## Scope
 

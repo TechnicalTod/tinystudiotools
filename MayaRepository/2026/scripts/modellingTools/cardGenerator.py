@@ -84,11 +84,13 @@ def create_window(name, slider):
     mc.showWindow(win)
 
 
-def launch():
+def show():
     name = "window"
     slider = "slider"
     if mc.window(name, ex=True):
-        mc.deleteUI(name)
-        create_window(name, slider)
-    else:
-        create_window(name, slider)
+        mc.showWindow(name)
+        return
+    create_window(name, slider)
+
+
+launch = show

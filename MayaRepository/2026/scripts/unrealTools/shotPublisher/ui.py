@@ -8,7 +8,7 @@ import shiboken6
 from PySide6 import QtCore, QtGui, QtWidgets
 
 import mayaFilePaths
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, show_singleton_qt_window
 
 from . import paths, publish_ops, scene_scan
 
@@ -36,7 +36,6 @@ class MainWindow(QtWidgets.QWidget):
         self.createWidgets()
         self.connectLayout()
         self.populatePublishTree()
-        self.show()
 
     def center(self):
         qr = self.frameGeometry()
@@ -264,10 +263,8 @@ class MainWindow(QtWidgets.QWidget):
         print(message)
 
 
-def launch():
-    global win
-    win = MainWindow()
-    win.raise_()
-    win.activateWindow()
-    win.show()
+def show():
+    return show_singleton_qt_window("publish_shot_unreal", MainWindow, host="maya")
 
+
+launch = show

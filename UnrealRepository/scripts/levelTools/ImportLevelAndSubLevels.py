@@ -20,7 +20,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Import All levels into Current")
         self.setFocus()
         self.center()
-        self.show()
 
         # Current level text field widget
         self.currentLevelPath = QtWidgets.QLineEdit(self)
@@ -124,5 +123,8 @@ class MainWindow(QtWidgets.QWidget):
             # unreal.EditorLevelLibrary.save_current_level()
 
 
-def openWindow():
+def show():
     show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)
+
+
+openWindow = show

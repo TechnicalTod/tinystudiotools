@@ -36,7 +36,7 @@ print()
 try:
     import TunnelUi
 
-    TunnelUi.openWindow()
+    TunnelUi.show()
     print("TunnelUI launched successfully!")
 except Exception as e:
     print(f"Error launching TunnelUI: {e}")

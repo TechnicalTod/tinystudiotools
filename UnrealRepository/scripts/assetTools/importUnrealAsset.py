@@ -6,7 +6,7 @@ from PySide6 import QtGui, QtWidgets, QtCore
 
 import genTools.genUnrealUtils as genUnrealUtils
 import genTools.genUnrealImportUtils as genUnrealImportUtils
-from genTools.uiUtils import center_widget, load_qss
+from genTools.uiUtils import center_widget, load_qss, show_unreal_tool_window
 from genTools.studio_python_path import ensure_gen_tools_shared
 
 ensure_gen_tools_shared()
@@ -81,7 +81,7 @@ QComboBox::down-arrow {
 
 _TABLE_ROW_HEIGHT = 32
 
-_WINDOW = None
+IMPORT_WINDOW_KEY = "import_unreal_assets"
 DEFAULT_VARIANT_NAME = "main"
 
 
@@ -313,7 +313,6 @@ class MainWindow(QtWidgets.QWidget):
         table_layout.addWidget(button_panel, 0)
 
         self._update_root_label()
-        self.show()
 
     def center(self):
         center_widget(self)
@@ -948,17 +947,8 @@ class MainWindow(QtWidgets.QWidget):
                 unreal.EditorAssetLibrary.save_asset(asset_name_clean)
 
 
-def openWindow():
-    global _WINDOW
+def show():
+    return show_unreal_tool_window(MainWindow, IMPORT_WINDOW_KEY)
 
-    app = QtWidgets.QApplication.instance()
-    if app:
-        if _WINDOW is not None:
-            _WINDOW.close()
-            _WINDOW.deleteLater()
-    else:
-        QtWidgets.QApplication(sys.argv)
 
-    _WINDOW = MainWindow()
-    _WINDOW.show()
-    unreal.parent_external_window_to_slate(_WINDOW.winId())
+openWindow = show

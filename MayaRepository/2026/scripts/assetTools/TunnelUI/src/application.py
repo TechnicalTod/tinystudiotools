@@ -243,21 +243,27 @@ class TunnelUIApplication:
         }
 
 
-def openWindow():
-    """
-    Legacy entry point for backward compatibility.
+_APP: Optional[TunnelUIApplication] = None
 
-    This function maintains the same signature as the original TunnelUI
-    for seamless integration with existing Maya shelves and scripts.
+
+def show():
     """
+    Entry point for Maya shelf integration.
+
+    Opens a single TunnelUI window; repeated calls raise/focus the existing window.
+    """
+    from genTools.uiUtils import show_singleton_qt_window
+
+    def factory():
+        global _APP
+        if _APP is None:
+            _APP = TunnelUIApplication()
+        if _APP.environment.is_maya:
+            return _APP.run_maya_mode()
+        return _APP.run_standalone()
+
     try:
-        app = TunnelUIApplication()
-
-        if app.environment.is_maya:
-            return app.run_maya_mode()
-        else:
-            return app.run_standalone()
-
+        return show_singleton_qt_window("tunnel_ui", factory, host="maya")
     except Exception as e:
         logging.error(f"Failed to open TunnelUI: {e}")
         try:
@@ -267,3 +273,6 @@ def openWindow():
         except Exception:
             print(f"CRITICAL ERROR: Failed to open TunnelUI: {e}")
         return None
+
+
+openWindow = show

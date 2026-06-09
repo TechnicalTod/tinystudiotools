@@ -67,7 +67,6 @@ class MainWindow(QtWidgets.QWidget):
         outer.addLayout(content, 1)
 
         self.getShowList()
-        self.show()
 
     def _build_table(self):
         self.tableWidget = QtWidgets.QTableWidget(self)

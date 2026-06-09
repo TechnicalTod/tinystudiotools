@@ -141,7 +141,7 @@
         {
           "label": "Card generator",
           "module": "modellingTools.cardGenerator",
-          "function": "launch"
+          "function": "show"
         },
         {
           "label": "Extract Vis Geo",
@@ -156,12 +156,12 @@
         {
           "label": "Convert Megascans Assets",
           "module": "unrealTools.convertMegascansAssets",
-          "function": "launch"
+          "function": "show"
         },
         {
           "label": "Load Tunnel Asset Lib",
           "module": "assetTools.TunnelUI.TunnelUi",
-          "function": "openWindow"
+          "function": "show"
         }
       ]
     },
@@ -193,7 +193,7 @@
         {
           "label": "MZ Ctrl Creator",
           "module": "riggingTools.mz_ctrlCreator",
-          "function": "buildWindow"
+          "function": "show"
         },
         {
           "type": "spacer",
@@ -231,13 +231,13 @@
       "label": "Texture Tools",
       "primary_action": {
         "module": "textureTools.convertTextureUI",
-        "function": "launch"
+        "function": "show"
       },
       "menu": [
         {
           "label": "Convert texture UI",
           "module": "textureTools.convertTextureUI",
-          "function": "launch"
+          "function": "show"
         }
       ]
     },
@@ -288,7 +288,7 @@
         {
           "label": "Build shader network from Substance",
           "module": "shadingTools.buildShaderNetworkFromSubstance",
-          "function": "launch"
+          "function": "show"
         }
       ]
     },
@@ -303,7 +303,7 @@
         {
           "label": "Playblast Manager",
           "module": "playblastManager.ui.main_window",
-          "function": "main"
+          "function": "show"
         }
       ]
     },
@@ -364,17 +364,17 @@
         {
           "label": "Create Asset Directories",
           "module": "assetTools.createAssetDirUI",
-          "function": "launch"
+          "function": "show"
         },
         {
           "label": "Export Selected as OBJs",
           "module": "modellingTools.exportOBJ",
-          "function": "launch"
+          "function": "show"
         },
         {
           "label": "Plugin manager",
           "module": "genTools.pluginManager",
-          "function": "launch"
+          "function": "show"
         }
       ]
     },
@@ -389,7 +389,7 @@
         {
           "label": "Measurement Tools",
           "module": "techvisTools.measurementToolsUI",
-          "function": "openWindow"
+          "function": "show"
         },
         {
           "type": "submenu",
@@ -434,14 +434,14 @@
       "type": "button",
       "label": "Workfile Manager",
       "module": "workfileManager.ui.main_window",
-      "function": "main",
+      "function": "show",
       "icon": "workfileManager_manager.png"
     },
     {
       "type": "button",
       "label": "Asset Manager",
       "module": "assetManager.ui.main_window",
-      "function": "main",
+      "function": "show",
       "icon": "assetManager_treasure.png"
     },
     {
@@ -470,7 +470,7 @@
         {
           "label": "Publish Shot To Unreal",
           "module": "unrealTools.publishShotForUnreal",
-          "function": "launch"
+          "function": "show"
         },
         {
           "type": "spacer",
@@ -479,7 +479,7 @@
         {
           "label": "Publish Layout Scene Description",
           "module": "unrealTools.SetDecSceneDescriptionUIMaya",
-          "function": "launch"
+          "function": "show"
         },
         {
           "type": "spacer",
@@ -488,7 +488,7 @@
         {
           "label": "Publish Setdec Assets",
           "module": "unrealTools.exportSetDecAssets",
-          "function": "openWindow"
+          "function": "show"
         }
       ]
     },

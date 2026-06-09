@@ -2,7 +2,7 @@ from importlib import reload
 from PySide6 import QtWidgets, QtGui
 import genTools.genUtils as genUtils
 from genTools.genUtils import warningPopup
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, show_singleton_qt_window
 import os
 import subprocess
 import json
@@ -65,7 +65,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Build shaders from Substance exports")
         self.setFocus()
         self.center()
-        self.show()
 
         # tex field widget
         self.getFilePathTextures = QtWidgets.QLineEdit(self)
@@ -235,12 +234,8 @@ class MainWindow(QtWidgets.QWidget):
 # definition to open UI
 
 
-def launch():
-    global win
-    win = MainWindow()
-    win.raise_()
-    win.activateWindow()
-    win.show()
+def show():
+    return show_singleton_qt_window("build_shader_network", MainWindow, host="maya")
 
 
-launch()
+launch = show

@@ -47,8 +47,8 @@ try:
     print("   TunnelUi module imported successfully")
 
     # Call the main entry point
-    print("   Calling TunnelUi.openWindow()...")
-    window = TunnelUi.openWindow()
+    print("   Calling TunnelUi.show()...")
+    window = TunnelUi.show()
 
     print("   Window created: " + str(window is not None))
 

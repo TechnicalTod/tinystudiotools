@@ -5,7 +5,8 @@
  *   Override with AE_MANIFEST absolute path if needed.
  *
  * Tool contract: each tool .jsx loaded via $.evalFile must define:
- *   function tinystudioRun() { ... }
+ *   function show() { ... }
+ *   (tinystudioRun() is still accepted during transition)
  *
  * Launch After Effects from TinyStudioLauncher so AE_REPO is set, or set AE_REPO
  * manually to your AERepository root. Run install_tinystudio_ae_panel.ps1 once
@@ -157,7 +158,8 @@
           return;
         }
         // Avoid running a stale entry point if the selected script fails to
-        // load or no longer defines tinystudioRun().
+        // load or no longer defines show().
+        show = undefined;
         tinystudioRun = undefined;
         try {
           $.evalFile(scriptPath);
@@ -165,12 +167,13 @@
           alert("Error loading tool script:\n" + String(e));
           return;
         }
-        if (typeof tinystudioRun !== "function") {
-          alert("Tool did not define tinystudioRun():\n" + scriptPath.fsName);
+        var runTool = typeof show === "function" ? show : tinystudioRun;
+        if (typeof runTool !== "function") {
+          alert("Tool did not define show():\n" + scriptPath.fsName);
           return;
         }
         try {
-          tinystudioRun();
+          runTool();
         } catch (e2) {
           alert("Tool error:\n" + String(e2));
         }

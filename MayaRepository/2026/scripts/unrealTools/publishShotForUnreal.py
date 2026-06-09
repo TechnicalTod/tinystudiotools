@@ -1,5 +1,5 @@
-"""Compatibility launcher for the refactored shot publisher."""
+"""Compatibility launcher for the shot publisher UI."""
 
-from unrealTools.shotPublisher.ui import MainWindow, launch
+from unrealTools.shotPublisher.ui import MainWindow, launch, show
 
-__all__ = ["MainWindow", "launch"]
+__all__ = ["MainWindow", "launch", "show"]

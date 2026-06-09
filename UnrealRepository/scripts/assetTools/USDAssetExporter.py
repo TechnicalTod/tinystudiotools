@@ -23,7 +23,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Bulk Export Assets to USD")
         self.setFocus()
         self.center()
-        self.show()
 
         # Create a combo box and populate it with files from the directory
         self.exportDirLabel = QtWidgets.QLabel("Export Directory:")
@@ -78,5 +77,8 @@ class MainWindow(QtWidgets.QWidget):
             self.exportDir.setText(directory)
 
 
-def openWindow():
+def show():
     show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)
+
+
+openWindow = show

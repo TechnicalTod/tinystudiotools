@@ -4,7 +4,7 @@ from PySide6 import QtGui, QtWidgets, QtCore
 import maya.cmds as mc
 import re
 from genTools.genUtils import warningPopup, viewportMessage
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, show_singleton_qt_window
 import mayaFilePaths
 
 
@@ -21,7 +21,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Export multiple Obj")
         self.setFocus()
         self.center()
-        self.show()
 
         # text field widget
         self.getFilePath = QtWidgets.QLineEdit(self)
@@ -96,12 +95,8 @@ class MainWindow(QtWidgets.QWidget):
 # definition to open UI
 
 
-def launch():
-    global win
-    win = MainWindow()
-    win.raise_()
-    win.activateWindow()
-    win.show()
+def show():
+    return show_singleton_qt_window("export_obj", MainWindow, host="maya")
 
 
-launch()
+launch = show

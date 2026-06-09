@@ -25,7 +25,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("Import published Shot")
         self.setFocus()
         self.center()
-        self.show()
 
         self.jsonFilePath = QtWidgets.QLineEdit(self)
         self.jsonFilePath.setPlaceholderText("File path")
@@ -82,5 +81,8 @@ class MainWindow(QtWidgets.QWidget):
         print(message)
 
 
-def openWindow():
+def show():
     show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)
+
+
+openWindow = show

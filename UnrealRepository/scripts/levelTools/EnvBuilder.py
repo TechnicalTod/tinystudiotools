@@ -31,7 +31,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowTitle("ENV Builder")
         self.setFocus()
         self.center()
-        self.show()
 
         self.grid = QtWidgets.QGridLayout()
         self.grid.setSpacing(10)
@@ -136,5 +135,8 @@ class MainWindow(QtWidgets.QWidget):
         center_widget(self)
 
 
-def openWindow():
+def show():
     show_unreal_tool_window(MainWindow, WINDOW_OBJECT_NAME)
+
+
+openWindow = show

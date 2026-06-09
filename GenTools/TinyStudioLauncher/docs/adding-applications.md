@@ -153,7 +153,7 @@ That symlinks (or copies) `scripts/ScriptUI Panels/TinyStudioTools.jsx` into `%A
 
 On **Windows**, use the launcher menu **Install → After Effects scripts panel…**, then click **Install After Effects scripts panel** in the dialog (pick the AE version year if you have several configs). You can still run `install_tinystudio_ae_panel.ps1` manually from `AERepository/install/` if you prefer.
 
-**Runtime:** launch AE from TinyStudioLauncher so **`AE_REPO`** points at `AERepository`. The panel reads **`AE_MANIFEST`** if set (default in config: `{AE_REPO}/config/tinystudio_ae_tools.json`), loads the tool list, and runs each tool file via **`$.evalFile`** (tools define **`tinystudioRun()`**).
+**Runtime:** launch AE from TinyStudioLauncher so **`AE_REPO`** points at `AERepository`. The panel reads **`AE_MANIFEST`** if set (default in config: `{AE_REPO}/config/tinystudio_ae_tools.json`), loads the tool list, and runs each tool file via **`$.evalFile`** (tools define **`show()`**; **`tinystudioRun()`** is still accepted during transition).
 
 Example shape (match your real `configs/ae_2024.json`):
 

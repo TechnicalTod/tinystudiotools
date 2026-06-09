@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, maya_main_window, show_singleton_qt_window
 
 from ..core import path_schema as ps
 from ..core.context import StudioContext, resolve_context
@@ -436,41 +436,22 @@ def _load_default_schema() -> ps.PathSchema:
     return ps.load_schema(ps.default_schema_path())
 
 
-def _maya_main_window():  # pragma: no cover - only runs in Maya
-    try:
-        import maya.OpenMayaUI as omui
-        from shiboken6 import wrapInstance  # type: ignore[import-not-found]
+def show() -> WorkfileManagerWindow:  # pragma: no cover - exercised inside Maya
+    """Shelf entry point: open (or focus) the Workfile Manager window."""
+    parent = maya_main_window()
 
-        ptr = omui.MQtUtil.mainWindow()
-        if ptr is None:
-            return None
-        return wrapInstance(int(ptr), QtWidgets.QWidget)
-    except Exception:
-        pass
-    try:
-        import maya.OpenMayaUI as omui
-        from shiboken2 import wrapInstance  # type: ignore[import-not-found]
+    def factory() -> WorkfileManagerWindow:
+        context = resolve_context()
+        schema = _load_default_schema()
+        host = MayaHost()
+        return WorkfileManagerWindow(context, schema, host, parent=parent)
 
-        ptr = omui.MQtUtil.mainWindow()
-        if ptr is None:
-            return None
-        return wrapInstance(int(ptr), QtWidgets.QWidget)
-    except Exception:
-        return None
+    return show_singleton_qt_window(
+        "workfile_manager",
+        factory,
+        host="maya",
+        parent=parent,
+    )
 
 
-_MAYA_WINDOW_REF: Optional[WorkfileManagerWindow] = None
-
-
-def main() -> WorkfileManagerWindow:  # pragma: no cover - exercised inside Maya
-    """Shelf entry point: open (or re-open) the Workfile Manager window."""
-    global _MAYA_WINDOW_REF
-    context = resolve_context()
-    schema = _load_default_schema()
-    host = MayaHost()
-    parent = _maya_main_window()
-    window = WorkfileManagerWindow(context, schema, host, parent=parent)
-    window.setAttribute(Qt.WA_DeleteOnClose, True)
-    window.show()
-    _MAYA_WINDOW_REF = window
-    return window
+main = show

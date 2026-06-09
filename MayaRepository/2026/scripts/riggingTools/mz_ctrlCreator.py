@@ -51,6 +51,13 @@ def buildWindow():
     cmds.showWindow(mz_ccWin)
 
 
+def show():
+    if cmds.window(mz_ccWin, exists=True):
+        cmds.showWindow(mz_ccWin)
+        return
+    buildWindow()
+
+
 #############################################
 """making the GUI of the window"""
 

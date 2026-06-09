@@ -3,8 +3,8 @@
 
 Used for standalone development (``python launcher.py``). Inside a DCC the
 tool is opened through the shelf / menu shim, which calls
-``setdec_scene_description_io.ui.main_window.show_in_maya`` or
-``show_in_unreal`` directly; this script is not used in those paths.
+``setdec_scene_description_io.ui.main_window.show(host=...)``; this script is
+not used in those paths.
 """
 
 from __future__ import annotations

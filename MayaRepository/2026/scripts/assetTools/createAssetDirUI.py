@@ -1,7 +1,7 @@
 import os
 import subprocess
 from genTools.genUtils import warningPopup
-from genTools.uiUtils import load_qss
+from genTools.uiUtils import load_qss, maya_main_window, show_singleton_qt_window
 from PySide6 import QtGui, QtWidgets, QtCore
 import mayaFilePaths
 import maya.OpenMayaUI as OMUI
@@ -28,7 +28,6 @@ class MainWindow(QtWidgets.QWidget):
         self.setFocus()
         self.setStyleSheet(load_qss("dark.qss"))
         self.center()
-        self.show()
 
         # text field widget
         self.getAssetName = QtWidgets.QLineEdit(self)
@@ -115,9 +114,14 @@ class MainWindow(QtWidgets.QWidget):
 # definition to open UI
 
 
-def launch():
-    global win
-    win = MainWindow()
-    win.raise_()
-    win.activateWindow()
-    win.show()
+def show():
+    parent = maya_main_window()
+    return show_singleton_qt_window(
+        "create_asset_dirs",
+        lambda: MainWindow(parent=parent),
+        host="maya",
+        parent=parent,
+    )
+
+
+launch = show
