@@ -52,7 +52,7 @@ def register_previs_menu() -> None:
     menus = unreal.ToolMenus.get()
     main_menu = menus.find_menu("LevelEditor.MainMenu")
     previs_menu = main_menu.add_sub_menu(
-        main_menu.menu_name, "Previs Menu", " ", "CFX PREVIS TOOLS", "CFX Previs Toolset"
+        main_menu.menu_name, "Previs Menu", " ", "TinyStudio Tools", "TinyStudio Tools"
     )
     _add_previs_sections(previs_menu)
 
