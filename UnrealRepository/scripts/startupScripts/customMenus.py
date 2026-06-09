@@ -181,7 +181,7 @@ def register_previs_menu() -> None:
             import shotTools.shotVersioner as shotVersioner
 
             reload(shotVersioner)
-            shotVersioner.version_and_fix_redirectors()
+            shotVersioner.schedule_version_and_fix_redirectors()
 
     ShotVersionerButton = USD_ShotVersioner_Class()
     ShotVersionerButton.init_entry(
