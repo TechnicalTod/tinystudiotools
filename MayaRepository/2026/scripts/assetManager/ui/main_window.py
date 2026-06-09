@@ -26,6 +26,7 @@ from .widgets.precheck_panel import PrecheckPanel
 from .widgets.publish_form import PublishForm
 from .widgets.publish_table import PublishTable
 from .widgets.screenshot_panel import ScreenshotPanel
+from .widgets.setdec_tree_browser import SetDecTreeBrowser, list_setdec_versions
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,11 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
         splitter.setHandleWidth(6)
 
         self._asset_tree = AssetTreeBrowser(self._discovery, self._schema)
-        splitter.addWidget(self._asset_tree)
+        self._setdec_tree = SetDecTreeBrowser(self._context)
+        self._browser_tabs = QtWidgets.QTabWidget()
+        self._browser_tabs.addTab(self._asset_tree, "Assets")
+        self._browser_tabs.addTab(self._setdec_tree, "Set Dec")
+        splitter.addWidget(self._browser_tabs)
 
         center = QtWidgets.QWidget()
         center_layout = QtWidgets.QVBoxLayout(center)
@@ -120,13 +125,15 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
         return frame
 
     def _connect_signals(self) -> None:
+        self._browser_tabs.currentChanged.connect(self._on_browser_tab_changed)
         self._asset_tree.selection_changed.connect(self._on_tree_selection)
+        self._setdec_tree.selection_changed.connect(self._on_setdec_tree_selection)
         self._form.target_changed.connect(self._refresh_all)
         self._form.publish_requested.connect(self._on_publish)
-        self._form.load_requested.connect(self._on_load_selected)
-        self._form.open_requested.connect(self._on_open_selected)
         self._form.refresh_requested.connect(self._on_refresh)
         self._table.selection_changed.connect(self._on_table_selection)
+        self._table.reference_requested.connect(self._reference_entry)
+        self._table.import_requested.connect(self._import_entry)
         self._table.open_requested.connect(self._open_entry)
         self._screenshot_panel.capture_btn.clicked.connect(self._on_capture)
         self._precheck_panel.run_requested.connect(self._on_run_checks)
@@ -146,7 +153,20 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             self._form.set_publish_type(selection.publish_type)
         self._refresh_all()
 
+    def _on_setdec_tree_selection(self) -> None:
+        self._refresh_all()
+
+    def _on_browser_tab_changed(self, _index: int) -> None:
+        setdec_mode = self._is_setdec_mode()
+        self._form.setEnabled(not setdec_mode)
+        self._refresh_all()
+
+    def _is_setdec_mode(self) -> bool:
+        return self._browser_tabs.currentWidget() is self._setdec_tree
+
     def _tree_selection(self):
+        if self._is_setdec_mode():
+            return None
         return self._asset_tree.current_selection()
 
     def _browse_target(self) -> Optional[AssetPublishTarget]:
@@ -208,6 +228,12 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
 
     def _refresh_checks(self) -> None:
         """Clear pre-checks on target change; user re-runs explicitly."""
+        if self._is_setdec_mode():
+            self._precheck_panel.clear()
+            self._precheck_panel.set_run_enabled(False)
+            self._form.set_publish_enabled(False)
+            return
+
         target = self._current_target()
         self._precheck_panel.clear()
         self._precheck_panel.set_run_enabled(target is not None)
@@ -225,11 +251,13 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             )
 
     def _refresh_table(self) -> None:
+        if self._is_setdec_mode():
+            self._refresh_setdec_table()
+            return
+
         browse_target = self._browse_target()
         if browse_target is None:
             self._table.set_entries([])
-            self._form.set_load_enabled(False)
-            self._form.set_open_enabled(False)
             selection = self._tree_selection()
             if selection is None:
                 self._status.showMessage(
@@ -247,9 +275,6 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
 
         entries = self._service.list_versions(browse_target, include_all_variants=True)
         self._table.set_entries(entries)
-        has_selection = bool(entries)
-        self._form.set_load_enabled(has_selection)
-        self._form.set_open_enabled(has_selection)
         folder = self._service.publish_dir(browse_target)
         next_v = self._service.next_version_for_target(
             self._current_target(
@@ -266,14 +291,40 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             f"next {variant}: v{next_v:03d}"
         )
 
+    def _refresh_setdec_table(self) -> None:
+        selection = self._setdec_tree.current_selection()
+        if selection is None or not selection.asset or not selection.variant:
+            self._table.set_entries([])
+            if selection is None:
+                self._status.showMessage("Select a Set Dec group, asset, and variant.")
+            elif selection.asset is None:
+                self._status.showMessage("Select a Set Dec asset.")
+            else:
+                self._status.showMessage("Select a Set Dec variant to browse versions.")
+            return
+
+        entries = list_setdec_versions(
+            self._setdec_tree.setdec_root,
+            selection.group,
+            selection.asset,
+            selection.variant,
+        )
+        self._table.set_entries(entries)
+        folder = (
+            self._setdec_tree.setdec_root
+            / selection.group
+            / selection.asset
+            / selection.variant
+        )
+        self._status.showMessage(
+            f"{len(entries)} Set Dec publish(es) in {folder}"
+        )
+
     def _refresh_all(self) -> None:
         self._refresh_checks()
         self._refresh_table()
 
     def _on_table_selection(self, entry: Optional[PublishEntry]) -> None:
-        enabled = entry is not None
-        self._form.set_load_enabled(enabled)
-        self._form.set_open_enabled(enabled)
         if entry is None:
             self._screenshot_panel.display_image(None)
             return
@@ -341,47 +392,59 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
             padding=self._schema.version_padding,
         )
 
-    def _on_load_selected(self) -> None:
-        entry = self._table.current_entry()
-        if entry is not None:
-            self._load_entry(entry)
-
-    def _on_open_selected(self) -> None:
-        entry = self._table.current_entry()
-        if entry is not None:
-            self._open_entry(entry)
-
-    def _load_entry(self, entry: PublishEntry) -> None:
+    def _reference_entry(self, entry: PublishEntry) -> None:
         scene_path = self._scene_path_for_entry(entry)
         if scene_path is None:
-            self._warn("Load failed", f"No Maya scene found in {entry.path}")
+            self._warn("Reference failed", f"No Maya scene found in {entry.path}")
             return
         namespace = self._host.sanitize_namespace(entry.asset)
         try:
             self._host.reference_scene(scene_path, namespace)
         except Exception as exc:
-            logger.exception("Load failed")
-            self._warn("Load failed", str(exc))
+            logger.exception("Reference failed")
+            self._warn("Reference failed", str(exc))
             return
         self._status.showMessage(
             f"Referenced {scene_path.name} as {namespace}", 8000
         )
+
+    def _import_entry(self, entry: PublishEntry) -> None:
+        scene_path = self._scene_path_for_entry(entry)
+        if scene_path is None:
+            self._warn("Import failed", f"No Maya scene found in {entry.path}")
+            return
+        try:
+            self._host.import_scene(scene_path)
+        except Exception as exc:
+            logger.exception("Import failed")
+            self._warn("Import failed", str(exc))
+            return
+        self._status.showMessage(f"Imported {scene_path.name}", 8000)
 
     def _open_entry(self, entry: PublishEntry) -> None:
         scene_path = self._scene_path_for_entry(entry)
         if scene_path is None:
             self._warn("Open failed", f"No Maya scene found in {entry.path}")
             return
+        message = (
+            "Opening this publish will replace the current Maya scene.\n\n"
+            f"{scene_path}\n\n"
+            "Continue?"
+        )
         if self._host.is_scene_modified():
-            confirm = QtWidgets.QMessageBox.question(
-                self,
-                "Unsaved changes",
-                "The current scene has unsaved changes. Open the selected publish anyway?",
-                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-                QtWidgets.QMessageBox.No,
+            message = (
+                "The current scene has unsaved changes.\n\n"
+                + message
             )
-            if confirm != QtWidgets.QMessageBox.Yes:
-                return
+        confirm = QtWidgets.QMessageBox.question(
+            self,
+            "Open published scene",
+            message,
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            QtWidgets.QMessageBox.No,
+        )
+        if confirm != QtWidgets.QMessageBox.Yes:
+            return
         try:
             self._host.open_scene(scene_path)
         except Exception as exc:
@@ -391,6 +454,11 @@ class AssetManagerWindow(QtWidgets.QMainWindow):
         self._status.showMessage(f"Opened {scene_path}", 8000)
 
     def _on_refresh(self) -> None:
+        if self._is_setdec_mode():
+            self._setdec_tree.refresh()
+            self._refresh_all()
+            return
+
         category = self._form.category()
         asset = self._form.asset_name()
         self._asset_tree.refresh()

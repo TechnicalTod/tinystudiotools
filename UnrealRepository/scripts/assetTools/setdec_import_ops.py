@@ -1,21 +1,23 @@
-"""Set Dec static-mesh import operations shared by the manual importer UI and scene-description IO.
+"""Static-mesh publish import operations shared by manual importer UI and scene-description IO.
 
 UE destination paths must stay aligned with
-``setdec_scene_description_io.core.paths.complete_path(..., "ue")`` /
-``_to_ue_publish_root`` in GenTools/SetDecSceneDescriptionIO.
+``publish_bundle_paths`` in GenTools/shared and
+``setdec_scene_description_io.core.paths.complete_path``.
 """
 
 from __future__ import annotations
 
 import glob
 import os
-import re
+import sys
 from typing import Callable, List, Optional, Tuple
 
 import unreal
 
 import assetTools.getUSDTexturePaths as getUSDTexturePaths
 import genTools.genUnrealImportUtils as genUnrealImportUtils
+
+WarnFn = Callable[[str], None]
 
 USD_PREVIEW_PARAMETER_LIST = {
     "USDPreviewMaterial": {
@@ -59,30 +61,71 @@ USD_PREVIEW_PARAMETER_LIST = {
     }
 }
 
-WarnFn = Callable[[str], None]
+
+def _ensure_publish_bundle_paths():
+    try:
+        from publish_bundle_paths import (  # type: ignore[import-not-found]
+            StaticMeshPublishIdentity,
+            bundle_paths,
+            identity_from_base_path,
+            identity_from_legacy_setdec_args,
+        )
+        return StaticMeshPublishIdentity, bundle_paths, identity_from_base_path, identity_from_legacy_setdec_args
+    except ImportError:
+        from genTools.studio_python_path import ensure_gen_tools_shared
+
+        ensure_gen_tools_shared()
+        from publish_bundle_paths import (  # type: ignore[import-not-found]
+            StaticMeshPublishIdentity,
+            bundle_paths,
+            identity_from_base_path,
+            identity_from_legacy_setdec_args,
+        )
+        return StaticMeshPublishIdentity, bundle_paths, identity_from_base_path, identity_from_legacy_setdec_args
+
+
+(
+    StaticMeshPublishIdentity,
+    bundle_paths,
+    identity_from_base_path,
+    identity_from_legacy_setdec_args,
+) = _ensure_publish_bundle_paths()
+
+
+def _resolve_identity(
+    asset_path: str,
+    variant: str,
+    version: str,
+    *,
+    base_path: Optional[str] = None,
+    asset_name: Optional[str] = None,
+) -> StaticMeshPublishIdentity:
+    if base_path and asset_name:
+        return identity_from_base_path(base_path, asset_name, variant, version)
+    return identity_from_legacy_setdec_args(asset_path, variant, version)
 
 
 def build_unreal_mesh_import_path(asset_path: str, variant: str, version: str) -> str:
-    """Content-browser folder for one published Set Dec static mesh."""
-    normalized = asset_path.replace("\\", "/").rstrip("/")
-    asset_name = normalized.split("/")[-1]
-    set_dec_env_name = normalized.split("/")[-2]
-    return "/Game/01_Assets/SETDEC/{}/{}/{}/{}".format(
-        set_dec_env_name, asset_name, variant, version
-    )
+    """Content-browser folder for one published static mesh."""
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return bundle_paths(identity).ue_import_dir
 
 
 def expected_ue_mesh_object_path(asset_path: str, variant: str, version: str) -> str:
     """Object path passed to ``unreal.load_asset`` for the imported static mesh."""
-    normalized = asset_path.replace("\\", "/").rstrip("/")
-    asset_name = normalized.split("/")[-1]
-    import_path = build_unreal_mesh_import_path(asset_path, variant, version)
-    return "{}/{}_{}".format(import_path, asset_name, version)
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return bundle_paths(identity).ue_mesh_object_path
+
+
+def expected_ue_mesh_object_path_for_identity(identity: StaticMeshPublishIdentity) -> str:
+    return bundle_paths(identity).ue_mesh_object_path
 
 
 def udim_to_glob(path: Optional[str]) -> Optional[str]:
     if path is None:
         return path
+
+    import re
 
     patterns = {
         "<udim>": "<udim>",
@@ -114,27 +157,76 @@ def udim_to_glob(path: Optional[str]) -> Optional[str]:
     return path
 
 
-def _published_fbx_path(
-    asset_path: str, variant: str, version: str, *, warn: WarnFn
+def _published_fbx_path_for_identity(
+    identity: StaticMeshPublishIdentity,
+    *,
+    warn: WarnFn,
 ) -> Optional[str]:
-    published_fbx_path = "{}/{}/{}/fbx/".format(
-        asset_path.replace("\\", "/").rstrip("/"), variant, version
-    )
-    if not os.path.isdir(published_fbx_path):
-        asset_name = asset_path.replace("\\", "/").rstrip("/").split("/")[-1]
-        warn("No FBX files found in {} publish directory".format(asset_name))
+    paths = bundle_paths(identity)
+    fbx_path = paths.fbx_file.replace("\\", "/")
+    if os.path.isfile(fbx_path):
+        if os.path.getsize(fbx_path) < 512:
+            warn(
+                "FBX file is empty or too small for {}: {}".format(
+                    identity.asset_name, fbx_path
+                )
+            )
+            return None
+        return fbx_path
+
+    fbx_dir = paths.fbx_dir.replace("\\", "/")
+    if not os.path.isdir(fbx_dir):
+        warn("No FBX files found in {} publish directory".format(identity.asset_name))
         return None
 
-    fbx_list = [fbx for fbx in os.listdir(published_fbx_path) if fbx.endswith(".fbx")]
+    fbx_list = [fbx for fbx in os.listdir(fbx_dir) if fbx.endswith(".fbx")]
     if len(fbx_list) > 1:
-        asset_name = asset_path.replace("\\", "/").rstrip("/").split("/")[-1]
-        warn("Found too many FBX files in {} publish directory".format(asset_name))
+        warn("Found too many FBX files in {} publish directory".format(identity.asset_name))
         return None
     if len(fbx_list) == 0:
-        asset_name = asset_path.replace("\\", "/").rstrip("/").split("/")[-1]
-        warn("No FBX files found in {} publish directory".format(asset_name))
+        warn("No FBX files found in {} publish directory".format(identity.asset_name))
         return None
-    return published_fbx_path + fbx_list[0]
+    fallback_path = "{}{}".format(fbx_dir, fbx_list[0])
+    if os.path.getsize(fallback_path) < 512:
+        warn(
+            "FBX file is empty or too small for {}: {}".format(
+                identity.asset_name, fallback_path
+            )
+        )
+        return None
+    return fallback_path
+
+
+def _published_fbx_path(
+    asset_path: str,
+    variant: str,
+    version: str,
+    *,
+    warn: WarnFn,
+) -> Optional[str]:
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return _published_fbx_path_for_identity(identity, warn=warn)
+
+
+def import_static_mesh(
+    identity: StaticMeshPublishIdentity,
+    *,
+    warn: WarnFn,
+) -> Tuple[Optional[List[str]], Optional[str]]:
+    """Import the published FBX. Returns ``(imported_paths, unreal_mesh_import_path)``."""
+    fbx_asset_path = _published_fbx_path_for_identity(identity, warn=warn)
+    if fbx_asset_path is None:
+        return None, None
+
+    paths = bundle_paths(identity)
+    import_mesh_task = genUnrealImportUtils.buildImportTask(
+        fbx_asset_path,
+        paths.ue_import_dir,
+        genUnrealImportUtils.buildStaticMeshImportOptions(),
+    )
+    imported_mesh = genUnrealImportUtils.executeImportTasks([import_mesh_task])
+    _tag_imported_static_mesh_metadata(imported_mesh, identity)
+    return imported_mesh, paths.ue_import_dir
 
 
 def import_setdec_static_mesh(
@@ -144,68 +236,56 @@ def import_setdec_static_mesh(
     *,
     warn: WarnFn,
 ) -> Tuple[Optional[List[str]], Optional[str]]:
-    """Import the published FBX. Returns ``(imported_paths, unreal_mesh_import_path)``."""
-    fbx_asset_path = _published_fbx_path(asset_path, variant, version, warn=warn)
-    if fbx_asset_path is None:
-        return None, None
-
-    unreal_mesh_import_path = build_unreal_mesh_import_path(asset_path, variant, version)
-    import_mesh_task = genUnrealImportUtils.buildImportTask(
-        fbx_asset_path,
-        unreal_mesh_import_path,
-        genUnrealImportUtils.buildStaticMeshImportOptions(),
-    )
-    imported_mesh = genUnrealImportUtils.executeImportTasks([import_mesh_task])
-    _tag_imported_static_mesh_metadata(imported_mesh, asset_path, variant, version)
-    return imported_mesh, unreal_mesh_import_path
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return import_static_mesh(identity, warn=warn)
 
 
 def _tag_imported_static_mesh_metadata(
     imported_mesh_paths: List[str],
-    asset_path: str,
-    variant: str,
-    version: str,
+    identity: StaticMeshPublishIdentity,
 ) -> None:
-    """Persist Maya-compatible publish metadata on imported Set Dec static meshes."""
-    normalized = asset_path.replace("\\", "/").rstrip("/")
-    asset_name = normalized.split("/")[-1]
-    base_path = normalized.rsplit("/", 1)[0] + "/"
-
+    """Persist Maya-compatible publish metadata on imported static meshes."""
     for imported_path in imported_mesh_paths:
         object_path = imported_path.split(".")[0]
         mesh_asset = unreal.EditorAssetLibrary.load_asset(object_path)
         if mesh_asset is None:
             continue
         unreal.EditorAssetLibrary.set_metadata_tag(
-            mesh_asset, "FBX.assetName", asset_name
+            mesh_asset, "FBX.assetName", identity.asset_name
         )
         unreal.EditorAssetLibrary.set_metadata_tag(
-            mesh_asset, "FBX.basePath", base_path
+            mesh_asset, "FBX.basePath", identity.base_path
         )
-        unreal.EditorAssetLibrary.set_metadata_tag(mesh_asset, "FBX.version", version)
+        unreal.EditorAssetLibrary.set_metadata_tag(mesh_asset, "FBX.version", identity.version)
         unreal.EditorAssetLibrary.set_metadata_tag(
-            mesh_asset, "FBX.variantName", variant
+            mesh_asset, "FBX.variantName", identity.variant
         )
         unreal.EditorAssetLibrary.save_asset(object_path)
 
 
-def import_setdec_textures(
-    asset_path: str,
-    variant: str,
-    version: str,
+def import_static_mesh_textures(
+    identity: StaticMeshPublishIdentity,
     unreal_mesh_import_path: str,
     *,
     warn: WarnFn,
 ) -> Optional[List[str]]:
-    """Import textures for a Set Dec static mesh from the published USD shader graph."""
-    del warn  # reserved for future validation messages
+    """Import textures from the published USD shader graph."""
+    del warn
     tex_list: List[str] = []
-    published_usd_path = "{}/{}/{}/usd/".format(
-        asset_path.replace("\\", "/").rstrip("/"), variant, version
-    )
-    usd_file = os.listdir(published_usd_path)[0]
-    usd_shader_dict = getUSDTexturePaths.get_paths(published_usd_path + usd_file)
+    paths = bundle_paths(identity)
+    usd_dir = paths.usd_dir.replace("\\", "/")
+    if not os.path.isdir(usd_dir):
+        unreal.EditorAssetLibrary.make_directory(f"{unreal_mesh_import_path}/TEX")
+        unreal.EditorAssetLibrary.make_directory(f"{unreal_mesh_import_path}/MAT")
+        return None
 
+    usd_files = [name for name in os.listdir(usd_dir) if name.endswith((".usd", ".usda"))]
+    if not usd_files:
+        unreal.EditorAssetLibrary.make_directory(f"{unreal_mesh_import_path}/TEX")
+        unreal.EditorAssetLibrary.make_directory(f"{unreal_mesh_import_path}/MAT")
+        return None
+
+    usd_shader_dict = getUSDTexturePaths.get_paths(usd_dir + usd_files[0])
     for shader_name in usd_shader_dict:
         texture_dict = usd_shader_dict.get(shader_name)
         for parameter in USD_PREVIEW_PARAMETER_LIST.get("USDPreviewMaterial"):
@@ -239,6 +319,25 @@ def import_setdec_textures(
     return genUnrealImportUtils.executeImportTasks(tex_import_task_list)
 
 
+def import_setdec_textures(
+    asset_path: str,
+    variant: str,
+    version: str,
+    unreal_mesh_import_path: str,
+    *,
+    warn: WarnFn,
+) -> Optional[List[str]]:
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return import_static_mesh_textures(identity, unreal_mesh_import_path, warn=warn)
+
+
+def _material_instance_name(material_slot_name: str) -> str:
+    slot = str(material_slot_name)
+    if "_" in slot:
+        return "MI_" + slot.split("_", 1)[1]
+    return "MI_" + slot
+
+
 def assign_setdec_static_mesh_materials(
     imported_mesh: List[str],
     unreal_mesh_import_path: str,
@@ -266,7 +365,7 @@ def assign_setdec_static_mesh_materials(
 
     for material in material_type_function:
         index = material_type_function.index(material)
-        new_mat_name = "MI_" + str(material.material_slot_name).split("_", 1)[1]
+        new_mat_name = _material_instance_name(material.material_slot_name)
         material_instance = asset_tools.create_asset(
             new_mat_name,
             unreal_mat_import_path,
@@ -305,6 +404,25 @@ def assign_setdec_static_mesh_materials(
             unreal.EditorAssetLibrary.save_asset(asset_name_clean)
 
 
+def import_static_mesh_publish_pipeline(
+    identity: StaticMeshPublishIdentity,
+    *,
+    warn: WarnFn,
+) -> Optional[str]:
+    """Run mesh + textures + materials. Returns expected UE static-mesh object path."""
+    imported_mesh, unreal_mesh_import_path = import_static_mesh(identity, warn=warn)
+    if not imported_mesh:
+        return None
+
+    imported_textures = import_static_mesh_textures(
+        identity, unreal_mesh_import_path, warn=warn
+    )
+    assign_setdec_static_mesh_materials(
+        imported_mesh, unreal_mesh_import_path, imported_textures
+    )
+    return expected_ue_mesh_object_path_for_identity(identity)
+
+
 def import_setdec_static_mesh_pipeline(
     asset_path: str,
     variant: str,
@@ -312,20 +430,27 @@ def import_setdec_static_mesh_pipeline(
     *,
     warn: WarnFn,
 ) -> Optional[str]:
-    """Run mesh + textures + materials. Returns expected UE static-mesh object path."""
-    imported_mesh, unreal_mesh_import_path = import_setdec_static_mesh(
-        asset_path, variant, version, warn=warn
-    )
-    if not imported_mesh:
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return import_static_mesh_publish_pipeline(identity, warn=warn)
+
+
+def ensure_static_mesh_imported(
+    identity: StaticMeshPublishIdentity,
+    *,
+    warn: WarnFn,
+) -> Optional[str]:
+    """Return UE mesh object path, importing from publish disk when missing."""
+    expected_path = expected_ue_mesh_object_path_for_identity(identity)
+    if unreal.EditorAssetLibrary.load_asset(expected_path):
+        return expected_path
+
+    if _published_fbx_path_for_identity(identity, warn=warn) is None:
         return None
 
-    imported_textures = import_setdec_textures(
-        asset_path, variant, version, unreal_mesh_import_path, warn=warn
-    )
-    assign_setdec_static_mesh_materials(
-        imported_mesh, unreal_mesh_import_path, imported_textures
-    )
-    return expected_ue_mesh_object_path(asset_path, variant, version)
+    import_static_mesh_publish_pipeline(identity, warn=warn)
+    if unreal.EditorAssetLibrary.load_asset(expected_path):
+        return expected_path
+    return None
 
 
 def ensure_setdec_static_mesh_imported(
@@ -335,15 +460,5 @@ def ensure_setdec_static_mesh_imported(
     *,
     warn: WarnFn,
 ) -> Optional[str]:
-    """Return UE mesh object path, importing from publish disk when missing in the project."""
-    expected_path = expected_ue_mesh_object_path(asset_path, variant, version)
-    if unreal.EditorAssetLibrary.load_asset(expected_path):
-        return expected_path
-
-    if _published_fbx_path(asset_path, variant, version, warn=warn) is None:
-        return None
-
-    import_setdec_static_mesh_pipeline(asset_path, variant, version, warn=warn)
-    if unreal.EditorAssetLibrary.load_asset(expected_path):
-        return expected_path
-    return None
+    identity = identity_from_legacy_setdec_args(asset_path, variant, version)
+    return ensure_static_mesh_imported(identity, warn=warn)

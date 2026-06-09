@@ -6,7 +6,7 @@ import maya.OpenMayaUI as OMUI
 import shiboken6
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from .constants import MAIN_WINDOW_OBJECT_NAME
+from .constants import DEFAULT_VARIANT_NAME, MAIN_WINDOW_OBJECT_NAME
 from .paths import setdec_group_folder, setdec_production_folder, version_asset_root
 from .publish_ops import publish_set_dec, publish_set_dec_textures
 from .styling import load_qss
@@ -270,7 +270,7 @@ class MainWindow(QtWidgets.QWidget):
                 if len(variant_list) > 1:
                     variant_combo_box.setStyleSheet(load_qss("qComboBoxMultiItemYellow.qss"))
             except Exception:
-                variant_combo_box.addItems(["base"])
+                variant_combo_box.addItems([DEFAULT_VARIANT_NAME])
                 variant_combo_box.setCurrentIndex(0)
 
             version_combo_box = QtWidgets.QComboBox()

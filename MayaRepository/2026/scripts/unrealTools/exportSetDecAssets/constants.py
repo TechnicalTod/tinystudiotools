@@ -1,4 +1,5 @@
 MAIN_WINDOW_OBJECT_NAME = "PublishSetDecAssetsMainWindow"
+DEFAULT_VARIANT_NAME = "main"
 
 PARAMETER_LIST = {
     "USDPreviewMaterial": {

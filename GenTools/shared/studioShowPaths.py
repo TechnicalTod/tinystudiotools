@@ -6,6 +6,21 @@ import os
 from pathlib import Path
 
 SETDEC_CATEGORY = "setdec"
+_DRIVE_RELATIVE_PREFIX_LEN = 2  # "S:"
+
+
+def normalize_disk_path(path: str) -> str:
+    """Ensure ``S:folder/...`` becomes ``S:/folder/...`` for Unreal and ``os.path``."""
+    if not path:
+        return path
+    path = path.replace("\\", "/")
+    if (
+        len(path) >= _DRIVE_RELATIVE_PREFIX_LEN
+        and path[1] == ":"
+        and (len(path) == _DRIVE_RELATIVE_PREFIX_LEN or path[_DRIVE_RELATIVE_PREFIX_LEN] not in "/\\")
+    ):
+        path = path[:_DRIVE_RELATIVE_PREFIX_LEN] + "/" + path[_DRIVE_RELATIVE_PREFIX_LEN:]
+    return path
 
 
 def _env(name: str) -> str:
@@ -15,7 +30,7 @@ def _env(name: str) -> str:
 def normalize_show_root(base: str, show: str) -> Path:
     """Return absolute show root, folding duplicate show segments when needed."""
     show = show.strip().strip("/\\")
-    base_path = Path(base.replace("\\", "/"))
+    base_path = Path(normalize_disk_path(base))
 
     if base_path.name == show and base_path.exists():
         return base_path

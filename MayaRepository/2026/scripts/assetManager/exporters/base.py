@@ -55,7 +55,10 @@ def run_exports(
     from .registry import get_export  # local import to break import cycles
 
     type_spec = schema.get_publish_type(target.publish_type)
-    steps: list[ExportStepSpec] = list(schema.default_exports) + list(type_spec.exports)
+    steps: list[ExportStepSpec] = []
+    if not type_spec.skip_default_exports:
+        steps.extend(schema.default_exports)
+    steps.extend(type_spec.exports)
 
     artifacts: list[str] = []
     for step in steps:

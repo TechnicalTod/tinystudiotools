@@ -57,6 +57,7 @@ class PublishTypeSpec:
     label: str
     checks: List[CheckSpec]
     exports: List[ExportStepSpec]
+    skip_default_exports: bool = False
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,7 @@ def load_schema(path: Path | None = None) -> AssetPublishSchema:
             label=spec.get("label", key.title()),
             checks=checks,
             exports=exports,
+            skip_default_exports=bool(spec.get("skip_default_exports", False)),
         )
 
     default_exports = [

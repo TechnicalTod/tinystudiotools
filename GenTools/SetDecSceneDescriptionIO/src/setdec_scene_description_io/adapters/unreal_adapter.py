@@ -19,7 +19,6 @@ from transforms3d import affines, euler
 
 from ..core.paths import (
     complete_path,
-    disk_asset_folder,
     parse_ue_setdec_static_mesh_object_path,
 )
 from ..core.records import AssetRecord
@@ -113,7 +112,7 @@ class UnrealAdapter(SceneAdapter):
                 variant = unreal.EditorAssetLibrary.get_metadata_tag(
                     mesh_asset, "FBX.variantName"
                 )
-                asset_name, base_path, version, variant = _resolve_setdec_publish_info(
+                asset_name, base_path, version, variant = _resolve_publish_info(
                     asset_path,
                     asset_name,
                     base_path,
@@ -177,16 +176,18 @@ class UnrealAdapter(SceneAdapter):
                     )
                     if import_key not in ensured_imports:
                         from assetTools.setdec_import_ops import (
-                            ensure_setdec_static_mesh_imported,
+                            ensure_static_mesh_imported,
+                            identity_from_base_path,
                         )
 
-                        disk_asset_path = disk_asset_folder(
-                            record.base_path, record.asset_name
-                        )
-                        if ensure_setdec_static_mesh_imported(
-                            disk_asset_path,
+                        identity = identity_from_base_path(
+                            record.base_path,
+                            record.asset_name,
                             variant,
                             record.version,
+                        )
+                        if ensure_static_mesh_imported(
+                            identity,
                             warn=unreal.log_warning,
                         ):
                             auto_imported += 1
@@ -221,7 +222,7 @@ def _nonempty_tag(value: Optional[str]) -> Optional[str]:
     return text or None
 
 
-def _resolve_setdec_publish_info(
+def _resolve_publish_info(
     mesh_object_path: str,
     asset_name: Optional[str],
     base_path: Optional[str],
@@ -237,6 +238,20 @@ def _resolve_setdec_publish_info(
     if asset_name and base_path and version and variant:
         return asset_name, base_path, version, variant
 
+    try:
+        from publish_bundle_paths import parse_ue_static_mesh_object_path  # type: ignore[import-not-found]
+
+        parsed = parse_ue_static_mesh_object_path(mesh_object_path)
+        if parsed is not None:
+            return (
+                asset_name or parsed.asset_name,
+                base_path or parsed.base_path,
+                version or parsed.version,
+                variant or parsed.variant,
+            )
+    except ImportError:
+        pass
+
     parsed = parse_ue_setdec_static_mesh_object_path(mesh_object_path)
     if parsed is None:
         return asset_name, base_path, version, variant
@@ -247,6 +262,18 @@ def _resolve_setdec_publish_info(
         base_path or group_base_path,
         version or parsed.version,
         variant or parsed.variant,
+    )
+
+
+def _resolve_setdec_publish_info(
+    mesh_object_path: str,
+    asset_name: Optional[str],
+    base_path: Optional[str],
+    version: Optional[str],
+    variant: Optional[str],
+) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    return _resolve_publish_info(
+        mesh_object_path, asset_name, base_path, version, variant
     )
 
 

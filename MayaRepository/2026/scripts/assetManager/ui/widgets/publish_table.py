@@ -12,6 +12,8 @@ _HEADERS = ("Variant", "Version", "Summary", "Modified")
 
 class PublishTable(QtWidgets.QTableWidget):
     selection_changed = Signal(object)
+    reference_requested = Signal(object)
+    import_requested = Signal(object)
     open_requested = Signal(object)
 
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None) -> None:
@@ -23,6 +25,7 @@ class PublishTable(QtWidgets.QTableWidget):
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.setAlternatingRowColors(True)
         self.setSortingEnabled(True)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
         header = self.horizontalHeader()
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
@@ -30,6 +33,7 @@ class PublishTable(QtWidgets.QTableWidget):
         header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.doubleClicked.connect(self._on_double_clicked)
+        self.customContextMenuRequested.connect(self._on_context_menu)
         self._entries: List[PublishEntry] = []
 
     def set_entries(self, entries: List[PublishEntry]) -> None:
@@ -73,4 +77,37 @@ class PublishTable(QtWidgets.QTableWidget):
     def _on_double_clicked(self, _index: QtCore.QModelIndex) -> None:
         entry = self.current_entry()
         if entry is not None:
+            self.open_requested.emit(entry)
+
+    def _entry_at_row(self, row: int) -> Optional[PublishEntry]:
+        item = self.item(row, 0)
+        if item is None:
+            return None
+        idx = item.data(Qt.UserRole)
+        if idx is None or idx >= len(self._entries):
+            return None
+        return self._entries[idx]
+
+    def _on_context_menu(self, pos: QtCore.QPoint) -> None:
+        index = self.indexAt(pos)
+        if not index.isValid():
+            return
+
+        self.selectRow(index.row())
+        entry = self._entry_at_row(index.row())
+        if entry is None:
+            return
+
+        menu = QtWidgets.QMenu(self)
+        reference_action = menu.addAction("Reference")
+        import_action = menu.addAction("Import")
+        menu.addSeparator()
+        open_action = menu.addAction("Open...")
+
+        chosen = menu.exec(self.viewport().mapToGlobal(pos))
+        if chosen == reference_action:
+            self.reference_requested.emit(entry)
+        elif chosen == import_action:
+            self.import_requested.emit(entry)
+        elif chosen == open_action:
             self.open_requested.emit(entry)

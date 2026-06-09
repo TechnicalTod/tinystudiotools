@@ -247,6 +247,20 @@ class MayaHost:
             namespace=namespace,
         )
 
+    def import_scene(self, path: Path) -> None:
+        """Import a published scene directly into the current Maya file."""
+        import maya.cmds as cmds
+
+        if not path.is_file():
+            raise RuntimeError(f"Scene not found: {path}")
+        cmds.file(
+            str(path),
+            i=True,
+            ignoreVersion=True,
+            mergeNamespacesOnClash=True,
+            namespace=":",
+        )
+
     def is_scene_modified(self) -> bool:
         import maya.cmds as cmds
 
@@ -266,3 +280,82 @@ class MayaHost:
         if cleaned[0].isdigit():
             cleaned = f"a_{cleaned}"
         return cleaned
+
+    # ---------------------------------------------------- static mesh publish
+
+    def selected_mesh_transforms(self) -> List[str]:
+        """Return long names of selected transforms that have a mesh shape."""
+        import maya.cmds as cmds
+
+        selected = cmds.ls(selection=True, long=True) or []
+        meshes: list[str] = []
+        for node in selected:
+            shapes = cmds.listRelatives(node, shapes=True, fullPath=True) or []
+            if any(cmds.nodeType(shape) == "mesh" for shape in shapes):
+                meshes.append(node)
+        return meshes
+
+    def selection_is_single_mesh_transform(self) -> bool:
+        return len(self.selected_mesh_transforms()) == 1
+
+    def selection_has_usd_preview_material(self) -> bool:
+        import maya.cmds as cmds
+
+        for transform in self.selected_mesh_transforms():
+            shapes = cmds.listRelatives(transform, shapes=True, fullPath=True) or []
+            for shape in shapes:
+                shading_engines = cmds.listConnections(shape, type="shadingEngine") or []
+                for shading_engine in shading_engines:
+                    materials = (
+                        cmds.listConnections(f"{shading_engine}.surfaceShader") or []
+                    )
+                    for material in materials:
+                        if cmds.nodeType(material) == "usdPreviewSurface":
+                            return True
+        return False
+
+    def selection_has_published_mesh(self) -> bool:
+        import maya.cmds as cmds
+
+        for transform in self.selected_mesh_transforms():
+            if cmds.attributeQuery("published", node=transform, exists=True):
+                try:
+                    if bool(cmds.getAttr(f"{transform}.published")):
+                        return True
+                except Exception:
+                    continue
+        return False
+
+    def publish_static_mesh_bundle(
+        self,
+        bundle_root: Path,
+        *,
+        file_stem: str,
+        asset_name: str,
+        variant_name: str,
+        version_label: str,
+        base_path: str,
+        publish_layout: str = "asset_manager_model",
+    ) -> List[str]:
+        """Publish USD Preview static mesh bundle with undo safety."""
+        from genTools import static_mesh_publish_ops as publish_ops
+
+        transforms = self.selected_mesh_transforms()
+        if len(transforms) != 1:
+            raise RuntimeError("Select exactly one mesh transform to publish.")
+
+        import pymel.core as pm
+
+        mesh_object = pm.PyNode(transforms[0])
+        return publish_ops.publish_static_mesh_bundle(
+            mesh_object,
+            bundle_root,
+            file_stem=file_stem,
+            asset_name=asset_name,
+            variant_name=variant_name,
+            version_label=version_label,
+            base_path=base_path,
+            usd_parent_scope=asset_name,
+            publish_layout=publish_layout,
+            replace_in_scene=True,
+        )

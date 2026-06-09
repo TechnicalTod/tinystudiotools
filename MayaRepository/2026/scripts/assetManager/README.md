@@ -218,12 +218,39 @@ Asset and variant names are validated (`core.asset_name`, `core.variant`) before
 
 ## Universal publish outputs
 
-Every publish type runs `default_exports` first, then type-specific exports:
+Every publish type runs `default_exports` first, then type-specific exports — **except model**, which sets `skip_default_exports: true` and uses the Set Dec-compatible bundle only.
 
 | Artifact | Export id | Description |
 | -------- | --------- | ----------- |
-| Maya scene | `maya_scene` | Saves current scene as `<asset>_<type>_<variant>_v###.ma` (or `.mb` via params) |
-| Textures | `copy_applied_textures` | Copies textures from applied materials into `tex/` (including UDIM siblings on disk) |
+| Maya scene | `maya_scene` | Saves current scene as `<asset>_<type>_<variant>_v###.ma` (rig/layout via default exports) |
+| Textures | `copy_applied_textures` | Copies textures from applied materials into `tex/` (default exports only) |
+| Model bundle | `setdec_model_bundle` | `fbx/`, `usd/`, `maya/`, `tex/` under the version folder; USD Preview textures rewired; mesh replaced in-scene |
+
+### Model publish workflow
+
+1. Select **one mesh transform** in the viewport.
+2. Assign a legacy **`usdPreviewSurface`** material network (same as Publish Set Dec Assets).
+3. Select category / asset / type in Asset Manager, set variant, optionally run checks.
+4. Click **Publish**.
+
+Model publishes write:
+
+```
+{show}/assets/{category}/{asset}/publish/model/{asset}_model_{variant}_v###/
+  fbx/{asset}_model_{variant}_v###.fbx
+  usd/{asset}_model_{variant}_v###.usda
+  maya/{asset}_model_{variant}_v###.ma
+  tex/
+  manifest.json
+```
+
+Published transforms are stamped with `basePath`, `assetName`, `variantName`, `version`, and `published` for env scene-description export and Unreal import.
+
+### Unreal import
+
+- **Manual:** Unreal → Import Assets → **Assets** tab → browse to a model version folder under `publish/model/` → Import.
+- **Scene description:** Env `.usda` import auto-imports referenced chr/prop/env/veh models when missing in the project.
+- **Content Browser destination:** `/Game/01_Assets/{CATEGORY}/{asset}/{variant}/{version}/` (e.g. `/Game/01_Assets/CHR/BigGuy/main/v001/`).
 
 Type-specific artifacts come from `publish_types.<key>.exports` in the schema (see inventory below).
 
@@ -249,12 +276,15 @@ The schema is the **configuration surface** for categories, publish types, check
   "publish_types": {
     "model": {
       "label": "Model",
+      "skip_default_exports": true,
       "checks": [
-        { "id": "asset_name_pascal_case", "severity": "warning" },
-        { "id": "materials_m_prefix_pascal", "severity": "warning" }
+        { "id": "selection_not_empty", "severity": "error" },
+        { "id": "usd_preview_material", "severity": "error" },
+        { "id": "not_already_published", "severity": "error" },
+        { "id": "asset_name_pascal_case", "severity": "warning" }
       ],
       "exports": [
-        { "id": "fbx_selection" }
+        { "id": "setdec_model_bundle" }
       ]
     }
   }
@@ -277,7 +307,7 @@ Each check is either a string id or an object:
 
 Each export is either a string id or `{ "id": "…", "params": { … } }`.
 
-Export order: **`default_exports`** (global) then **`publish_types.<key>.exports`** (per type).
+Export order: **`default_exports`** (global) then **`publish_types.<key>.exports`** (per type), unless the publish type sets **`skip_default_exports`: true**.
 
 ---
 
@@ -304,8 +334,10 @@ Plugins must use `ctx.host` (`MayaHost`) for scene queries — not `maya.cmds` d
 
 | Publish type | Check id | Severity | Rule |
 | ------------ | -------- | -------- | ---- |
+| model | `selection_not_empty` | error | One mesh transform selected |
+| model | `usd_preview_material` | error | Selection uses `usdPreviewSurface` |
+| model | `not_already_published` | error | Selection is not already published |
 | model | `asset_name_pascal_case` | warning | Asset folder name segments are PascalCase |
-| model | `materials_m_prefix_pascal` | warning | Assigned materials match `M_<PascalCase>` |
 | rig | `root_joint_exists` | error | Configurable root joint exists (default `root_joint`) |
 | rig | `root_joint_puppet_attrs` | warning | Puppet metadata string attrs present on root joint |
 | layout | `content_under_env_group` | warning | Mesh shapes are under top-level `ENV` group |
@@ -346,7 +378,8 @@ These handlers exist in `checks/registry.py` and can be enabled by adding them t
 | ------- | ----- | ------ |
 | `maya_scene` | `default_exports` | `<asset>_<type>_<variant>_v###.ma` |
 | `copy_applied_textures` | `default_exports` | `tex/` with applied material textures |
-| `fbx_selection` | `model.exports` | FBX of current selection |
+| `setdec_model_bundle` | `model.exports` | `fbx/`, `usd/`, `maya/`, `tex/` bundle |
+| `fbx_selection` | (legacy model) | flat FBX in version folder |
 | `fbx_rig` | `rig.exports` | `UnrealExport/<asset>_ExportedRigForUnreal_<version>.fbx` from `root_joint` + `visGeo` |
 | `layout_placeholder` | `layout.exports` | `layout.json` stub describing publish intent |
 
@@ -408,6 +441,8 @@ MayaRepository/2026/scripts/assetManager/
 | Table empty with asset selected | Select a **publish type** leaf; asset-only selection is for new publishes |
 | Publish fails on export | Check Maya script editor; partial version folder is rolled back |
 | FBX / rig export fails | Missing selection (`fbx_selection`) or missing `root_joint` / `visGeo` (`fbx_rig`) |
+| Model publish fails checks | Select one mesh with legacy `usdPreviewSurface`; unpublish if already published |
+| Model publish mutates scene | Expected — textures rewire and mesh is replaced with published import |
 | Load references wrong namespace | Namespace is derived from asset name (`MayaHost.sanitize_namespace`) |
 | Capture fails | Viewport playblast error — publish still works without a preview image |
 

@@ -23,6 +23,7 @@ from .plugins import (
     fbx_selection,
     layout_placeholder,
     maya_scene,
+    setdec_model_bundle,
 )
 
 
@@ -35,6 +36,7 @@ DEFAULT_EXPORTS: Dict[str, ExportFn] = {
     "fbx_selection": fbx_selection.run,
     "fbx_rig": fbx_rig.run,
     "layout_placeholder": layout_placeholder.run,
+    "setdec_model_bundle": setdec_model_bundle.run,
 }
 
 

@@ -4,8 +4,6 @@ Two concerns live here, both host-agnostic and free of numpy / DCC imports:
 
 * :func:`complete_path` / :func:`transform_path` - build the path to a single
   *published asset* (``.usda`` reference, ``.ma`` file, or Unreal ``/Game`` asset).
-  These are the de-duplicated copies that used to be pasted into every exporter,
-  builder and ``conversionUtilites`` module.
 * :class:`ScenePaths` - build the on-disk path of the *scene description* file
   itself, driven by ``configs/setdec_scene_paths.json``.
 """
@@ -22,16 +20,33 @@ from typing import Optional
 SCHEMA_FILENAME = "setdec_scene_paths.json"
 
 
-# ---------------------------------------------------------------------------
-# Published-asset paths (de-duplicated from conversionUtilites / exporters)
+def _publish_bundle_paths():
+    try:
+        from publish_bundle_paths import (  # type: ignore[import-not-found]
+            complete_path as _complete_path,
+            disk_asset_folder as _disk_asset_folder,
+            parse_ue_setdec_static_mesh_object_path as _parse_setdec,
+            parse_ue_asset_manager_static_mesh_object_path as _parse_asset_manager,
+            parse_ue_static_mesh_object_path,
+        )
+        return (
+            _complete_path,
+            _disk_asset_folder,
+            _parse_setdec,
+            _parse_asset_manager,
+            parse_ue_static_mesh_object_path,
+        )
+    except ImportError:
+        return None
 
 
 def complete_path(file_path, variant, version, asset_name, ext):
-    """Build the path to a published asset in the requested flavour.
+    """Build the path to a published asset in the requested flavour."""
+    loaded = _publish_bundle_paths()
+    if loaded is not None:
+        _complete_path, _, _, _, _ = loaded
+        return _complete_path(file_path, variant, version, asset_name, ext)
 
-    ``ext`` selects the output: ``maya`` (``.ma``), ``usd`` (``.usda``), or
-    ``ue`` (an Unreal ``/Game`` content path with no extension).
-    """
     if ext == "maya":
         path_ext = ".ma"
     elif ext == "usd":
@@ -68,7 +83,10 @@ def complete_path(file_path, variant, version, asset_name, ext):
 
 
 def disk_asset_folder(base_path: str, asset_name: str) -> str:
-    """Show-drive folder for one Set Dec asset (group path + asset short name)."""
+    loaded = _publish_bundle_paths()
+    if loaded is not None:
+        _, _disk_asset_folder, _, _, _ = loaded
+        return _disk_asset_folder(base_path, asset_name)
     normalized = base_path.replace("\\", "/").rstrip("/")
     return f"{normalized}/{asset_name}"
 
@@ -85,6 +103,19 @@ class SetDecUeMeshIdentity:
 
 def parse_ue_setdec_static_mesh_object_path(ue_path: str) -> Optional[SetDecUeMeshIdentity]:
     """Parse ``/Game/01_Assets/SETDEC/{group}/{asset}/{variant}/{version}/…``."""
+    loaded = _publish_bundle_paths()
+    if loaded is not None:
+        _, _, _parse_setdec, _, parse_ue_static_mesh_object_path = loaded
+        identity = parse_ue_static_mesh_object_path(ue_path)
+        if identity is None or identity.layout != "setdec":
+            return None
+        return SetDecUeMeshIdentity(
+            group_name=identity.base_path.rstrip("/").split("/")[-1],
+            asset_name=identity.asset_name,
+            variant=identity.variant,
+            version=identity.version,
+        )
+
     path = ue_path.split(".")[0].replace("\\", "/")
     marker = "/setdec/"
     idx = path.lower().find(marker)
@@ -128,13 +159,16 @@ def transform_path(original_path, pivot, new_base):
 
 
 def _to_ue_publish_root(file_path: str) -> str:
-    """Map a show-drive Set Dec folder to the Unreal content root.
+    """Map a show-drive publish folder to the Unreal content root."""
+    loaded = _publish_bundle_paths()
+    if loaded is not None:
+        try:
+            from publish_bundle_paths import ue_publish_prefix  # type: ignore[import-not-found]
 
-    Published meshes land under ``/Game/01_Assets/SETDEC/{group}/…`` (see
-    ``assetTools.setdec_import_ops``). Show-drive ``basePath`` values use
-    lowercase ``assets/setdec/``, so a case-sensitive ``SETDEC`` pivot miss would
-    leave a Windows path and ``load_asset`` would fail.
-    """
+            return ue_publish_prefix(file_path).rstrip("/")
+        except Exception:
+            pass
+
     path = file_path.replace("\\", "/")
     lowered = path.lower()
     marker = "/setdec/"

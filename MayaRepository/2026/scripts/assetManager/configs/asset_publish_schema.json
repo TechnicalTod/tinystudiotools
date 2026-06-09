@@ -11,12 +11,15 @@
   "publish_types": {
     "model": {
       "label": "Model",
+      "skip_default_exports": true,
       "checks": [
-        { "id": "asset_name_pascal_case", "severity": "warning" },
-        { "id": "materials_m_prefix_pascal", "severity": "warning" }
+        { "id": "selection_not_empty", "severity": "error" },
+        { "id": "usd_preview_material", "severity": "error" },
+        { "id": "not_already_published", "severity": "error" },
+        { "id": "asset_name_pascal_case", "severity": "warning" }
       ],
       "exports": [
-        { "id": "fbx_selection" }
+        { "id": "setdec_model_bundle" }
       ]
     },
     "rig": {

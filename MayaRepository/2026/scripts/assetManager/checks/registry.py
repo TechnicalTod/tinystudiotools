@@ -22,9 +22,11 @@ from .plugins import (
     materials_m_prefix_pascal,
     nodes_exist,
     no_history_on_selection,
+    not_already_published,
     root_joint_exists,
     root_joint_puppet_attrs,
     selection_not_empty,
+    usd_preview_material,
 )
 from .runner import CheckContext, CheckResult
 
@@ -41,6 +43,8 @@ DEFAULT_CHECKS: Dict[str, CheckFn] = {
     "root_joint_exists": root_joint_exists.run,
     "root_joint_puppet_attrs": root_joint_puppet_attrs.run,
     "content_under_env_group": content_under_env_group.run,
+    "usd_preview_material": usd_preview_material.run,
+    "not_already_published": not_already_published.run,
 }
 
 

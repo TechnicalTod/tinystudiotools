@@ -12,8 +12,6 @@ class PublishForm(QtWidgets.QWidget):
     """Asset name, variant, asset type, and publish actions."""
 
     publish_requested = Signal()
-    load_requested = Signal()
-    open_requested = Signal()
     refresh_requested = Signal()
     target_changed = Signal()
 
@@ -53,18 +51,12 @@ class PublishForm(QtWidgets.QWidget):
 
         self.publish_button = QtWidgets.QPushButton("Publish")
         self.publish_button.setDefault(True)
-        self.load_button = QtWidgets.QPushButton("Load")
-        self.load_button.setToolTip("Reference the selected publish into the current scene.")
-        self.open_button = QtWidgets.QPushButton("Open")
-        self.open_button.setToolTip("Open the selected publish as the current Maya scene.")
         self.refresh_button = QtWidgets.QPushButton("Refresh")
 
         button_row = QtWidgets.QHBoxLayout()
         button_row.setSpacing(12)
         button_row.addStretch(1)
         button_row.addWidget(self.refresh_button)
-        button_row.addWidget(self.load_button)
-        button_row.addWidget(self.open_button)
         button_row.addWidget(self.publish_button)
         layout.addLayout(button_row, 2, 0, 1, 4)
 
@@ -72,16 +64,11 @@ class PublishForm(QtWidgets.QWidget):
         layout.setColumnStretch(3, 0)
 
         self.publish_button.clicked.connect(self.publish_requested)
-        self.load_button.clicked.connect(self.load_requested)
-        self.open_button.clicked.connect(self.open_requested)
         self.refresh_button.clicked.connect(self.refresh_requested)
 
         self.asset_combo.currentTextChanged.connect(self._emit_target_changed)
         self.variant_edit.textChanged.connect(self._emit_target_changed)
         self.type_combo.currentIndexChanged.connect(self._emit_target_changed)
-
-        self.set_load_enabled(False)
-        self.set_open_enabled(False)
 
     def _emit_target_changed(self, *_args) -> None:
         self.target_changed.emit()
@@ -124,9 +111,3 @@ class PublishForm(QtWidgets.QWidget):
 
     def set_publish_enabled(self, enabled: bool) -> None:
         self.publish_button.setEnabled(enabled)
-
-    def set_load_enabled(self, enabled: bool) -> None:
-        self.load_button.setEnabled(enabled)
-
-    def set_open_enabled(self, enabled: bool) -> None:
-        self.open_button.setEnabled(enabled)

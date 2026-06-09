@@ -73,12 +73,26 @@ def scene_path_for_version(
         )
         if expected.is_file():
             return expected
+        nested = version_dir / "maya" / scene_filename(
+            asset,
+            publish_type,
+            variant,
+            version,
+            padding=padding,
+            extension=ext,
+        )
+        if nested.is_file():
+            return nested
     if not version_dir.is_dir():
         return None
-    for child in version_dir.iterdir():
-        if child.is_file() and child.suffix.lower() in (".ma", ".mb"):
-            if "_preview" not in child.stem.lower():
-                return child
+    for subdir in ("maya", ""):
+        search_root = version_dir / subdir if subdir else version_dir
+        if not search_root.is_dir():
+            continue
+        for child in search_root.iterdir():
+            if child.is_file() and child.suffix.lower() in (".ma", ".mb"):
+                if "_preview" not in child.stem.lower():
+                    return child
     return None
 
 
