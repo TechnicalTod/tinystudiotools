@@ -77,12 +77,59 @@ class ShotManifestParserTests(unittest.TestCase):
         manifest = parse_shot_manifest(data)
 
         self.assertEqual(len(manifest.custom_geo), 2)
+        self.assertEqual(len(manifest.custom_animated_geometry), 2)
         self.assertTrue(manifest.custom_geo[0].animated)
         self.assertFalse(manifest.custom_geo[1].animated)
         self.assertEqual(
             manifest.custom_geo[0].export_path,
             "Y:/TestShow/customGeo/propA_v003.fbx",
         )
+
+    def test_parses_schema_v3_custom_animated_geometry(self):
+        data = {
+            "schemaVersion": 3,
+            "shotInfo": {
+                "project": "TestShow",
+                "shotNumber": "ep001_sq010_sh020",
+                "version": "v003",
+                "timeline": {"startFrame": 1001, "endFrame": 1050},
+                "fps": 24,
+            },
+            "cameras": [],
+            "puppets": [],
+            "customAnimatedGeometry": {
+                "items": [
+                    {
+                        "productType": "animatedFbx",
+                        "exportFormat": "fbx",
+                        "name": "propA",
+                        "animated": True,
+                        "exportPath": "Y:/TestShow/customGeo/fbx/propA_v003.fbx",
+                    },
+                    {
+                        "productType": "setDecAnimated",
+                        "exportFormat": "alembic",
+                        "name": "clothProp",
+                        "isSetDec": True,
+                        "assetName": "clothProp",
+                        "basePath": "Y:/Show/assets/setdec/setdec01/",
+                        "variant": "main",
+                        "version": "v002",
+                        "exportPath": "Y:/TestShow/customGeo/setDec/alembic/clothProp_v003.abc",
+                    },
+                ]
+            },
+            "warnings": ["example warning"],
+        }
+
+        manifest = parse_shot_manifest(data)
+
+        self.assertEqual(manifest.schema_version, 3)
+        self.assertEqual(len(manifest.custom_animated_geometry), 2)
+        self.assertEqual(manifest.custom_animated_geometry[0].product_type, "animatedFbx")
+        self.assertTrue(manifest.custom_animated_geometry[1].is_set_dec)
+        self.assertEqual(manifest.custom_animated_geometry[1].asset_name, "clothProp")
+        self.assertEqual(manifest.warnings, ["example warning"])
 
     def test_schema_v1_without_custom_geo_still_works(self):
         data = {

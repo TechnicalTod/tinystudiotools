@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import unreal
 
 from . import paths
-from .constants import ANIMATION_SUBDIR, CUSTOM_GEO_SUBDIR, MEDIA_SUBDIR
+from .constants import ANIMATION_SUBDIR, CUSTOM_GEO_SETDEC_SUBDIR, CUSTOM_GEO_SUBDIR, MEDIA_SUBDIR
 from .manifest import ShotInfo
 
 
@@ -43,6 +43,11 @@ def create_shot_setup(shot_info: ShotInfo) -> ShotSetupResult:
     _ensure_directory("{}/{}".format(shot_dir, ANIMATION_SUBDIR))
     _ensure_directory("{}/{}".format(shot_dir, MEDIA_SUBDIR))
     _ensure_directory("{}/{}".format(shot_dir, CUSTOM_GEO_SUBDIR))
+    _ensure_directory(paths.custom_geo_fbx_dir(shot_dir))
+    _ensure_directory(paths.custom_geo_alembic_dir(shot_dir))
+    _ensure_directory(
+        "{}/{}/{}".format(shot_dir, CUSTOM_GEO_SUBDIR, CUSTOM_GEO_SETDEC_SUBDIR)
+    )
 
     level_asset_path = paths.level_asset_path(
         shot_dir, shot_info.shot_number, shot_info.version

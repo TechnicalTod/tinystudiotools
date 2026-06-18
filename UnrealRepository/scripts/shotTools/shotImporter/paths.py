@@ -7,11 +7,20 @@ import re
 from .constants import (
     ANIMATION_SUBDIR,
     ASSETS_ROOT,
+    CUSTOM_GEO_ALEMBIC_SUBDIR,
+    CUSTOM_GEO_FBX_SUBDIR,
+    CUSTOM_GEO_SETDEC_SUBDIR,
     CUSTOM_GEO_SUBDIR,
     EPISODES_ROOT,
     MEDIA_SUBDIR,
 )
-from .manifest import PuppetItem, ShotInfo
+from .manifest import (
+    EXPORT_FORMAT_ALEMBIC,
+    EXPORT_FORMAT_FBX,
+    CustomAnimatedGeometryItem,
+    PuppetItem,
+    ShotInfo,
+)
 
 
 def shot_version_dir(shot_info: ShotInfo) -> str:
@@ -34,6 +43,39 @@ def media_dir(shot_dir: str) -> str:
 
 def custom_geo_dir(shot_dir: str) -> str:
     return "{}/{}".format(shot_dir, CUSTOM_GEO_SUBDIR)
+
+
+def custom_geo_fbx_dir(shot_dir: str) -> str:
+    return "{}/{}/{}".format(shot_dir, CUSTOM_GEO_SUBDIR, CUSTOM_GEO_FBX_SUBDIR)
+
+
+def custom_geo_alembic_dir(shot_dir: str) -> str:
+    return "{}/{}/{}".format(shot_dir, CUSTOM_GEO_SUBDIR, CUSTOM_GEO_ALEMBIC_SUBDIR)
+
+
+def custom_geo_setdec_item_dir(shot_dir: str, item: CustomAnimatedGeometryItem) -> str:
+    stem = safe_artifact_stem(item.name)
+    if item.export_format == EXPORT_FORMAT_ALEMBIC:
+        return "{}/{}/{}/{}".format(
+            shot_dir,
+            CUSTOM_GEO_SUBDIR,
+            CUSTOM_GEO_SETDEC_SUBDIR,
+            stem,
+        )
+    return "{}/{}/{}/{}".format(
+        shot_dir,
+        CUSTOM_GEO_SUBDIR,
+        CUSTOM_GEO_SETDEC_SUBDIR,
+        stem,
+    )
+
+
+def custom_geo_import_dir(shot_dir: str, item: CustomAnimatedGeometryItem) -> str:
+    if item.is_set_dec or item.product_type == "setDecAnimated":
+        return custom_geo_setdec_item_dir(shot_dir, item)
+    if item.export_format == EXPORT_FORMAT_ALEMBIC:
+        return custom_geo_alembic_dir(shot_dir)
+    return custom_geo_fbx_dir(shot_dir)
 
 
 def safe_artifact_stem(name: str) -> str:

@@ -82,6 +82,8 @@ def buildImportTask(filename='', destination_path='', options=None):
     task.set_editor_property('replace_existing_settings', True)
     task.set_editor_property('save', True)
     task.set_editor_property('options', options)
+    if isinstance(options, unreal.FbxImportUI) and hasattr(unreal, "FbxFactory"):
+        task.set_editor_property('factory', unreal.FbxFactory())
     return task
 
 #Function to execute built task
@@ -101,18 +103,93 @@ def executeImportTasks(tasks=[]):
 
     imported_asset_paths = []
     for task in tasks:
-        for path in task.get_editor_property('imported_object_paths'):
-            imported_asset_paths.append(path)
+        imported_asset_paths.extend(_collect_import_task_paths(task))
     return imported_asset_paths
+
+
+def _collect_import_task_paths(task) -> list[str]:
+    paths: list[str] = []
+    get_objects = getattr(task, "get_objects", None)
+    if get_objects is not None:
+        try:
+            for obj in get_objects() or []:
+                if obj is None:
+                    continue
+                path_name = obj.get_path_name()
+                if path_name and path_name not in paths:
+                    paths.append(path_name)
+        except Exception:
+            pass
+
+    for path in task.get_editor_property("imported_object_paths") or []:
+        if path and path not in paths:
+            paths.append(path)
+    return paths
+
+
+def resolve_static_mesh_object_path(task, destination_path: str) -> str:
+    """Return a loadable object path for the StaticMesh created by one import task."""
+    destination_path = (destination_path or "").rstrip("/")
+    imported_paths = _collect_import_task_paths(task)
+
+    for path in imported_paths:
+        object_path = path.rsplit(".", 1)[0] if "." in path else path
+        for candidate in (path, object_path):
+            if not candidate:
+                continue
+            asset = unreal.EditorAssetLibrary.load_asset(candidate)
+            if isinstance(asset, unreal.StaticMesh):
+                return candidate
+
+    destination_name = task.get_editor_property("destination_name") or ""
+    if destination_name:
+        expected = "{}/{}".format(destination_path, destination_name)
+        if unreal.EditorAssetLibrary.does_asset_exist(expected):
+            asset = unreal.EditorAssetLibrary.load_asset(expected)
+            if isinstance(asset, unreal.StaticMesh):
+                return expected
+
+    if destination_path:
+        for asset_path in unreal.EditorAssetLibrary.list_assets(
+            destination_path,
+            recursive=True,
+        ):
+            asset = unreal.EditorAssetLibrary.load_asset(asset_path)
+            if isinstance(asset, unreal.StaticMesh):
+                return asset_path
+
+    imported_summary = []
+    for path in imported_paths:
+        object_path = path.rsplit(".", 1)[0] if "." in path else path
+        asset = unreal.EditorAssetLibrary.load_asset(object_path)
+        asset_type = type(asset).__name__ if asset is not None else "None"
+        imported_summary.append("{} ({})".format(path, asset_type))
+
+    filename = task.get_editor_property("filename") or destination_path
+    raise RuntimeError(
+        "Could not find imported static mesh asset for {}. Imported: {}".format(
+            filename,
+            ", ".join(imported_summary) if imported_summary else "none",
+        )
+    )
+
 
 #Function to build Static mesh import options
 def buildStaticMeshImportOptions():
     options = unreal.FbxImportUI()
 
     options.set_editor_property('import_mesh', True)
+    options.set_editor_property('import_animations', False)
     options.set_editor_property('import_textures', False)
     options.set_editor_property('import_materials', False)
     options.set_editor_property('import_as_skeletal', False)  # Static Mesh
+
+    fbx_import_type = getattr(unreal, "FBXImportType", None)
+    if fbx_import_type is not None:
+        static_mesh_type = getattr(fbx_import_type, "FBXIT_STATIC_MESH", None)
+        if static_mesh_type is not None:
+            options.set_editor_property('automated_import_should_detect_type', False)
+            options.set_editor_property('mesh_type_to_import', static_mesh_type)
 
     options.static_mesh_import_data.set_editor_property('import_translation', unreal.Vector(0.0, 0.0, 0.0))
     options.static_mesh_import_data.set_editor_property('import_rotation', unreal.Rotator(0.0, 0.0, 0.0))
@@ -162,3 +239,19 @@ def buildUSDImportOptions():
     options.set_editor_property('import_level_sequences', False)
     options.set_editor_property('import_materials', True)
     return options
+
+
+def buildGeometryCacheImportOptions():
+    options = unreal.AbcImportSettings()
+    options.set_editor_property(
+        "import_type",
+        unreal.AlembicImportType.GEOMETRY_CACHE,
+    )
+    sampling = options.get_editor_property("sampling_settings")
+    if sampling is not None:
+        sampling.set_editor_property("frame_start", 0)
+    return options
+
+
+def buildAbcImportTask(filename='', destination_path='', options=None):
+    return buildImportTask(filename=filename, destination_path=destination_path, options=options)

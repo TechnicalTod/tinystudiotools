@@ -139,24 +139,18 @@ class MayaHost:
         cmds.file(rename=str(path))
         cmds.file(save=True, type=file_type)
 
-    def collect_applied_textures(self) -> List[Path]:
-        """Texture files referenced by file nodes connected to any material.
-
-        Walks shading engines → materials → ``file`` nodes; expands UDIM tile
-        siblings on disk so the bundle is complete. Returns deduplicated
-        absolute paths; missing files are skipped.
-        """
+    def _collect_textures_from_materials(self, materials: set[str]) -> List[Path]:
+        """Expand ``file`` nodes on ``materials`` into on-disk texture paths."""
         import maya.cmds as cmds
 
         seen: list[Path] = []
         seen_lookup: set[str] = set()
-
-        materials = set(self.list_assignable_materials())
         if not materials:
             return seen
 
         for material in materials:
-            file_nodes = cmds.listConnections(material, type="file") or []
+            history = cmds.listHistory(material, pruneDagObjects=True) or []
+            file_nodes = [node for node in history if cmds.nodeType(node) == "file"]
             for file_node in set(file_nodes):
                 texture_attr = f"{file_node}.fileTextureName"
                 if not cmds.objExists(texture_attr):
@@ -181,6 +175,39 @@ class MayaHost:
                     seen.append(full)
         return seen
 
+    def collect_applied_textures(self) -> List[Path]:
+        """Texture files referenced by file nodes connected to any material.
+
+        Walks shading engines → materials → ``file`` nodes; expands UDIM tile
+        siblings on disk so the bundle is complete. Returns deduplicated
+        absolute paths; missing files are skipped.
+        """
+        return self._collect_textures_from_materials(set(self.list_assignable_materials()))
+
+    def collect_textures_for_nodes(self, root_nodes: List[str]) -> List[Path]:
+        """Textures referenced by materials assigned to meshes under ``root_nodes``."""
+        import maya.cmds as cmds
+
+        materials: set[str] = set()
+        for root in root_nodes:
+            if not cmds.objExists(root):
+                continue
+            meshes = cmds.listRelatives(
+                root,
+                allDescendents=True,
+                fullPath=True,
+                type="mesh",
+                noIntermediate=True,
+            ) or []
+            root_shapes = cmds.listRelatives(
+                root, shapes=True, fullPath=True, type="mesh", noIntermediate=True
+            ) or []
+            for mesh in set(meshes + root_shapes):
+                for sg in cmds.listConnections(mesh, type="shadingEngine") or []:
+                    for shader in cmds.listConnections(f"{sg}.surfaceShader") or []:
+                        materials.add(shader)
+        return self._collect_textures_from_materials(materials)
+
     def export_fbx_selection(self, path: Path) -> None:
         import maya.cmds as cmds
         import maya.mel as mel
@@ -193,36 +220,55 @@ class MayaHost:
         mel.eval("FBXResetExport")
         mel.eval('FBXExport -f "{}" -s'.format(path.as_posix()))
 
-    def export_fbx_rig(self, version_dir: Path, asset_name: str) -> None:
+    def export_fbx_rig(
+        self,
+        version_dir: Path,
+        asset_name: str,
+        export_nodes: Optional[List[str]] = None,
+        version_label: Optional[str] = None,
+    ) -> Path:
         import maya.cmds as cmds
         import maya.mel as mel
-        import pymel.core as pm
 
-        export_nodes = ["root_joint", "visGeo"]
+        export_nodes = list(export_nodes or ["root_joint", "visGeo"])
         missing = [n for n in export_nodes if not cmds.objExists(n)]
         if missing:
             raise RuntimeError(f"Missing rig export nodes: {', '.join(missing)}")
 
-        version_name = version_dir.name
-        parent_list = []
-        for node in export_nodes:
-            parents = pm.listRelatives(node, p=1)
-            if parents:
-                parent_list.append(parents[0])
-                pm.parent(node, world=1)
-        all_constraints = pm.ls(type="constraint")
-        if all_constraints:
-            pm.delete(all_constraints)
-        if parent_list:
-            pm.delete(parent_list)
-
-        pm.select(export_nodes)
+        version_name = version_label or version_dir.name
         fbx_base = version_dir / "UnrealExport"
         fbx_base.mkdir(parents=True, exist_ok=True)
         fbx_path = fbx_base / f"{asset_name}_ExportedRigForUnreal_{version_name}.fbx"
-        mel.eval("FBXResetExport")
-        mel.eval("FBXExportSmoothingGroups -v true")
-        mel.eval('FBXExport -f "{}" -s'.format(fbx_path.as_posix()))
+
+        temp_group = cmds.group(empty=True, name="_unrealExport_TEMP", world=True)
+        duplicate_roots: list[str] = []
+        try:
+            for node in export_nodes:
+                dup = cmds.duplicate(node, renameChildren=True, inputConnections=True)[0]
+                cmds.parent(dup, temp_group)
+                duplicate_roots.append(dup)
+
+            dup_nodes: set[str] = set()
+            for root in duplicate_roots:
+                dup_nodes.add(root)
+                dup_nodes.update(cmds.listRelatives(root, allDescendents=True) or [])
+
+            for constraint in cmds.ls(type="constraint") or []:
+                related = set(
+                    cmds.listConnections(constraint, source=True, destination=True) or []
+                )
+                if related and related.issubset(dup_nodes):
+                    cmds.delete(constraint)
+
+            cmds.select(duplicate_roots, replace=True)
+            mel.eval("FBXResetExport")
+            mel.eval("FBXExportSmoothingGroups -v true")
+            mel.eval('FBXExport -f "{}" -s'.format(fbx_path.as_posix()))
+        finally:
+            if cmds.objExists(temp_group):
+                cmds.delete(temp_group)
+
+        return fbx_path
 
     # ----------------------------------------------------------- scene I/O
 

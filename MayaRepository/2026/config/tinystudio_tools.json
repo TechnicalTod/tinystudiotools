@@ -463,8 +463,13 @@
           "label": "Shot Publish"
         },
         {
-          "label": "Add Custom Geo to Set",
+          "label": "Add Custom Geo (FBX) to Set",
           "module": "unrealTools.addCustomGeoToSet",
+          "function": "run"
+        },
+        {
+          "label": "Add Custom Geo (Alembic) to Set",
+          "module": "unrealTools.addCustomGeoAlembicToSet",
           "function": "run"
         },
         {

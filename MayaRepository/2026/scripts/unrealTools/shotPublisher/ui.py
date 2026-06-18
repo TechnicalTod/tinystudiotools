@@ -11,6 +11,7 @@ import mayaFilePaths
 from genTools.uiUtils import load_qss, show_singleton_qt_window
 
 from . import paths, publish_ops, scene_scan
+from .constants import CUSTOM_GEO_ALEMBIC_SET_NAME, CUSTOM_GEO_FBX_SET_NAME
 
 
 ITEM_ROLE = QtCore.Qt.UserRole
@@ -103,7 +104,9 @@ class MainWindow(QtWidgets.QWidget):
         self.model.clear()
         self.cameraGroup = self._group_item("snapshotTools.png", "Cameras")
         self.puppetGroup = self._group_item("centerPivot.png", "Puppets")
-        self.customGeoGroup = self._group_item("modelling.png", "Custom Geo")
+        self.customGeoGroup = self._group_item("modelling.png", "Custom Animated Geometry")
+        self.fbxGroup = self._group_item("modelling.png", "FBX")
+        self.alembicGroup = self._group_item("modelling.png", "Alembic")
         self.shotInfoGroup = self._group_item("techvis.png", "Shot Info")
         self.extraInfoGroup = self._group_item("modelling.png", "Extra Info")
 
@@ -113,11 +116,15 @@ class MainWindow(QtWidgets.QWidget):
         self.model.appendRow(self.shotInfoGroup)
         self.model.appendRow(self.extraInfoGroup)
 
+        self.customGeoGroup.appendRow(self.fbxGroup)
+        self.customGeoGroup.appendRow(self.alembicGroup)
+
         self._populate_cameras()
         self._populate_puppets()
-        self._populate_custom_geo()
+        self._populate_custom_animated_geometry()
         self._populate_shot_info()
         self._populate_extra_info()
+        self._populate_warnings()
         self.treeView.expandAll()
 
     def _icon(self, icon_name):
@@ -157,19 +164,44 @@ class MainWindow(QtWidgets.QWidget):
             for label, value in puppet.attributes().items():
                 title_item.appendRow(self._child_item(label, value))
 
-    def _populate_custom_geo(self):
-        if not self.manifest.custom_geo:
-            self.customGeoGroup.appendRow(
+    def _populate_custom_animated_geometry(self):
+        fbx_items = [
+            item
+            for item in self.manifest.custom_animated_geometry
+            if item.source_set == CUSTOM_GEO_FBX_SET_NAME
+        ]
+        alembic_items = [
+            item
+            for item in self.manifest.custom_animated_geometry
+            if item.source_set == CUSTOM_GEO_ALEMBIC_SET_NAME
+        ]
+
+        if not fbx_items:
+            self.fbxGroup.appendRow(
+                QtGui.QStandardItem("N/A — use Add Custom Geo (FBX) on Unreal Tools shelf")
+            )
+        for item in fbx_items:
+            self._append_custom_item(self.fbxGroup, item)
+
+        if not alembic_items:
+            self.alembicGroup.appendRow(
                 QtGui.QStandardItem(
-                    "N/A — use Add Custom Geo to Set on Unreal Tools shelf"
+                    "N/A — use Add Custom Geo (Alembic) on Unreal Tools shelf"
                 )
             )
-            return
-        for item in self.manifest.custom_geo:
-            title_item = self._title_item(item.name, ("custom_geo", item.name))
-            self.customGeoGroup.appendRow(title_item)
-            for label, value in item.attributes().items():
-                title_item.appendRow(self._child_item(label, value))
+        for item in alembic_items:
+            self._append_custom_item(self.alembicGroup, item)
+
+    def _append_custom_item(self, parent_group, item):
+        label = "{} [{} / {}]".format(
+            item.name,
+            item.display_kind(),
+            item.product_type,
+        )
+        title_item = self._title_item(label, ("custom_anim_geo", item.key))
+        parent_group.appendRow(title_item)
+        for field_label, value in item.attributes().items():
+            title_item.appendRow(self._child_item(field_label, value))
 
     def _populate_shot_info(self):
         for label, value in self.manifest.shot_info.display_rows():
@@ -183,6 +215,14 @@ class MainWindow(QtWidgets.QWidget):
             return
         for label, value in self.manifest.extra_info.items():
             self.extraInfoGroup.appendRow(self._child_item(label, value))
+
+    def _populate_warnings(self):
+        if not self.manifest.warnings:
+            return
+        warning_group = self._group_item("modelling.png", "Warnings")
+        self.model.appendRow(warning_group)
+        for warning in self.manifest.warnings:
+            warning_group.appendRow(QtGui.QStandardItem(warning))
 
     def clearList(self):
         if self.manifest is None:
@@ -210,8 +250,8 @@ class MainWindow(QtWidgets.QWidget):
             self.manifest.remove_camera(item_name)
         elif item_type == "puppet":
             self.manifest.remove_puppet(item_name)
-        elif item_type == "custom_geo":
-            self.manifest.remove_custom_geo(item_name)
+        elif item_type == "custom_anim_geo":
+            self.manifest.remove_custom_animated_geometry(item_name)
         self.populatePublishTree()
 
     def getExportDir(self):
@@ -248,9 +288,10 @@ class MainWindow(QtWidgets.QWidget):
     def itemGrabShape(self, index: QtCore.QModelIndex):
         payload = self._payload_for_index(index)
         if payload:
-            _, item_name = payload
+            _, item_key_value = payload
+            node_name = item_key_value.split("|", 1)[-1]
             try:
-                pm.select(item_name)
+                pm.select(node_name)
             except Exception:
                 pass
 

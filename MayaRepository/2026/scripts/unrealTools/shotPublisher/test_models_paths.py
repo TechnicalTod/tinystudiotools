@@ -6,13 +6,90 @@ import unittest
 from pathlib import Path
 
 from unrealTools.shotPublisher import paths
+from unrealTools.shotPublisher.classification import (
+    export_format_for_source_set,
+    is_published_setdec_from_attrs,
+    partial_setdec_warning,
+    product_type_for_item,
+)
+from unrealTools.shotPublisher.constants import (
+    CUSTOM_GEO_ALEMBIC_SET_NAME,
+    CUSTOM_GEO_FBX_SET_NAME,
+    EXPORT_FORMAT_ALEMBIC,
+    EXPORT_FORMAT_FBX,
+    PRODUCT_TYPE_ALEMBIC,
+    PRODUCT_TYPE_ANIMATED_FBX,
+    PRODUCT_TYPE_SETDEC_ANIMATED,
+)
 from unrealTools.shotPublisher.models import (
     CameraPublishItem,
-    CustomGeoItem,
+    CustomAnimatedGeometryItem,
     PuppetPublishItem,
+    SCHEMA_VERSION,
     ShotInfo,
     ShotPublishManifest,
 )
+
+
+class ShotPublisherClassificationTests(unittest.TestCase):
+    def test_export_format_for_source_set(self):
+        self.assertEqual(export_format_for_source_set(CUSTOM_GEO_FBX_SET_NAME), EXPORT_FORMAT_FBX)
+        self.assertEqual(
+            export_format_for_source_set(CUSTOM_GEO_ALEMBIC_SET_NAME),
+            EXPORT_FORMAT_ALEMBIC,
+        )
+
+    def test_product_type_for_item(self):
+        self.assertEqual(
+            product_type_for_item(export_format=EXPORT_FORMAT_FBX, is_set_dec=False),
+            PRODUCT_TYPE_ANIMATED_FBX,
+        )
+        self.assertEqual(
+            product_type_for_item(export_format=EXPORT_FORMAT_ALEMBIC, is_set_dec=False),
+            PRODUCT_TYPE_ALEMBIC,
+        )
+        self.assertEqual(
+            product_type_for_item(export_format=EXPORT_FORMAT_FBX, is_set_dec=True),
+            PRODUCT_TYPE_SETDEC_ANIMATED,
+        )
+
+    def test_is_published_setdec_from_attrs(self):
+        self.assertTrue(
+            is_published_setdec_from_attrs(
+                {
+                    "published": True,
+                    "assetName": "pCube1",
+                    "basePath": "Y:/Show/assets/setdec/setdec01/",
+                    "variantName": "main",
+                    "version": "v001",
+                }
+            )
+        )
+        self.assertFalse(
+            is_published_setdec_from_attrs(
+                {
+                    "published": True,
+                    "assetName": "pCube1",
+                    "basePath": "",
+                    "variantName": "main",
+                    "version": "v001",
+                }
+            )
+        )
+
+    def test_partial_setdec_warning(self):
+        warning = partial_setdec_warning(
+            {
+                "name": "pCube1",
+                "published": True,
+                "assetName": "pCube1",
+                "basePath": "",
+                "variantName": "main",
+                "version": "v001",
+            }
+        )
+        self.assertIsNotNone(warning)
+        self.assertIn("incomplete", warning.lower())
 
 
 class ShotPublisherModelPathTests(unittest.TestCase):
@@ -53,29 +130,39 @@ class ShotPublisherModelPathTests(unittest.TestCase):
 
         data = manifest.to_dict()
 
-        self.assertEqual(data["schemaVersion"], 2)
+        self.assertEqual(data["schemaVersion"], SCHEMA_VERSION)
         self.assertEqual(data["shotInfo"]["shotNumber"], "ep001_sq010_sh020")
         self.assertEqual(data["cameras"][0]["exportPath"], "renderCam_v003.fbx")
         self.assertEqual(data["puppets"][0]["rootJointName"], "root_joint")
 
-    def test_manifest_serializes_custom_geo_items(self):
+    def test_manifest_serializes_custom_animated_geometry_items(self):
         manifest = ShotPublishManifest(
             shot_info=ShotInfo(
                 project="TestShow",
                 shot_number="ep001_sq010_sh020",
                 version="v003",
             ),
-            custom_geo=[
-                CustomGeoItem(
+            custom_animated_geometry=[
+                CustomAnimatedGeometryItem(
                     name="propA",
+                    product_type=PRODUCT_TYPE_ANIMATED_FBX,
+                    export_format=EXPORT_FORMAT_FBX,
+                    source_set=CUSTOM_GEO_FBX_SET_NAME,
                     animated=True,
-                    export_path="Y:/TestShow/customGeo/propA_v003.fbx",
+                    export_path="Y:/TestShow/customGeo/fbx/propA_v003.fbx",
                     publish_status="published",
                 ),
-                CustomGeoItem(
-                    name="groupB",
-                    animated=False,
-                    export_path="Y:/TestShow/customGeo/groupB_v003.fbx",
+                CustomAnimatedGeometryItem(
+                    name="clothProp",
+                    product_type=PRODUCT_TYPE_SETDEC_ANIMATED,
+                    export_format=EXPORT_FORMAT_ALEMBIC,
+                    source_set=CUSTOM_GEO_ALEMBIC_SET_NAME,
+                    is_set_dec=True,
+                    asset_name="clothProp",
+                    base_path="Y:/Show/assets/setdec/setdec01/",
+                    variant="main",
+                    asset_version="v002",
+                    export_path="Y:/TestShow/customGeo/setDec/alembic/clothProp_v003.abc",
                     publish_status="published",
                 ),
             ],
@@ -83,13 +170,15 @@ class ShotPublisherModelPathTests(unittest.TestCase):
 
         data = manifest.to_dict()
 
-        self.assertEqual(data["schemaVersion"], 2)
-        self.assertEqual(data["customGeo"]["setName"], "unreal_custom_geo")
-        self.assertEqual(len(data["customGeo"]["items"]), 2)
-        self.assertTrue(data["customGeo"]["items"][0]["animated"])
-        self.assertFalse(data["customGeo"]["items"][1]["animated"])
+        self.assertEqual(data["schemaVersion"], 3)
+        items = data["customAnimatedGeometry"]["items"]
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]["productType"], PRODUCT_TYPE_ANIMATED_FBX)
+        self.assertTrue(items[0]["animated"])
+        self.assertEqual(items[1]["productType"], PRODUCT_TYPE_SETDEC_ANIMATED)
+        self.assertEqual(items[1]["assetName"], "clothProp")
 
-    def test_custom_geo_fbx_path_uses_custom_geo_subdir(self):
+    def test_custom_animated_geometry_paths(self):
         info = ShotInfo(
             project="TestShow",
             shot_number="ep001_sq010_sh020",
@@ -99,9 +188,26 @@ class ShotPublisherModelPathTests(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 os.environ["TINYSTUDIO_BASE_SHOW_DIR"] = tmp_dir
-                fbx_path = paths.custom_geo_fbx_path(info, "propA")
+                fbx_path = paths.custom_animated_geometry_path(
+                    info,
+                    "propA",
+                    export_format=EXPORT_FORMAT_FBX,
+                    is_set_dec=False,
+                )
+                setdec_fbx_path = paths.custom_animated_geometry_path(
+                    info,
+                    "pCube1",
+                    export_format=EXPORT_FORMAT_FBX,
+                    is_set_dec=True,
+                )
+                alembic_path = paths.custom_animated_geometry_path(
+                    info,
+                    "clothProp",
+                    export_format=EXPORT_FORMAT_ALEMBIC,
+                    is_set_dec=True,
+                )
 
-                expected = (
+                root = (
                     Path(tmp_dir)
                     / "TestShow"
                     / "episodes"
@@ -113,9 +219,46 @@ class ShotPublisherModelPathTests(unittest.TestCase):
                     / "sceneDescription"
                     / "v003"
                     / "customGeo"
-                    / "propA_v003.fbx"
                 )
-                self.assertEqual(fbx_path, expected)
+                self.assertEqual(fbx_path, root / "fbx" / "propA_v003.fbx")
+                self.assertEqual(setdec_fbx_path, root / "setDec" / "fbx" / "pCube1_v003.fbx")
+                self.assertEqual(
+                    alembic_path,
+                    root / "setDec" / "alembic" / "clothProp_v003.abc",
+                )
+        finally:
+            if old_base is None:
+                os.environ.pop("TINYSTUDIO_BASE_SHOW_DIR", None)
+            else:
+                os.environ["TINYSTUDIO_BASE_SHOW_DIR"] = old_base
+
+    def test_resolve_paths_adds_suffix_for_duplicate_stems(self):
+        info = ShotInfo(
+            project="TestShow",
+            shot_number="ep001_sq010_sh020",
+            version="v003",
+        )
+        items = [
+            CustomAnimatedGeometryItem(
+                name="ENV|propA",
+                product_type=PRODUCT_TYPE_ANIMATED_FBX,
+                export_format=EXPORT_FORMAT_FBX,
+                source_set=CUSTOM_GEO_FBX_SET_NAME,
+            ),
+            CustomAnimatedGeometryItem(
+                name="layout|propA",
+                product_type=PRODUCT_TYPE_ANIMATED_FBX,
+                export_format=EXPORT_FORMAT_FBX,
+                source_set=CUSTOM_GEO_FBX_SET_NAME,
+            ),
+        ]
+        old_base = os.environ.get("TINYSTUDIO_BASE_SHOW_DIR")
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                os.environ["TINYSTUDIO_BASE_SHOW_DIR"] = tmp_dir
+                paths.resolve_custom_animated_geometry_paths(info, items)
+                self.assertIn("propA_v003.fbx", items[0].export_path)
+                self.assertIn("propA_01_v003.fbx", items[1].export_path)
         finally:
             if old_base is None:
                 os.environ.pop("TINYSTUDIO_BASE_SHOW_DIR", None)
@@ -155,6 +298,21 @@ class ShotPublisherModelPathTests(unittest.TestCase):
                 os.environ["TINYSTUDIO_BASE_SHOW_DIR"] = old_base
 
 
+class ShotPublisherManualTestNotes(unittest.TestCase):
+    """Document manual Maya -> Unreal verification cases for TDs."""
+
+    def test_manual_case_documentation_exists(self):
+        notes = """
+        Manual verification per product type:
+        1. Custom FBX: add transform-animated prop to unreal_custom_geo_fbx, publish, import in UE, confirm static mesh + sequencer keys.
+        2. Custom Alembic: add deforming mesh to unreal_custom_geo_alembic, publish ABC, import as geometry cache in sequencer.
+        3. Set Dec FBX: published set dec with transform animation in FBX set, confirm Set Dec textures/MI applied on shot mesh.
+        4. Set Dec Alembic: published deforming set dec in Alembic set, confirm geometry cache + Set Dec material override.
+        5. Dual membership: same node in both sets publishes FBX and ABC artifacts.
+        """
+        self.assertIn("Custom FBX", notes)
+        self.assertIn("Set Dec Alembic", notes)
+
+
 if __name__ == "__main__":
     unittest.main()
-

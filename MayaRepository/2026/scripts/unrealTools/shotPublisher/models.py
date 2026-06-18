@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .classification import item_key
 
-SCHEMA_VERSION = 2
+
+SCHEMA_VERSION = 3
 
 
 @dataclass
@@ -115,11 +117,37 @@ class PuppetPublishItem(PublishItem):
 
 
 @dataclass
-class CustomGeoItem(PublishItem):
+class CustomAnimatedGeometryItem(PublishItem):
+    product_type: str = ""
+    export_format: str = ""
+    source_set: str = ""
     animated: bool = False
+    is_set_dec: bool = False
+    asset_name: str = ""
+    base_path: str = ""
+    variant: str = ""
+    asset_version: str = ""
+    publish_layout: str = ""
+
+    @property
+    def key(self) -> str:
+        return item_key(self.source_set, self.name)
 
     def attributes(self) -> dict[str, Any]:
-        data = {"animated": self.animated}
+        data: dict[str, Any] = {
+            "productType": self.product_type,
+            "exportFormat": self.export_format,
+            "sourceSet": self.source_set,
+            "animated": self.animated,
+            "isSetDec": self.is_set_dec,
+        }
+        if self.is_set_dec:
+            data["assetName"] = self.asset_name
+            data["basePath"] = self.base_path
+            data["variant"] = self.variant
+            data["version"] = self.asset_version
+            if self.publish_layout:
+                data["publishLayout"] = self.publish_layout
         data.update(self.publish_fields())
         return data
 
@@ -128,19 +156,24 @@ class CustomGeoItem(PublishItem):
         data.update(self.attributes())
         return data
 
+    def display_kind(self) -> str:
+        if self.is_set_dec:
+            return "Set Dec"
+        return "Custom"
+
 
 @dataclass
 class ShotPublishManifest:
     shot_info: ShotInfo
     cameras: list[CameraPublishItem] = field(default_factory=list)
     puppets: list[PuppetPublishItem] = field(default_factory=list)
-    custom_geo: list[CustomGeoItem] = field(default_factory=list)
+    custom_animated_geometry: list[CustomAnimatedGeometryItem] = field(
+        default_factory=list
+    )
     extra_info: dict[str, Any] = field(default_factory=dict)
     warnings: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
-        from .constants import CUSTOM_GEO_SET_NAME
-
         data = {
             "schemaVersion": SCHEMA_VERSION,
             "shotInfo": self.shot_info.to_dict(),
@@ -149,10 +182,9 @@ class ShotPublishManifest:
             "extraInfo": self.extra_info,
             "warnings": self.warnings,
         }
-        if self.custom_geo:
-            data["customGeo"] = {
-                "setName": CUSTOM_GEO_SET_NAME,
-                "items": [item.to_dict() for item in self.custom_geo],
+        if self.custom_animated_geometry:
+            data["customAnimatedGeometry"] = {
+                "items": [item.to_dict() for item in self.custom_animated_geometry],
             }
         return data
 
@@ -162,11 +194,12 @@ class ShotPublishManifest:
     def remove_puppet(self, name: str) -> None:
         self.puppets = [puppet for puppet in self.puppets if puppet.name != name]
 
-    def remove_custom_geo(self, name: str) -> None:
-        self.custom_geo = [item for item in self.custom_geo if item.name != name]
+    def remove_custom_animated_geometry(self, key: str) -> None:
+        self.custom_animated_geometry = [
+            item for item in self.custom_animated_geometry if item.key != key
+        ]
 
     def clear_publish_items(self) -> None:
         self.cameras = []
         self.puppets = []
-        self.custom_geo = []
-
+        self.custom_animated_geometry = []

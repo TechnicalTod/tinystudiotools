@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import maya.cmds as cmds
 import pymel.core as pm
 
 from . import paths
+from .constants import EXPORT_FORMAT_ALEMBIC, EXPORT_FORMAT_FBX
 from .models import (
     CameraPublishItem,
-    CustomGeoItem,
+    CustomAnimatedGeometryItem,
     PuppetPublishItem,
     ShotPublishManifest,
 )
@@ -24,7 +26,7 @@ def _delete_node(node) -> None:
         pass
 
 
-def _bake_nodes(nodes, start_frame: float, end_frame: float) -> None:
+def _bake_nodes(nodes, start_frame: float, end_frame: float, *, shape: bool = False) -> None:
     pm.bakeResults(
         nodes,
         simulation=True,
@@ -38,7 +40,7 @@ def _bake_nodes(nodes, start_frame: float, end_frame: float) -> None:
         bakeOnOverrideLayer=False,
         minimizeRotation=True,
         controlPoints=False,
-        shape=True,
+        shape=shape,
     )
 
 
@@ -46,6 +48,33 @@ def _export_selected_fbx(export_path: Path) -> None:
     pm.mel.FBXResetExport()
     pm.mel.FBXExportSmoothingGroups(v=True)
     pm.mel.FBXExport(file=export_path.as_posix(), s=True)
+
+
+def _ensure_abc_export_plugin() -> None:
+    if not cmds.pluginInfo("AbcExport", query=True, loaded=True):
+        cmds.loadPlugin("AbcExport", quiet=True)
+
+
+def _export_selected_alembic(
+    root_node,
+    export_path: Path,
+    start_frame: float,
+    end_frame: float,
+) -> None:
+    _ensure_abc_export_plugin()
+    root_dag = root_node.name()
+    if not root_dag.startswith("|"):
+        root_dag = "|{}".format(root_dag)
+    job = (
+        '-frameRange {start} {end} -uvWrite -worldSpace -writeVisibility '
+        '-dataFormat ogawa -root {root} -file "{path}"'
+    ).format(
+        start=int(start_frame),
+        end=int(end_frame),
+        root=root_dag,
+        path=export_path.as_posix(),
+    )
+    cmds.AbcExport(j=job)
 
 
 def publish_camera(
@@ -171,13 +200,17 @@ def _hierarchy_nodes(root) -> list:
     return nodes
 
 
-def publish_custom_geo_item(
-    item: CustomGeoItem,
+def publish_custom_animated_geometry_item(
+    item: CustomAnimatedGeometryItem,
     manifest: ShotPublishManifest,
-) -> CustomGeoItem:
+) -> CustomAnimatedGeometryItem:
     duplicated_geo = None
-    export_path = paths.custom_geo_fbx_path(manifest.shot_info, item.name)
-    item.export_path = export_path.as_posix()
+    if not item.export_path:
+        paths.resolve_custom_animated_geometry_paths(
+            manifest.shot_info,
+            [item],
+        )
+    export_path = Path(item.export_path)
 
     try:
         duplicated_geo = pm.duplicate(
@@ -186,15 +219,32 @@ def publish_custom_geo_item(
             un=True,
             ic=True,
         )[0]
-        if item.animated:
+        pm.parent(duplicated_geo, world=True)
+
+        if item.export_format == EXPORT_FORMAT_ALEMBIC:
             _bake_nodes(
                 _hierarchy_nodes(duplicated_geo),
                 manifest.shot_info.timeline_start,
                 manifest.shot_info.timeline_end,
+                shape=True,
             )
-        pm.parent(duplicated_geo, world=True)
-        pm.select(duplicated_geo, replace=True)
-        _export_selected_fbx(export_path)
+            pm.select(duplicated_geo, replace=True)
+            _export_selected_alembic(
+                duplicated_geo,
+                export_path,
+                manifest.shot_info.timeline_start,
+                manifest.shot_info.timeline_end,
+            )
+        else:
+            if item.animated:
+                _bake_nodes(
+                    _hierarchy_nodes(duplicated_geo),
+                    manifest.shot_info.timeline_start,
+                    manifest.shot_info.timeline_end,
+                )
+            pm.select(duplicated_geo, replace=True)
+            _export_selected_fbx(export_path)
+
         item.publish_status = "published"
         item.error = ""
     except Exception as exc:
@@ -207,12 +257,21 @@ def publish_custom_geo_item(
     return item
 
 
-def publish_custom_geo_items(manifest: ShotPublishManifest) -> None:
-    for item in manifest.custom_geo:
+def publish_custom_animated_geometry_items(manifest: ShotPublishManifest) -> None:
+    paths.resolve_custom_animated_geometry_paths(
+        manifest.shot_info,
+        manifest.custom_animated_geometry,
+    )
+    for item in manifest.custom_animated_geometry:
         try:
-            publish_custom_geo_item(item, manifest)
+            publish_custom_animated_geometry_item(item, manifest)
         except Exception as exc:
-            print("Failed to publish custom geo '{}': {}".format(item.name, exc))
+            print(
+                "Failed to publish custom animated geometry '{}': {}".format(
+                    item.name,
+                    exc,
+                )
+            )
 
 
 def write_manifest(manifest: ShotPublishManifest) -> Path:
@@ -235,7 +294,6 @@ def publish_manifest(manifest: ShotPublishManifest) -> Path:
         except Exception as exc:
             print("Failed to publish puppet '{}': {}".format(puppet.name, exc))
 
-    publish_custom_geo_items(manifest)
+    publish_custom_animated_geometry_items(manifest)
 
     return write_manifest(manifest)
-

@@ -5,7 +5,8 @@ from pathlib import Path
 
 from genTools.studio_python_path import ensure_gen_tools_shared
 
-from .models import ShotInfo
+from .constants import EXPORT_FORMAT_ALEMBIC, EXPORT_FORMAT_FBX
+from .models import CustomAnimatedGeometryItem, ShotInfo
 
 ensure_gen_tools_shared()
 
@@ -106,16 +107,62 @@ def publish_root_string(shot_info: ShotInfo) -> str:
     return publish_root(shot_info).as_posix()
 
 
-def custom_geo_dir(shot_info: ShotInfo) -> Path:
+def custom_geo_root(shot_info: ShotInfo) -> Path:
     root = publish_root(shot_info) / CUSTOM_GEO_SUBDIR
     create_directory(root)
     return root
 
 
-def custom_geo_fbx_path(shot_info: ShotInfo, member_name: str) -> Path:
-    file_name = "{}_{}.fbx".format(
-        safe_artifact_stem(member_name),
-        shot_info.version,
-    )
-    return custom_geo_dir(shot_info) / file_name
+def _custom_geo_subdir(
+    shot_info: ShotInfo,
+    *,
+    export_format: str,
+    is_set_dec: bool,
+) -> Path:
+    root = custom_geo_root(shot_info)
+    if is_set_dec:
+        path = root / "setDec" / export_format
+    else:
+        path = root / export_format
+    create_directory(path)
+    return path
 
+
+def custom_animated_geometry_path(
+    shot_info: ShotInfo,
+    member_name: str,
+    *,
+    export_format: str,
+    is_set_dec: bool,
+    stem_suffix: str = "",
+) -> Path:
+    extension = ".abc" if export_format == EXPORT_FORMAT_ALEMBIC else ".fbx"
+    stem = safe_artifact_stem(member_name) + stem_suffix
+    file_name = "{}_{}{}".format(stem, shot_info.version, extension)
+    return _custom_geo_subdir(
+        shot_info,
+        export_format=export_format,
+        is_set_dec=is_set_dec,
+    ) / file_name
+
+
+def resolve_custom_animated_geometry_paths(
+    shot_info: ShotInfo,
+    items: list[CustomAnimatedGeometryItem],
+) -> None:
+    used_stems: dict[tuple[str, bool], dict[str, int]] = {}
+    for item in items:
+        bucket = (item.export_format, item.is_set_dec)
+        base_stem = safe_artifact_stem(item.name)
+        bucket_used = used_stems.setdefault(bucket, {})
+        count = bucket_used.get(base_stem, 0)
+        stem_suffix = "" if count == 0 else "_{:02d}".format(count)
+        bucket_used[base_stem] = count + 1
+        path = custom_animated_geometry_path(
+            shot_info,
+            item.name,
+            export_format=item.export_format,
+            is_set_dec=item.is_set_dec,
+            stem_suffix=stem_suffix,
+        )
+        item.export_path = path.as_posix()

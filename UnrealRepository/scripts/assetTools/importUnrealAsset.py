@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import getpass
 import unreal
@@ -83,6 +84,9 @@ _TABLE_ROW_HEIGHT = 32
 
 IMPORT_WINDOW_KEY = "import_unreal_assets"
 DEFAULT_VARIANT_NAME = "main"
+_BROWSER_TAB_MODES = ("setdec", "assets", "rigs")
+_RIG_UNREAL_VERSION_RE = re.compile(r"^v(?P<version>\d+)$", re.IGNORECASE)
+_ASSET_MANAGER_CATEGORIES = frozenset({"chr", "prop", "env", "veh"})
 
 
 def _list_subdirs(path: str) -> list[str]:
@@ -142,6 +146,100 @@ def _setdec_variants(asset_path: str) -> dict[str, list[str]]:
         if versions:
             variants[variant] = versions
     return variants
+
+
+def _asset_manager_category_from_root(asset_root: str) -> str | None:
+    parts = normalize_disk_path(asset_root).split("/")
+    for idx, part in enumerate(parts):
+        if part.lower() == "assets" and idx + 1 < len(parts):
+            category = parts[idx + 1].lower()
+            if category in _ASSET_MANAGER_CATEGORIES:
+                return category
+    return None
+
+
+def _rig_unreal_root(asset_root: str) -> str:
+    return normalize_disk_path(os.path.join(asset_root, "publish", "rig", "unreal"))
+
+
+def _rig_unreal_version_has_fbx(version_dir: str) -> bool:
+    if not os.path.isdir(version_dir):
+        return False
+    return any(
+        name.lower().endswith(".fbx")
+        for name in os.listdir(version_dir)
+        if os.path.isfile(os.path.join(version_dir, name))
+    )
+
+
+def _rig_unreal_versions(asset_root: str) -> list[str]:
+    unreal_root = _rig_unreal_root(asset_root)
+    if not os.path.isdir(unreal_root):
+        return []
+    versions = [
+        version
+        for version in _list_subdirs(unreal_root)
+        if _RIG_UNREAL_VERSION_RE.match(version)
+        and _rig_unreal_version_has_fbx(os.path.join(unreal_root, version))
+    ]
+    return sorted(versions, key=_version_sort_key)
+
+
+def _is_rig_unreal_asset_root(path: str) -> bool:
+    return bool(_rig_unreal_versions(path))
+
+
+def _publish_layout_for_path(path: str, *, layout_hint: str | None = None) -> str:
+    if layout_hint == "rig_unreal":
+        return "rig_unreal"
+    if layout_hint == "asset_manager_model":
+        return "asset_manager_model"
+    if layout_hint == "setdec":
+        return "setdec"
+    if _is_rig_unreal_asset_root(path):
+        return "rig_unreal"
+    if _is_asset_manager_asset_root(path) or _is_asset_manager_version_path(path):
+        return "asset_manager_model"
+    return "setdec"
+
+
+def _resolve_skeletal_publish_paths(
+    asset_path: str,
+    variant_name: str,
+    version_number: str,
+    *,
+    layout: str,
+) -> tuple[str, str, str]:
+    """Return ``(fbx_dir, tex_dir, ue_import_dir)`` for one skeletal publish."""
+    asset_path = normalize_disk_path(asset_path.rstrip("/\\"))
+    asset_name = os.path.basename(asset_path)
+
+    if layout == "rig_unreal":
+        version_dir = normalize_disk_path(
+            os.path.join(_rig_unreal_root(asset_path), version_number)
+        )
+        category = (_asset_manager_category_from_root(asset_path) or "chr").upper()
+        ue_import_dir = "/Game/01_Assets/{}/{}/{}/{}".format(
+            category,
+            asset_name,
+            variant_name,
+            version_number,
+        )
+        return f"{version_dir}/", f"{version_dir}/tex/", ue_import_dir
+
+    publish_dir = asset_path.split("/")[-4]
+    ue_import_dir = "/Game/01_Assets/{}/{}/{}/{}".format(
+        publish_dir,
+        asset_name,
+        variant_name,
+        version_number,
+    )
+    bundle_root = f"{asset_path}/{variant_name}/{version_number}/"
+    return (
+        f"{bundle_root}unrealExport/",
+        f"{bundle_root}tex/",
+        ue_import_dir,
+    )
 
 
 def _apply_table_combo_style(
@@ -381,19 +479,30 @@ class MainWindow(QtWidgets.QWidget):
         self.browser_tabs = QtWidgets.QTabWidget()
         self.browser_tabs.addTab(self._build_setdec_browser(), "Set Dec")
         self.browser_tabs.addTab(self._build_asset_browser(), "Assets")
+        self.browser_tabs.addTab(self._build_rigs_browser(), "Rigs")
         self.browser_tabs.currentChanged.connect(self._on_browser_tab_changed)
 
         layout.addWidget(self.browser_tabs)
         return panel
 
     def _on_browser_tab_changed(self, index):
-        self._browser_mode = "assets" if index == 1 else "setdec"
+        if 0 <= index < len(_BROWSER_TAB_MODES):
+            self._browser_mode = _BROWSER_TAB_MODES[index]
+        else:
+            self._browser_mode = "setdec"
         self._update_root_label()
 
     def _update_root_label(self):
         if self._browser_mode == "assets":
             self.root_label.setText(
                 "<b>Assets root:</b> <code>{}</code>".format(self._assets_root)
+            )
+        elif self._browser_mode == "rigs":
+            self.root_label.setText(
+                "<b>Rigs root:</b> <code>{}</code> &nbsp;|&nbsp; "
+                "Looking for <code>publish/rig/unreal/v###/</code> exports.".format(
+                    self._assets_root
+                )
             )
         else:
             self.root_label.setText(
@@ -449,6 +558,33 @@ class MainWindow(QtWidgets.QWidget):
         layout.addWidget(self.asset_browser_status)
 
         self._refresh_asset_manager_list()
+        return panel
+
+    def _build_rigs_browser(self):
+        panel = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(panel)
+        layout.setContentsMargins(4, 8, 4, 4)
+        layout.setSpacing(8)
+
+        self.rigs_category_combo = QtWidgets.QComboBox()
+        self.rigs_category_combo.addItems(["chr", "prop", "veh"])
+        self.rigs_category_combo.currentIndexChanged.connect(self._refresh_rigs_asset_list)
+
+        self.rigs_asset_list = self._make_asset_list()
+
+        self.rigs_browser_status = QtWidgets.QLabel(
+            "Select character or prop folders with rig exports under publish/rig/unreal/."
+        )
+        self.rigs_browser_status.setWordWrap(True)
+        self.rigs_browser_status.setStyleSheet("color: #888888; font-size: 11px;")
+
+        layout.addWidget(self._section_label("Category"))
+        layout.addWidget(self.rigs_category_combo)
+        layout.addWidget(self._section_label("Assets"))
+        layout.addWidget(self.rigs_asset_list, 1)
+        layout.addWidget(self.rigs_browser_status)
+
+        self._refresh_rigs_asset_list()
         return panel
 
     def _refresh_groups(self):
@@ -520,7 +656,41 @@ class MainWindow(QtWidgets.QWidget):
             "{} assets with model publishes. Select folders, then Add Selected.".format(count)
         )
 
+    def _refresh_rigs_asset_list(self):
+        self.rigs_asset_list.clear()
+        category = self.rigs_category_combo.currentText()
+        category_path = os.path.join(self._assets_root, category).replace("\\", "/")
+        if not os.path.isdir(category_path):
+            self.rigs_asset_list.setEnabled(False)
+            self.rigs_browser_status.setText(
+                "Category folder not found: {}".format(category_path)
+            )
+            return
+
+        self.rigs_asset_list.setEnabled(True)
+        count = 0
+        for asset_name in _list_subdirs(category_path):
+            asset_path = normalize_disk_path(os.path.join(category_path, asset_name))
+            if _is_rig_unreal_asset_root(asset_path):
+                self.rigs_asset_list.addItem(asset_name)
+                count += 1
+
+        self.rigs_browser_status.setText(
+            "{} assets with rig exports under publish/rig/unreal/. "
+            "Select folders, then Add Selected.".format(count)
+        )
+
     def _paths_from_browser_selection(self):
+        if self._browser_mode == "rigs":
+            category = self.rigs_category_combo.currentText()
+            category_path = os.path.join(self._assets_root, category).replace("\\", "/")
+            paths = []
+            for item in self.rigs_asset_list.selectedItems():
+                asset_path = normalize_disk_path(os.path.join(category_path, item.text()))
+                if asset_path not in paths:
+                    paths.append(asset_path)
+            return paths
+
         if self._browser_mode == "assets":
             category = self.category_combo.currentText()
             category_path = os.path.join(self._assets_root, category).replace("\\", "/")
@@ -546,6 +716,7 @@ class MainWindow(QtWidgets.QWidget):
         path: str,
         *,
         asset_type_default: str = "Static Mesh",
+        layout: str | None = None,
     ):
         variant_combo = _make_table_combo()
         version_combo = _make_table_combo()
@@ -553,7 +724,18 @@ class MainWindow(QtWidgets.QWidget):
         asset_type_combo.addItems(["Static Mesh", "Skeletal Mesh"])
         asset_type_combo.setCurrentText(asset_type_default)
 
-        if _is_asset_manager_asset_root(path) or _is_asset_manager_version_path(path):
+        resolved_layout = _publish_layout_for_path(path, layout_hint=layout)
+
+        if resolved_layout == "rig_unreal":
+            variant_combo.addItems([DEFAULT_VARIANT_NAME])
+            self._fill_version_combo(
+                version_combo,
+                path=path,
+                variant=DEFAULT_VARIANT_NAME,
+                layout="rig_unreal",
+            )
+            asset_type_combo.setCurrentText("Skeletal Mesh")
+        elif resolved_layout == "asset_manager_model":
             asset_root = _asset_manager_asset_root(path)
             variants = _asset_manager_publish_variants(asset_root)
             variant_names = sorted(variants.keys())
@@ -574,7 +756,7 @@ class MainWindow(QtWidgets.QWidget):
                 version_combo,
                 path=asset_root,
                 variant=variant_combo.currentText(),
-                is_asset_manager=True,
+                layout="asset_manager_model",
             )
             asset_type_combo.setCurrentText("Static Mesh")
         else:
@@ -589,7 +771,7 @@ class MainWindow(QtWidgets.QWidget):
                 version_combo,
                 path=path,
                 variant=variant_combo.currentText(),
-                is_asset_manager=False,
+                layout="setdec",
             )
 
             parent_folder = path.replace("\\", "/").split("/")[-4] if path else ""
@@ -616,11 +798,13 @@ class MainWindow(QtWidgets.QWidget):
         *,
         path: str,
         variant: str,
-        is_asset_manager: bool,
+        layout: str,
     ):
         version_combo.blockSignals(True)
         version_combo.clear()
-        if is_asset_manager:
+        if layout == "rig_unreal":
+            versions = _rig_unreal_versions(path)
+        elif layout == "asset_manager_model":
             variants = _asset_manager_publish_variants(path)
             versions = variants.get(variant, [])
         else:
@@ -633,15 +817,43 @@ class MainWindow(QtWidgets.QWidget):
             version_combo.setCurrentIndex(len(versions) - 1)
         version_combo.blockSignals(False)
 
-    def _populate_row_from_path(self, row: int, path: str):
+    def _layout_hint_for_browser(self) -> str | None:
+        if self._browser_mode == "rigs":
+            return "rig_unreal"
+        if self._browser_mode == "assets":
+            return "asset_manager_model"
+        return "setdec"
+
+    def _row_publish_layout(self, row: int) -> str:
+        item = self.tableWidget.item(row, 0)
+        if item is None:
+            return "setdec"
+        stored = item.data(QtCore.Qt.ItemDataRole.UserRole + 1)
+        if stored:
+            return str(stored)
+        return _publish_layout_for_path(_path_from_table_item(item))
+
+    def _populate_row_from_path(self, row: int, path: str, *, layout: str | None = None):
         path = normalize_disk_path(path.replace("\\", "/"))
+        resolved_layout = layout or _publish_layout_for_path(
+            path,
+            layout_hint=self._layout_hint_for_browser(),
+        )
         if _is_asset_manager_version_path(path):
             path = _asset_manager_asset_root(path)
         item = QtWidgets.QTableWidgetItem(_asset_display_name(path))
         item.setToolTip(path)
         item.setData(QtCore.Qt.ItemDataRole.UserRole, path)
+        item.setData(QtCore.Qt.ItemDataRole.UserRole + 1, resolved_layout)
         self.tableWidget.setItem(row, 0, item)
-        self._populate_variant_version_combos(row, path)
+        self._populate_variant_version_combos(
+            row,
+            path,
+            layout=resolved_layout,
+            asset_type_default=(
+                "Skeletal Mesh" if resolved_layout == "rig_unreal" else "Static Mesh"
+            ),
+        )
 
     def add(self, pathList=None):
         paths = pathList or self._paths_from_browser_selection()
@@ -664,7 +876,11 @@ class MainWindow(QtWidgets.QWidget):
                 continue
             row = self.tableWidget.rowCount()
             self.tableWidget.insertRow(row)
-            self._populate_row_from_path(row, normalized)
+            self._populate_row_from_path(
+                row,
+                normalized,
+                layout=self._layout_hint_for_browser(),
+            )
             existing.add(normalized)
             added += 1
 
@@ -729,13 +945,15 @@ class MainWindow(QtWidgets.QWidget):
         if variant_combo is None or version_combo is None:
             return
         variant = variant_combo.currentText()
-        is_asset_manager = _is_asset_manager_asset_root(asset_path)
-        root_path = _asset_manager_asset_root(asset_path) if is_asset_manager else asset_path
+        layout = self._row_publish_layout(row)
+        root_path = asset_path
+        if layout == "asset_manager_model":
+            root_path = _asset_manager_asset_root(asset_path)
         self._fill_version_combo(
             version_combo,
             path=root_path,
             variant=variant,
-            is_asset_manager=is_asset_manager,
+            layout=layout,
         )
 
     def importAsset(self):
@@ -782,31 +1000,48 @@ class MainWindow(QtWidgets.QWidget):
                     )
 
             elif asset_type == "Skeletal Mesh":
+                layout = self._row_publish_layout(row)
                 imported_mesh, unreal_mesh_import_path = self.importSkeletalMesh(
-                    asset_path, variant_name, version_number
+                    asset_path,
+                    variant_name,
+                    version_number,
+                    layout=layout,
                 )
+                if imported_mesh is None:
+                    continue
                 imported_textures = self.importTextures(
                     asset_path,
                     variant_name,
                     version_number,
                     unreal_mesh_import_path,
                     asset_type,
+                    layout=layout,
                 )
                 self.assignMaterialInstanceToMesh(
                     imported_mesh, unreal_mesh_import_path, imported_textures, asset_type
                 )
 
-    def importSkeletalMesh(self, assetPath, variantName, versionNumber):
-        publishedFBXPath = "{}/{}/{}/unrealExport/".format(
-            assetPath, variantName, versionNumber
-        )
+    def importSkeletalMesh(self, assetPath, variantName, versionNumber, *, layout: str):
         assetName = assetPath.split("/")[-1]
-        publishDir = assetPath.split("/")[-4]
-        unrealMeshImportPath = "/Game/01_Assets/{}/{}/{}/{}".format(
-            publishDir, assetName, variantName, versionNumber
+        published_fbx_path, _published_tex_path, unrealMeshImportPath = (
+            _resolve_skeletal_publish_paths(
+                assetPath,
+                variantName,
+                versionNumber,
+                layout=layout,
+            )
         )
+        if not os.path.isdir(published_fbx_path):
+            genUnrealUtils.warningPopup(
+                "Publish folder not found for {}: {}".format(assetName, published_fbx_path)
+            )
+            return None, unrealMeshImportPath
+
         fbxList = [
-            fbx for fbx in os.listdir(publishedFBXPath) if fbx.endswith(".fbx")
+            fbx
+            for fbx in os.listdir(published_fbx_path)
+            if fbx.lower().endswith(".fbx")
+            and os.path.isfile(os.path.join(published_fbx_path, fbx))
         ]
         if len(fbxList) > 1:
             genUnrealUtils.warningPopup(
@@ -818,7 +1053,7 @@ class MainWindow(QtWidgets.QWidget):
             )
             return None, unrealMeshImportPath
 
-        fbx_asset_path = publishedFBXPath + fbxList[0]
+        fbx_asset_path = published_fbx_path + fbxList[0]
         import_mesh_task = genUnrealImportUtils.buildImportTask(
             fbx_asset_path,
             unrealMeshImportPath,
@@ -828,17 +1063,32 @@ class MainWindow(QtWidgets.QWidget):
         return imported_mesh, unrealMeshImportPath
 
     def importTextures(
-        self, assetPath, variantName, versionNumber, unrealMeshImportPath, assetType
+        self,
+        assetPath,
+        variantName,
+        versionNumber,
+        unrealMeshImportPath,
+        assetType,
+        *,
+        layout: str,
     ):
         tex_list = []
         if assetType == "Skeletal Mesh":
-            published_tex_path = "{}/{}/{}/tex/".format(
-                assetPath, variantName, versionNumber
+            _published_fbx_path, published_tex_path, _ue_import_dir = (
+                _resolve_skeletal_publish_paths(
+                    assetPath,
+                    variantName,
+                    versionNumber,
+                    layout=layout,
+                )
             )
-            for texture in os.listdir(published_tex_path):
-                if texture.endswith(".png"):
-                    tex_list.append(published_tex_path + texture)
-
+            if os.path.isdir(published_tex_path):
+                for texture in os.listdir(published_tex_path):
+                    texture_path = os.path.join(published_tex_path, texture)
+                    if not os.path.isfile(texture_path):
+                        continue
+                    if texture.lower().endswith((".png", ".jpg", ".jpeg", ".tga")):
+                        tex_list.append(normalize_disk_path(texture_path))
         unreal_tex_import_path = "{}/TEX".format(unrealMeshImportPath)
         unreal_mat_import_path = "{}/MAT".format(unrealMeshImportPath)
 
