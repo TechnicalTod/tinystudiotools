@@ -67,13 +67,14 @@ def register_previs_menu() -> None:
             _reload_and_show("assetTools.importUnrealAsset")
 
     importUnrealAssetMenuButton = importUnrealAssetClass()
+
     importUnrealAssetMenuButton.init_entry(
         owner_name=previs_menu.menu_name,
         menu=previs_menu.menu_name,
-        name="Import SetDec Assets",
-        label="Import SetDec Assets",
+        name="Import Unreal Assets",
+        label="Import Unreal Assets",
         section=_SECTION_IMPORT,
-        tool_tip="Import Unreal assets from published location",
+        tool_tip="Import published assets into Unreal",
     )
     importUnrealAssetMenuButton.register_menu_entry()
 

@@ -53,7 +53,7 @@ def _import_setdec_textures(
     unreal_import_path: str,
     *,
     warn: WarnFn,
-) -> Optional[List[str]]:
+) -> setdec_import_ops.StaticMeshTextureImportResult:
     identity = _build_identity(item)
     return setdec_import_ops.import_static_mesh_textures(
         identity,
@@ -66,11 +66,16 @@ def _assign_setdec_materials_to_static_mesh(
     static_mesh_path: str,
     unreal_import_path: str,
     imported_textures: Optional[List[str]],
+    *,
+    orma_channels_by_slot: Optional[dict] = None,
+    scalar_values_by_slot: Optional[dict] = None,
 ) -> None:
     setdec_import_ops.assign_setdec_static_mesh_materials(
         [static_mesh_path],
         unreal_import_path,
         imported_textures,
+        orma_channels_by_slot=orma_channels_by_slot,
+        scalar_values_by_slot=scalar_values_by_slot,
     )
     unreal.EditorAssetLibrary.save_asset(static_mesh_path.split(".")[0])
 
@@ -89,7 +94,7 @@ def _assign_setdec_materials_to_geometry_cache(
     unreal_eal = unreal.EditorAssetLibrary()
     asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
     loaded_master_material = unreal_eal.load_asset(
-        "/Game/03_Shared/MasterMaterials/M_BaseMaterial_Standard_VT"
+        setdec_import_ops.MASTER_MATERIAL_PATH
     )
     if loaded_master_material is None:
         warn("Could not load master material for Set Dec geometry cache assignment.")
@@ -161,11 +166,13 @@ def import_setdec_fbx_items(
         )
         saved_assets.append(static_mesh_path.split(".")[0])
 
-        imported_textures = _import_setdec_textures(item, import_dir, warn=warn)
+        texture_result = _import_setdec_textures(item, import_dir, warn=warn)
         _assign_setdec_materials_to_static_mesh(
             static_mesh_path,
             import_dir,
-            imported_textures,
+            texture_result.imported_textures,
+            orma_channels_by_slot=texture_result.orma_channels_by_slot,
+            scalar_values_by_slot=texture_result.scalar_values_by_slot,
         )
         animated_fbx_ops._spawn_static_mesh_item(  # noqa: SLF001
             setup,
@@ -190,7 +197,7 @@ def import_setdec_alembic_items(
     for item in items:
         import_dir = paths.custom_geo_import_dir(setup.shot_dir, item)
         unreal.EditorAssetLibrary.make_directory(import_dir)
-        imported_textures = _import_setdec_textures(item, import_dir, warn=warn)
+        texture_result = _import_setdec_textures(item, import_dir, warn=warn)
         mat_dir = "{}/MAT".format(import_dir)
         saved_assets.extend(alembic_ops.import_alembic_items(setup, [item]))
 
@@ -203,7 +210,7 @@ def import_setdec_alembic_items(
         if cache_actor is not None:
             _assign_setdec_materials_to_geometry_cache(
                 cache_actor,
-                imported_textures,
+                texture_result.imported_textures,
                 mat_dir,
                 warn=warn,
             )

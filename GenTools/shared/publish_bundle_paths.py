@@ -147,6 +147,12 @@ def bundle_paths(identity: StaticMeshPublishIdentity) -> BundlePaths:
     )
 
 
+def sm_prefixed_mesh_object_path(identity: StaticMeshPublishIdentity) -> str:
+    """UE object path after static mesh import renames the asset to ``SM_{stem}``."""
+    paths = bundle_paths(identity)
+    return f"{paths.ue_import_dir}/SM_{paths.bundle_stem}"
+
+
 def identity_from_legacy_setdec_args(
     asset_path: str,
     variant: str,
